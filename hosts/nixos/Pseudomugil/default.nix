@@ -46,7 +46,7 @@ in
       "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/tailscale.nix"
       "hosts/common/optional/services/openssh-init.nix"
-
+      "hosts/common/optional/services/komodo-periphery.nix"
     ])
   ];
 

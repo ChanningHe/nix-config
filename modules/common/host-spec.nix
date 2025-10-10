@@ -39,6 +39,11 @@
           type = lib.types.attrsOf lib.types.anything;
           description = "An attribute set of network information";
         };
+        serviceInfo = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf lib.types.anything;
+          description = "An attribute set of services information";
+        };
         wifi = lib.mkOption {
           type = lib.types.bool;
           default = false;

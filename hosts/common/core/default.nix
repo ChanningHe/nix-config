@@ -50,6 +50,7 @@ in
       userFullName
       networking
       networkInfo
+      serviceInfo
       ;
   };
 
@@ -71,6 +72,9 @@ in
     sops
     age
     ssh-to-age
+    just
+    deadnix
+    pre-commit
   ];
   # Force home-manager to use global packages
   home-manager.useGlobalPkgs = true;

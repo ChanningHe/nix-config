@@ -7,7 +7,8 @@
   programs.git = {
     enable = true;
     package = pkgs.gitAndTools.gitFull;
-
+    userName  = "Channing He";
+    userEmail = "channinghey@gmail.com";
     ignores = [
       ".csvignore"
       # nix
