@@ -58,6 +58,48 @@ let
     ## Require callers to provide passkeys to access the periphery API
     passkeys = [${lib.concatMapStringsSep ", " (key: ''"${key}"'') cfg.passkeys}]
 
+    ## Disable the terminal APIs and disallow remote shell access through Periphery.
+    ## Env: PERIPHERY_DISABLE_TERMINALS
+    ## Default: false
+    disable_terminals = ${if cfg.disableTerminals then "true" else "false"}
+
+    ## Disable the container exec APIs and disallow remote container shell access through Periphery.
+    ## This can be left enabled while general terminal access is disabled.
+    ## Env: PERIPHERY_DISABLE_CONTAINER_EXEC
+    ## Default: false
+    disable_container_exec = ${if cfg.disableContainerExec then "true" else "false"}
+
+    ## How often Periphery polls the host for system stats, like CPU / memory usage.
+    ## To effectively disable polling, set this to something like 1-hr.
+    ## Env: PERIPHERY_STATS_POLLING_RATE
+    ## Options: https://docs.rs/komodo_client/latest/komodo_client/entities/enum.Timelength.html
+    ## Default: 5-sec
+    stats_polling_rate = "${cfg.statsPollingRate}"
+
+    ## How often Periphery polls the host for container stats,
+    ## Env: PERIPHERY_CONTAINER_STATS_POLLING_RATE
+    ## Options: https://docs.rs/komodo_client/latest/komodo_client/entities/enum.Timelength.html
+    ## Default: 30-sec
+    container_stats_polling_rate = "${cfg.containerStatsPollingRate}"
+
+    ## Whether stack actions should use `docker-compose ...`
+    ## instead of `docker compose ...`.
+    ## Env: PERIPHERY_LEGACY_COMPOSE_CLI
+    ## Default: false
+    legacy_compose_cli = ${if cfg.legacyComposeCli then "true" else "false"}
+
+    ## Optional. Only include mounts at specific paths in the disk report.
+    ## Example: include_disk_mounts = ["/mnt/include/1", "/mnt/include/2"]
+    ## Env: PERIPHERY_INCLUDE_DISK_MOUNTS
+    ## Default: empty, which won't filter down the disks.
+    include_disk_mounts = [${lib.concatMapStringsSep ", " (mount: ''"${mount}"'') cfg.includeDiskMounts}]
+
+    ## Optional. Don't include these mounts in the disk report.
+    ## Example: exclude_disk_mounts = ["/mnt/exclude/1", "/mnt/exclude/2"]
+    ## Env: PERIPHERY_EXCLUDE_DISK_MOUNTS
+    ## Default: empty, which won't exclude any disks.
+    exclude_disk_mounts = [${lib.concatMapStringsSep ", " (mount: ''"${mount}"'') cfg.excludeDiskMounts}]
+
     ## Additional config sections
     ${cfg.extraConfig}
   '';
@@ -205,6 +247,71 @@ in
       '';
     };
 
+    disableTerminals = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Disable the terminal APIs and disallow remote shell access through Periphery.";
+    };
+
+    disableContainerExec = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Disable the container exec APIs and disallow remote container shell access through Periphery.
+        This can be left enabled while general terminal access is disabled.
+      '';
+    };
+
+    statsPollingRate = lib.mkOption {
+      type = lib.types.str;
+      default = "5-sec";
+      description = ''
+        How often Periphery polls the host for system stats, like CPU / memory usage.
+        To effectively disable polling, set this to something like 1-hr.
+        Options: https://docs.rs/komodo_client/latest/komodo_client/entities/enum.Timelength.html
+      '';
+      example = "10-sec";
+    };
+
+    containerStatsPollingRate = lib.mkOption {
+      type = lib.types.str;
+      default = "30-sec";
+      description = ''
+        How often Periphery polls the host for container stats.
+        Options: https://docs.rs/komodo_client/latest/komodo_client/entities/enum.Timelength.html
+      '';
+      example = "1-min";
+    };
+
+    legacyComposeCli = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether stack actions should use `docker-compose ...`
+        instead of `docker compose ...`.
+      '';
+    };
+
+    includeDiskMounts = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = ''
+        Optional. Only include mounts at specific paths in the disk report.
+        Empty list won't filter down the disks.
+      '';
+      example = [ "/mnt/include/1" "/mnt/include/2" ];
+    };
+
+    excludeDiskMounts = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = ''
+        Optional. Don't include these mounts in the disk report.
+        Empty list won't exclude any disks.
+      '';
+      example = [ "/mnt/exclude/1" "/mnt/exclude/2" ];
+    };
+
     user = lib.mkOption {
       type = lib.types.str;
       default = "komodo-periphery";
@@ -284,10 +391,13 @@ in
         RestartSec = "10s";
         TimeoutStartSec = 0;
 
-        # Set HOME for the service
-        Environment = "HOME=${
-          if cfg.user == "root" then "/root" else config.users.users.${cfg.user}.home
-        }";
+        # Set environment variables for the service
+        Environment = [
+          "HOME=${
+            if cfg.user == "root" then "/root" else config.users.users.${cfg.user}.home
+          }"
+          "PATH=/run/current-system/sw/bin:/run/wrappers/bin"
+        ];
 
         # Use the config file (use /etc if configFile not specified)
         # Note: komodo package provides 'periphery' binary, not 'komodo'
@@ -295,6 +405,8 @@ in
           if cfg.configFile != null then cfg.configFile else "/etc/komodo-periphery/config.toml"
         }";
 
+        # Allow the service to access the docker socket
+        SupplementaryGroups = [ "docker" ];
         # Security hardening (optional, adjust as needed)
         # ProtectSystem = "strict";
         # ReadWritePaths = [ cfg.rootDirectory ];

@@ -19,6 +19,8 @@ in
   users.users.${hostSpec.username} = {
     home = "/home/${hostSpec.username}";
     isNormalUser = true;
+    group = "${hostSpec.username}";
+    uid = 3000;
     hashedPasswordFile = sopsHashedPasswordFile; # Blank if sops is not working.
 
     extraGroups = lib.flatten [
@@ -35,6 +37,9 @@ in
     ];
   };
 
+  users.groups.${hostSpec.username} = {
+    gid = 3000;
+  };
   # No matter what environment we are in we want these tools for root, and the user(s)
   programs.git.enable = true;
 

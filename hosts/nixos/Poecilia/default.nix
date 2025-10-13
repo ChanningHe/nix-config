@@ -112,28 +112,37 @@ in
       fsType = "zfs";
     };
 
-    # ---- snapshot tasks ---- #
-    services.znapzend.enable = true;
-    services.znapzend.zetup = {
-      "rpool/ConfigData" = {
-        enable = true;
-        dataset = "rpool/ConfigData";
-        timestampFormat = "znapzend-auto-%Y-%m-%dT%H:%M:%SZ";
-        plan = "1w=>1h,1m=>1d";
-        recursive = true;
-        # destinations = {
-        #   local = {
-        #     dataset = "rpool/ConfigData";
-        #     #presend = "zpool import -N btank";
-        #     #postsend = "zpool export btank";
-        #   };
-        #   remote = {
-        #     #host = "john@example.com";
-        #     #dataset = "tank/john";
-        #   };
-        # };
-      };
+  virtualisation.docker.daemon.settings = {
+    data-root = "/mnt/rpool/container-root/docker";
+  };
+
+  # ==== snapshot tasks ==== #
+  services.znapzend.enable = true;
+  services.znapzend.zetup = {
+    "rpool/ConfigData" = {
+      enable = true;
+      dataset = "rpool/ConfigData";
+      timestampFormat = "znapzend-auto-%Y-%m-%dT%H:%M:%SZ";
+      plan = "1w=>1h,1m=>1d";
+      recursive = true;
+      # destinations = {
+      #   local = {
+      #     dataset = "rpool/ConfigData";
+      #     #presend = "zpool import -N btank";
+      #     #postsend = "zpool export btank";
+      #   };
+      #   remote = {
+      #     #host = "john@example.com";
+      #     #dataset = "tank/john";
+      #   };
+      # };
     };
+  };
+
+  # ===== environment variables ===== #
+  environment.variables = {
+    DOCKER_DATA = "/mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
+  };
 
   # ===== Kernel config =====
   boot.kernelParams = [

@@ -65,6 +65,27 @@ let
     passkeys = [${lib.concatMapStringsSep ", " (key: ''"${key}"'') cfg.passkeys}]
     ''}
 
+    ## Disable the terminal APIs and disallow remote shell access through Periphery.
+    disable_terminals = ${if cfg.disableTerminals then "true" else "false"}
+
+    ## Disable the container exec APIs and disallow remote container shell access through Periphery.
+    disable_container_exec = ${if cfg.disableContainerExec then "true" else "false"}
+
+    ## How often Periphery polls the host for system stats, like CPU / memory usage.
+    stats_polling_rate = "${cfg.statsPollingRate}"
+
+    ## How often Periphery polls the host for container stats.
+    container_stats_polling_rate = "${cfg.containerStatsPollingRate}"
+
+    ## Whether stack actions should use `docker-compose ...` instead of `docker compose ...`.
+    legacy_compose_cli = ${if cfg.legacyComposeCli then "true" else "false"}
+
+    ## Optional. Only include mounts at specific paths in the disk report.
+    include_disk_mounts = [${lib.concatMapStringsSep ", " (mount: ''"${mount}"'') cfg.includeDiskMounts}]
+
+    ## Optional. Don't include these mounts in the disk report.
+    exclude_disk_mounts = [${lib.concatMapStringsSep ", " (mount: ''"${mount}"'') cfg.excludeDiskMounts}]
+
     ## Secrets (injected via sops)
     ${lib.optionalString (config.sops.secrets ? "komodo/github_token") ''
     [secrets]
@@ -99,6 +120,14 @@ in
         # Security options
         allowedIps = lib.mkDefault (hostKomodo.allowedIps or [ ]);
         passkeys = lib.mkDefault (hostKomodo.passkeys or [ ]);
+        # Advanced options
+        disableTerminals = lib.mkDefault (hostKomodo.disableTerminals or false);
+        disableContainerExec = lib.mkDefault (hostKomodo.disableContainerExec or false);
+        statsPollingRate = lib.mkDefault (hostKomodo.statsPollingRate or "5-sec");
+        containerStatsPollingRate = lib.mkDefault (hostKomodo.containerStatsPollingRate or "30-sec");
+        legacyComposeCli = lib.mkDefault (hostKomodo.legacyComposeCli or false);
+        includeDiskMounts = lib.mkDefault (hostKomodo.includeDiskMounts or [ ]);
+        excludeDiskMounts = lib.mkDefault (hostKomodo.excludeDiskMounts or [ ]);
       };
     })
 

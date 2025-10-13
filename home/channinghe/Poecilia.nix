@@ -22,5 +22,12 @@
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix
   ];
-
+  
+  # ==== bash config for specific host ==== #
+  programs.bash = {
+    shellAliases = {
+      nxsw = "sudo nixos-rebuild switch";
+      "2dd" = "cd /mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
+   };
+  };
 }
