@@ -3,8 +3,13 @@ Fork from [EmergentMind/nix-config-starter](https://github.com/EmergentMind/nix-
 
 ## WIP!
 
+## System Architecture Overview
+![](./docs/images/SystemOverview.png)
+*Generated with [mermaid-to-excalidraw](https://github.com/excalidraw/mermaid-to-excalidraw)*
 
-
+## Configuration Inheritance Hierarchy
+![](./docs/images/ConfigurationInheritance.png)
+*Generated with [mermaid-to-excalidraw](https://github.com/excalidraw/mermaid-to-excalidraw)*
 
 ## Installation on Remote Targets
 
