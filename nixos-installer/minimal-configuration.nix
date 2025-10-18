@@ -10,8 +10,8 @@
     (map lib.custom.relativeToRoot [
       "modules/common/host-spec.nix"
       "hosts/common/core/ssh.nix"
-      "hosts/common/users/primary"
-      "hosts/common/users/primary/nixos.nix"
+      "hosts/common/users/channinghe"
+      "hosts/common/users/channinghe/nixos.nix"
       "hosts/common/optional/minimal-user.nix"
     ])
   ];
@@ -20,7 +20,7 @@
     isMinimal = lib.mkForce true;
     hostName = "installer";
     # FIXME(starter): Add your primary username or whatever user you want to use for installation
-    username = "hiro";
+    username = "channinghe";
   };
 
   fileSystems."/boot".options = [ "umask=0077" ]; # Removes permissions and security warnings.

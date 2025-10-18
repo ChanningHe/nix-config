@@ -327,6 +327,21 @@ in
       default = "komodo-periphery";
       description = "Group to run the Periphery agent as.";
     };
+
+    systemdEnvironment = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = ''
+        Additional environment variables to set for the systemd service.
+        Uses the same format as systemd.services.<name>.serviceConfig.Environment.
+        These will be appended to the default environment variables.
+      '';
+      example = [
+        "DOCKER_HOST=unix:///var/run/docker.sock"
+        "RUST_LOG=komodo=debug"
+        "CUSTOM_VAR=your-value"
+      ];
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -397,7 +412,7 @@ in
             if cfg.user == "root" then "/root" else config.users.users.${cfg.user}.home
           }"
           "PATH=/run/current-system/sw/bin:/run/wrappers/bin"
-        ];
+        ] ++ cfg.systemdEnvironment;
 
         # Use the config file (use /etc if configFile not specified)
         # Note: komodo package provides 'periphery' binary, not 'komodo'

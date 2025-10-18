@@ -17,21 +17,14 @@ in
     ])
     ./${platform}.nix
 
-    # FIXME(starter): add/edit as desired
-    ./bash.nix
-    ./darwin.nix
-    ./direnv.nix
-    ./fonts.nix
-    ./git.nix
-    ./kitty.nix
-    ./nixos.nix
-    ./ssh.nix
-    ./zed.nix
+    # Service users don't need complex bash/ssh configurations
+    # Keep it minimal - only essential functionality
   ];
 
   inherit hostSpec;
 
-  services.ssh-agent.enable = true;
+  # Disable ssh-agent for service user - not needed for application services
+  services.ssh-agent.enable = false;
 
   home = {
     username = lib.mkDefault config.hostSpec.username;
@@ -41,44 +34,32 @@ in
       "$HOME/.local/bin"
     ];
     sessionVariables = {
-      FLAKE = "$HOME/src/nix/nix-config";
+      # Minimal environment for service user
       SHELL = "bash";
     };
   };
 
+  # Minimal packages for service user - only absolute essentials
   home.packages = builtins.attrValues {
     inherit (pkgs)
-      curl
-      pciutils
-      pfetch # system info
-      pre-commit # git hooks
-      p7zip # compression & encryption
-      usbutils
-      unzip # zip extraction
-      unrar # rar extraction
-      sops
-      age
-      ssh-to-age
-      tree
-      lm_sensors
-      sysstat
-      jq
+      # Network tools for basic service communication
+      #curl
+      # Archive handling for service deployments
+      nano
       ;
   };
 
+  # Minimal nix configuration for service user
   nix = {
     package = lib.mkDefault pkgs.nix;
     settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
       warn-dirty = false;
     };
   };
 
   programs.home-manager.enable = true;
 
-  # Nicely reload system units when changing configs
-  systemd.user.startServices = "sd-switch";
+  # Disable systemd user service management for service user
+  # Service users typically don't need home-manager to manage systemd services
+  systemd.user.startServices = "ignore-dependencies";
 }

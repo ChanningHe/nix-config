@@ -21,5 +21,10 @@
         ethtool
         networkd-dispatcher
    ];
- 
+
+  # Enable IP forwarding for Tailscale (use mkDefault to avoid conflicts)
+  boot.kernel.sysctl = {
+    "net.ipv4.ip_forward" = lib.mkDefault 1;
+    "net.ipv6.conf.all.forwarding" = lib.mkDefault 1;
+  };
 }

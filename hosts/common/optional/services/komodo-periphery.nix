@@ -128,6 +128,8 @@ in
         legacyComposeCli = lib.mkDefault (hostKomodo.legacyComposeCli or false);
         includeDiskMounts = lib.mkDefault (hostKomodo.includeDiskMounts or [ ]);
         excludeDiskMounts = lib.mkDefault (hostKomodo.excludeDiskMounts or [ ]);
+        # systemd environment variables
+        systemdEnvironment = lib.mkDefault (hostKomodo.systemdEnvironment or []);
       };
     })
 

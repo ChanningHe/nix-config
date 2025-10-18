@@ -17,9 +17,9 @@
     inputs.home-manager.nixosModules.home-manager
     (map lib.custom.relativeToRoot [
       "modules/common/host-spec.nix"
-      # We want primary default so we get ssh authorized keys, zsh, and some basic tty tools. It also pulls in the hm spec for iso.
-      # Note that we are not pulling in "hosts/common/users/primary/nixos.nix" for the iso as it's not needed.
-      "hosts/common/users/primary/"
+      # We want channinghe default so we get ssh authorized keys, zsh, and some basic tty tools. It also pulls in the hm spec for iso.
+      # Note that we are not pulling in "hosts/common/users/channinghe/nixos.nix" for the iso as it's not needed.
+      "hosts/common/users/channinghe/"
       "hosts/common/optional/minimal-user.nix"
     ])
   ];
@@ -27,7 +27,7 @@
   hostSpec = {
     hostName = "iso";
     # FIXME(starter): the username below will be available in additional the the standard `root` and `nixos` users from the nixos installation image.
-    username = "hiro";
+    username = "channinghe";
     isProduction = lib.mkForce false;
 
     # FIXME(starter): add your github username and github-noreply email address

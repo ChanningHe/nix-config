@@ -1,8 +1,16 @@
-#NOTE(starter): this is the most basic way to set up this user with their core home manager settings
-# In this case, because the host is the ISO, very little is needed for the user.
+# Home configuration for channinghe user on ISO
+# This is a minimal configuration for the ISO environment
 { ... }:
 {
   imports = [
+    #
+    # ========== Required Configs ==========
+    #
     common/core
+
+    #
+    # ========== ISO-specific Optional Configs ==========
+    #
+    # Keep it minimal for ISO
   ];
 }
