@@ -11,90 +11,75 @@
   inputs,
   ...
 }:
+with lib;
 let
   cfg = config.services.komodo-periphery;
   hostName = config.hostSpec.hostName;
   hostKomodo = config.hostSpec.serviceInfo.${hostName}.komodo or { };
   sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
 
-  # Generate TOML config with sops placeholders
-  tomlConfigWithSops = ''
-    ################################
-    # KOMODO PERIPHERY CONFIG
-    ################################
+  # TOML format for sops template generation
+  settingsFormat = pkgs.formats.toml { };
 
-    ## Port periphery will run on
-    port = ${toString cfg.port}
+  # Generate structured config with sops placeholders
+  genSopsSettings = 
+    let 
+      baseSettings = {
+        # Core settings
+        port = cfg.port;
+        bind_ip = cfg.bindIp;
+        root_directory = cfg.rootDirectory;
+        repo_dir = "${cfg.rootDirectory}/repos";
+        stack_dir = "${cfg.rootDirectory}/stacks";
+        
+        # SSL configuration (use sops-managed paths)
+        ssl_enabled = cfg.ssl.enable;
+      } // optionalAttrs cfg.ssl.enable {
+        ssl_key_file = "${cfg.rootDirectory}/ssl/key.pem";
+        ssl_cert_file = "${cfg.rootDirectory}/ssl/cert.pem";
+      } // {
+        # Logging configuration
+        logging = {
+          level = cfg.logging.level;
+          stdio = cfg.logging.stdio;
+        } // optionalAttrs (cfg.logging.otlpEndpoint != "") {
+          otlp_endpoint = cfg.logging.otlpEndpoint;
+        };
+        
+        # Security settings with sops integration
+        allowed_ips = cfg.allowedIps;
+        
+        # Feature toggles
+        disable_terminals = cfg.disableTerminals;
+        disable_container_exec = cfg.disableContainerExec;
+        
+        # Polling settings  
+        stats_polling_rate = cfg.statsPollingRate;
+        container_stats_polling_rate = cfg.containerStatsPollingRate;
+        
+        # Docker settings
+        legacy_compose_cli = cfg.legacyComposeCli;
+        
+        # Disk monitoring
+        include_disk_mounts = cfg.includeDiskMounts;
+        exclude_disk_mounts = cfg.excludeDiskMounts;
+      } // optionalAttrs (config.sops.secrets ? "komodo/passkeys") {
+        # Use sops placeholder for passkeys if secret exists
+        passkeys = [ config.sops.placeholder."komodo/passkeys" ];
+      } // optionalAttrs (!(config.sops.secrets ? "komodo/passkeys") && cfg.passkeys != []) {
+        # Fall back to plain passkeys if no sops secret
+        passkeys = cfg.passkeys;
+      } // optionalAttrs (config.sops.secrets ? "komodo/github_token") {
+        # Optional GitHub token from sops
+        secrets.GITHUB_TOKEN = config.sops.placeholder."komodo/github_token";
+      } // cfg.extraSettings;
+    in
+    # Filter out null values and empty objects/lists
+    filterAttrsRecursive (_: v: v != null && v != {} && v != []) baseSettings;
 
-    ## Bind IP address
-    bind_ip = "${cfg.bindIp}"
-
-    ## Root directory for periphery data
-    ## Default: $HOME/.config/komodo-periphery
-    root_directory = "${cfg.rootDirectory}"
-
-    ## Repository directory
-    repo_dir = "${cfg.rootDirectory}/repos"
-
-    ## Stack directory
-    stack_dir = "${cfg.rootDirectory}/stacks"
-
-    ## SSL Configuration
-    ssl_enabled = ${if cfg.ssl.enable then "true" else "false"}
-    ${lib.optionalString cfg.ssl.enable ''
-    ssl_key_file = "${cfg.rootDirectory}/ssl/key.pem"
-    ssl_cert_file = "${cfg.rootDirectory}/ssl/cert.pem"
-    ''}
-
-    ## Logging Configuration
-    [logging]
-    level = "${cfg.logging.level}"
-    stdio = "${cfg.logging.stdio}"
-    ${lib.optionalString (cfg.logging.otlpEndpoint != "") ''
-    otlp_endpoint = "${cfg.logging.otlpEndpoint}"
-    ''}
-
-    ## Security Configuration
-    allowed_ips = [${lib.concatMapStringsSep ", " (ip: ''"${ip}"'') cfg.allowedIps}]
-    
-    ## Passkeys (from sops secrets)
-    ${lib.optionalString (config.sops.secrets ? "komodo/passkeys") ''
-    passkeys = ["${config.sops.placeholder."komodo/passkeys"}"]
-    ''}
-    ${lib.optionalString (!(config.sops.secrets ? "komodo/passkeys") && cfg.passkeys != []) ''
-    passkeys = [${lib.concatMapStringsSep ", " (key: ''"${key}"'') cfg.passkeys}]
-    ''}
-
-    ## Disable the terminal APIs and disallow remote shell access through Periphery.
-    disable_terminals = ${if cfg.disableTerminals then "true" else "false"}
-
-    ## Disable the container exec APIs and disallow remote container shell access through Periphery.
-    disable_container_exec = ${if cfg.disableContainerExec then "true" else "false"}
-
-    ## How often Periphery polls the host for system stats, like CPU / memory usage.
-    stats_polling_rate = "${cfg.statsPollingRate}"
-
-    ## How often Periphery polls the host for container stats.
-    container_stats_polling_rate = "${cfg.containerStatsPollingRate}"
-
-    ## Whether stack actions should use `docker-compose ...` instead of `docker compose ...`.
-    legacy_compose_cli = ${if cfg.legacyComposeCli then "true" else "false"}
-
-    ## Optional. Only include mounts at specific paths in the disk report.
-    include_disk_mounts = [${lib.concatMapStringsSep ", " (mount: ''"${mount}"'') cfg.includeDiskMounts}]
-
-    ## Optional. Don't include these mounts in the disk report.
-    exclude_disk_mounts = [${lib.concatMapStringsSep ", " (mount: ''"${mount}"'') cfg.excludeDiskMounts}]
-
-    ## Secrets (injected via sops)
-    ${lib.optionalString (config.sops.secrets ? "komodo/github_token") ''
-    [secrets]
-    GITHUB_TOKEN = "${config.sops.placeholder."komodo/github_token"}"
-    ''}
-
-    ## Extra configuration
-    ${cfg.extraConfig}
-  '';
+  # Legacy support: generate TOML config with sops placeholders as text
+  tomlConfigWithSops = 
+    settingsFormat.generate "komodo-periphery-sops.toml" genSopsSettings;
 in
 {
   # Import the pure NixOS module
@@ -136,13 +121,11 @@ in
     # sops-nix integration (only if service is enabled and passkeys secret exists)
     (lib.mkIf (cfg.enable && builtins.pathExists "${sopsFolder}/${hostName}.yaml") {
       # Create sops template for config if we have passkeys secret
-      # NOTE: sops template path doesn't have .toml extension, but Komodo requires it
-      # We'll use a symlink workaround
       sops.templates."komodo-periphery-config.toml" = lib.mkIf (config.sops.secrets ? "komodo/passkeys") {
         owner = cfg.user;
         group = cfg.group;
         mode = "0400";
-        content = tomlConfigWithSops;
+        content = builtins.readFile tomlConfigWithSops + optionalString (cfg.extraConfig != "") ("\n" + cfg.extraConfig);
       };
 
       # Use the sops template path if passkeys secret exists, otherwise let module generate config

@@ -42,7 +42,11 @@
     #"systemd.log_level=debug"
     "systemd.log_target=console"
     "systemd.journald.forward_to_console=1"
+      # Console output
+    "console=ttyS0,115200"
+    "console=tty1"
   ];
+
 
   environment.systemPackages = builtins.attrValues {
     inherit (pkgs)
@@ -81,5 +85,5 @@
     };
   };
 
-  system.stateVersion = "24.11";
+  system.stateVersion = "25.05";
 }
