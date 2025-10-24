@@ -1,4 +1,3 @@
-#FIXME: Move attrs that will only work on linux to nixos.nix
 {
   config,
   lib,
@@ -17,7 +16,7 @@ in
     ])
     ./${platform}.nix
 
-    # FIXME(starter): add/edit as desired
+    # Add/edit as desired
     ./bash.nix
     ./darwin.nix
     ./direnv.nix
@@ -63,6 +62,8 @@ in
       lm_sensors
       sysstat
       jq
+      traceroute
+      ripgrep
       ;
   };
 

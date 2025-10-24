@@ -64,7 +64,6 @@ in
   # ========== Host Network ==========
   #
   networking = {
-    # !!![FIXME]!!!
     hostId = "e874e2fb";
     networkmanager.enable = false;
     enableIPv6 = false;
@@ -80,12 +79,58 @@ in
   services.resolved.enable = false;
 
   # systemd-networkd
+  # systemd.network = {
+  #   enable = true;
+  #   networks = {
+  #     "10-wired" = {
+  #       # [FIXME]
+  #       matchConfig.Name = "enp197s0f1np1";
+  #       networkConfig = {
+  #         Address = [
+  #           "${hostNetwork.ip4}/24"
+  #           #"${hostNetwork.ip6}/64"
+  #         ];
+  #         Gateway = [
+  #           "${hostNetwork.gateway4}"
+  #           #"${hostNetwork.gateway6}"
+  #         ];
+  #         DHCP = "no";
+  #         IPv6AcceptRA = false;
+  #       };
+  #     };
+  #   };
+  # };
   systemd.network = {
     enable = true;
+    netdevs = {
+      # Bridges
+      # "br0" = {
+      #   netdevConfig = {
+      #     Name = "br0";
+      #     Kind = "bridge";
+      #   };
+      #   bridgeConfig.STP = true;  # Enable STP
+      # };
+      "20-vlan-mgmt" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "vlan-mgmt";
+        };
+        vlanConfig.Id = 250;
+      };
+    };
     networks = {
       "10-wired" = {
-        # [FIXME]
         matchConfig.Name = "enp197s0f1np1";
+        networkConfig = {
+          VLAN = [ "vlan-mgmt" ];
+          DHCP = "no";
+          IPv6AcceptRA = false;
+        };
+      };
+      
+      "20-vlan-mgmt" = {
+        matchConfig.Name = "vlan-mgmt";
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
@@ -101,6 +146,7 @@ in
       };
     };
   };
+
 
   #SB
   systemd.network.networks."10-enp193s0" = {
