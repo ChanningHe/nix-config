@@ -39,6 +39,12 @@ let
     };
   };
 
+  # Proxmox VE overlay - only available on x86_64-linux
+  proxmox-overlay = final: prev: 
+    if prev.stdenv.hostPlatform.system == "x86_64-linux" 
+    then inputs.proxmox-nixos.overlays.${prev.stdenv.hostPlatform.system} final prev
+    else {};
+
 in
 {
   default =
@@ -48,5 +54,6 @@ in
     // (modifications final prev)
     // (linuxModifications final prev)
     // (stable-packages final prev)
-    // (unstable-packages final prev);
+    // (unstable-packages final prev)
+    // (proxmox-overlay final prev);
 }

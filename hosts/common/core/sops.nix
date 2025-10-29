@@ -55,6 +55,16 @@ in
         neededForUsers = true;
       };
     }
+    # Shared secrets from shared.yaml (if it exists)
+    (lib.mkIf (builtins.pathExists "${sopsFolder}/shared.yaml") {
+      # Attic binary cache token
+      "attic/token" = {
+        sopsFile = "${sopsFolder}/shared.yaml";
+        mode = "0400";
+        owner = "channinghe";
+        group = "channinghe";
+      };
+    })
   ];
   # The containing folders are created as root and if this is the first ~/.config/ entry,
   # the ownership is busted and home-manager can't target because it can't write into .config...

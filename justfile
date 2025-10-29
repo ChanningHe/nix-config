@@ -128,3 +128,7 @@ sops-add-shared-creation-rules USER HOST:
 sops-add-creation-rules USER HOST:
     just sops-add-host-creation-rules {{USER}} {{HOST}} && \
     just sops-add-shared-creation-rules {{USER}} {{HOST}}
+
+attic-push:
+    attic push homielab /nix/store/*/
+

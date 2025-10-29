@@ -47,6 +47,8 @@ in
       "hosts/common/optional/services/tailscale.nix"
       "hosts/common/optional/services/openssh-init.nix"
       "hosts/common/optional/services/komodo-periphery.nix"
+      "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/proxmox-ve.nix"
     ])
   ];
 
@@ -71,9 +73,8 @@ in
     dhcpcd.enable = false;
     #nameservers = hostNetwork.dns;
     nameservers = [ "1.1.1.1" ];
-    extraHosts = ''
-      10.1.10.8 git.homielab.cc
-    '';
+    # extraHosts = ''
+    # '';
   };
 
   services.resolved.enable = false;
@@ -118,12 +119,33 @@ in
         };
         vlanConfig.Id = 250;
       };
+      "20-br-mgmt" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "br-mgmt";
+        };
+        bridgeConfig.STP = false;
+      };
+      "30-vlan10" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "vlan10";
+        };
+        vlanConfig.Id = 10;
+      };
+      "30-vmbr10" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "vmbr10";
+        };
+        bridgeConfig.STP = false;
+      };
     };
     networks = {
       "10-wired" = {
         matchConfig.Name = "enp197s0f1np1";
         networkConfig = {
-          VLAN = [ "vlan-mgmt" ];
+          VLAN = [ "vlan-mgmt" "vlan10" ];
           DHCP = "no";
           IPv6AcceptRA = false;
         };
@@ -131,6 +153,15 @@ in
       
       "20-vlan-mgmt" = {
         matchConfig.Name = "vlan-mgmt";
+        networkConfig = {
+          Bridge = "br-mgmt";
+          DHCP = "no";
+          IPv6AcceptRA = false;
+        };
+      };
+      
+      "20-br-mgmt" = {
+        matchConfig.Name = "br-mgmt";
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
@@ -140,6 +171,23 @@ in
             "${hostNetwork.gateway4}"
             #"${hostNetwork.gateway6}"
           ];
+          DHCP = "no";
+          IPv6AcceptRA = false;
+        };
+      };
+      
+      "30-vlan10" = {
+        matchConfig.Name = "vlan10";
+        networkConfig = {
+          Bridge = "vmbr10";
+          DHCP = "no";
+          IPv6AcceptRA = false;
+        };
+      };
+      
+      "30-vmbr10" = {
+        matchConfig.Name = "vmbr10";
+        networkConfig = {
           DHCP = "no";
           IPv6AcceptRA = false;
         };

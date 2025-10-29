@@ -128,6 +128,9 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    # Proxmox VE virtualization platform
+    proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
+
     hardware.url = "github:nixos/nixos-hardware";
     home-manager = {
       url = "github:nix-community/home-manager/release-25.05";
