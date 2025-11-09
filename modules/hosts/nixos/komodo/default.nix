@@ -335,6 +335,10 @@ in
         PrivateTmp = true;
         ProtectSystem = "full";
         ProtectHome = true;
+
+        ReadWritePaths = [
+          cfg.rootDirectory           # Service data directory
+        ];
       };
     };
   };

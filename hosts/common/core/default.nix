@@ -75,6 +75,7 @@ in
     just
     deadnix
     pre-commit
+    dnsutils
   ];
   # Force home-manager to use global packages
   home-manager.useGlobalPkgs = true;

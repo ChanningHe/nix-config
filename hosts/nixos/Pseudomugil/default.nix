@@ -73,8 +73,9 @@ in
     dhcpcd.enable = false;
     #nameservers = hostNetwork.dns;
     nameservers = [ "1.1.1.1" ];
-    # extraHosts = ''
-    # '';
+    extraHosts = ''
+      10.1.10.8 git-local.homielab.cc
+    '';
   };
 
   services.resolved.enable = false;

@@ -122,7 +122,8 @@ in
     # Additional configuration when service is enabled
     (lib.mkIf cfg.enable {
       # Ensure user is in docker group if using an existing user (not komodo-periphery or root)
-      users.users.${cfg.user} = lib.mkIf (cfg.user != "root" && cfg.user != "komodo-periphery") {
+      #users.users.${cfg.user} = lib.mkIf (cfg.user != "root" && cfg.user != "komodo-periphery") {
+      users.users.${cfg.user} = lib.mkIf (cfg.user != "root") {
         extraGroups = [ "docker" ];
       };
 
@@ -179,6 +180,10 @@ in
         config.sops.secrets ? "komodo/github_token"
       ) [ "sops-nix.service" ];
 
+      systemd.services.komodo-periphery.path = [ pkgs.git pkgs.age pkgs.sops pkgs.docker pkgs.bash];
+      # systemd.services.komodo-periphery.environment = {
+      #   SOPS_AGE_SSH_PRIVATE_KEY_FILE = "/xxxxxx/ssh_host_ed25519_key";
+      # };
       # Optionally open firewall port
       # Uncomment if you need external access to Periphery
       # networking.firewall.allowedTCPPorts = [ cfg.port ];

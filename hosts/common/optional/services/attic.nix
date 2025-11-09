@@ -35,6 +35,7 @@ in
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="  # NixOS cache
       "${endpoint}:m9rTuwjBlORefVuHByPil1ymtrcqtJIQPh9AmXv93cU="
     ];
+    trusted-users = [ "root" "channinghe" ];
   };
 
   # Use sops templates to generate attic config with secrets (only if secret is available)
