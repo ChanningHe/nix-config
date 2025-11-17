@@ -146,8 +146,8 @@ in
 
   # ===== Kernel config =====
   boot.kernelParams = [
-    "amd_iommu=on"
-    "amd_pstate=passive"
+    #"amd_iommu=on"
+    #"amd_pstate=passive"
     "iommu=pt"
     "zfs.zfs_arc_max=4294967296"
     "pcie_aspm=off"

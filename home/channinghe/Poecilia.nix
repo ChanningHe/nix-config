@@ -26,8 +26,11 @@
   # ==== bash config for specific host ==== #
   programs.bash = {
     shellAliases = {
-      nxsw = "sudo nixos-rebuild switch";
       "2dd" = "cd /mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
    };
+  };
+
+  home.sessionVariables = {
+    DOCKER_DATA = "/mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
   };
 }
