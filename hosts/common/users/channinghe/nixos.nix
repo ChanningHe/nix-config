@@ -50,4 +50,16 @@ in
     hashedPassword = config.users.users.${hostSpec.username}.hashedPassword; # This comes from hosts/common/optional/minimal.nix and gets overridden if sops is working
     openssh.authorizedKeys.keys = config.users.users.${hostSpec.username}.openssh.authorizedKeys.keys; # root's ssh keys are mainly used for remote deployment.
   };
+
+  # Create ssh sockets directory for controlpaths when homemanager not loaded (i.e. isMinimal)
+  systemd.tmpfiles.rules =
+    let
+      user = config.users.users.${hostSpec.username}.name;
+      group = config.users.users.${hostSpec.username}.group;
+    in
+    # you must set the rule for .ssh separately first, otherwise it will be automatically created as root:root and .ssh/sockects will fail
+    [
+      "d ${hostSpec.home}/.ssh 0750 ${user} ${group} -"
+      "d ${hostSpec.home}/.ssh/sockets 0750 ${user} ${group} -"
+    ];
 }

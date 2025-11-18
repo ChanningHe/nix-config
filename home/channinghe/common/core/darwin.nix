@@ -1,11 +1,15 @@
-# FIXME(starter): the declarations here will ONLY be applied to Darwin-based machines.
-# Core home functionality that will only work on Darwin
-{ config, ... }:
+# Darwin-specific home-manager configuration
+# This file contains configurations that only work on macOS systems
 {
+  pkgs,
+  ...
+}:
+{
+  # Add Homebrew to PATH
   home.sessionPath = [ "/opt/homebrew/bin" ];
 
-  home = {
-    username = config.hostSpec.username;
-    homeDirectory = config.hostSpec.home;
-  };
+  # Darwin-specific packages (if needed)
+  home.packages = with pkgs; [
+    # Add Darwin-specific packages here if needed
+  ];
 }

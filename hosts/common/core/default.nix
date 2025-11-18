@@ -57,18 +57,15 @@ in
   networking.hostName = config.hostSpec.hostName;
 
   # System-wide packages, in case we log in as root
-  #environment.systemPackages = [ pkgs.openssh ];
+  # NOTE: Only cross-platform packages here. Platform-specific packages go to darwin.nix or nixos.nix
   environment.systemPackages = with pkgs; [
     openssh
     git
     curl
     nano
-    ethtool
     btop
-    pciutils
     nmap
     unzip
-    usbutils
     sops
     age
     ssh-to-age
@@ -99,13 +96,16 @@ in
   # ========== Nix Nix Nix ==========
   #
   nix = {
-    # This will add each flake input as a registry
-    # To make nix3 commands consistent with your flake
-    registry = lib.mapAttrs (_: value: { flake = value; }) inputs;
+    # # This will add each flake input as a registry
+    # # To make nix3 commands consistent with your flake
+    # registry = lib.mapAttrs (_: value: { flake = value; }) inputs;
 
-    # This will add your inputs to the system's legacy channels
-    # Making legacy nix commands consistent as well, awesome!
-    nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
+    # # This will add your inputs to the system's legacy channels
+    # # Making legacy nix commands consistent as well, awesome!
+    # nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
+
+    # NOTE: registry and nixPath configuration moved to platform-specific files
+    # (darwin.nix and nixos.nix) due to different handling between platforms
 
     settings = {
       # See https://jackson.dev/post/nix-reasonable-defaults/
@@ -115,8 +115,8 @@ in
       max-free = 1000000000; # 1GB
 
       trusted-users = [ "@wheel" ];
-      # Deduplicate and optimize nix store
-      auto-optimise-store = true;
+      # NOTE: auto-optimise-store moved to platform-specific files
+      # (Darwin uses nix.optimise.automatic, NixOS uses nix.settings.auto-optimise-store)
       warn-dirty = false;
 
       #https://github.com/NixOS/nix/issues/11728#issuecomment-2725297584

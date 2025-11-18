@@ -4,7 +4,7 @@
     {
       self,
       nixpkgs,
-      # nix-darwin,
+      nix-darwin,
       ...
     }@inputs:
     let
@@ -16,7 +16,7 @@
       # NOTE(starter): Comment or uncomment architectures below as required by your hosts.
       forAllSystems = nixpkgs.lib.genAttrs [
         "x86_64-linux"
-        #"aarch64-darwin"
+        "aarch64-darwin"
       ];
 
       # ========== Extend lib with lib.custom ==========
@@ -49,18 +49,18 @@
         }) (builtins.attrNames (builtins.readDir ./hosts/nixos))
       );
 
-      # darwinConfigurations = builtins.listToAttrs (
-      #   map (host: {
-      #     name = host;
-      #     value = nix-darwin.lib.darwinSystem {
-      #       specialArgs = {
-      #         inherit inputs outputs lib;
-      #         isDarwin = true;
-      #       };
-      #       modules = [ ./hosts/darwin/${host} ];
-      #     };
-      #   }) (builtins.attrNames (builtins.readDir ./hosts/darwin))
-      # );
+      darwinConfigurations = builtins.listToAttrs (
+        map (host: {
+          name = host;
+          value = nix-darwin.lib.darwinSystem {
+            specialArgs = {
+              inherit inputs outputs lib;
+              isDarwin = true;
+            };
+            modules = [ ./hosts/darwin/${host} ];
+          };
+        }) (builtins.attrNames (builtins.readDir ./hosts/darwin))
+      );
 
       #
       # ========= Packages =========
@@ -139,7 +139,7 @@
 
     nixpkgs-darwin.url = "github:nixos/nixpkgs/nixpkgs-25.05-darwin";
     nix-darwin = {
-      url = "github:lnl7/nix-darwin";
+      url = "github:nix-darwin/nix-darwin/nix-darwin-25.05";
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 

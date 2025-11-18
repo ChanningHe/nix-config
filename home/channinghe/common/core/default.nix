@@ -14,23 +14,20 @@ in
       "modules/common/host-spec.nix"
       "modules/home"
     ])
+    # load the platform specific core configuration
     ./${platform}.nix
 
     # Add/edit as desired
     ./bash.nix
-    ./darwin.nix
     ./direnv.nix
     ./fonts.nix
     ./git.nix
     ./kitty.nix
-    ./nixos.nix
     ./ssh.nix
     ./zed.nix
   ];
 
   inherit hostSpec;
-
-  services.ssh-agent.enable = true;
 
   home = {
     username = lib.mkDefault config.hostSpec.username;
@@ -45,27 +42,22 @@ in
     };
   };
 
-  home.packages = builtins.attrValues {
-    inherit (pkgs)
-      curl
-      pciutils
-      pfetch # system info
-      pre-commit # git hooks
-      p7zip # compression & encryption
-      usbutils
-      unzip # zip extraction
-      unrar # rar extraction
-      sops
-      age
-      ssh-to-age
-      tree
-      lm_sensors
-      sysstat
-      jq
-      traceroute
-      ripgrep
-      ;
-  };
+  # Cross-platform packages only
+  # Platform-specific packages are defined in nixos.nix and darwin.nix
+  home.packages = with pkgs; [
+    curl
+    pfetch # system info
+    pre-commit # git hooks
+    p7zip # compression & encryption
+    unzip # zip extraction
+    unrar # rar extraction
+    sops
+    age
+    ssh-to-age
+    tree
+    jq
+    ripgrep
+  ];
 
   nix = {
     package = lib.mkDefault pkgs.nix;
@@ -79,7 +71,4 @@ in
   };
 
   programs.home-manager.enable = true;
-
-  # Nicely reload system units when changing configs
-  systemd.user.startServices = "sd-switch";
 }

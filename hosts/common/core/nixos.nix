@@ -1,6 +1,19 @@
 # Core functionality for every nixos host
-{ config, lib, ... }:
 {
+  inputs,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
+  # Linux-specific system packages
+  environment.systemPackages = with pkgs; [
+    ethtool # Ethernet tools
+    pciutils # PCI device utilities (lspci)
+    usbutils # USB device utilities (lsusb)
+  ];
+
   # Database for aiding terminal-based programs
   environment.enableAllTerminfo = true;
   # Enable firmware with a license allowing redistribution
@@ -34,6 +47,23 @@
 
   # Allow cursor/vscode to dynamically linked binaries built for other Linux distributions
   programs.nix-ld.enable = true;
+
+  #
+  # ========== Nix Registry & NixPath ==========
+  #
+  nix = {
+    # This will add each flake input as a registry
+    # To make nix3 commands consistent with your flake
+    registry = lib.mapAttrs (_: value: { flake = value; }) inputs;
+
+    # This will add your inputs to the system's legacy channels
+    # Making legacy nix commands consistent as well, awesome!
+    nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
+
+    # Deduplicate and optimize nix store (NixOS-specific)
+    settings.auto-optimise-store = true;
+  };
+
   #
   # ========== Localization ==========
   #
