@@ -25,6 +25,7 @@ in
     ./kitty.nix
     ./ssh.nix
     ./zed.nix
+    ./zsh.nix
   ];
 
   inherit hostSpec;

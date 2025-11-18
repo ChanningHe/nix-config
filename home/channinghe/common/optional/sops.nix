@@ -21,7 +21,7 @@ in
 
     secrets = {
       "private_keys/channinghe" = {
-        path = "/home/channinghe/.ssh/id_ed25519";
+        path = "${homeDirectory}/.ssh/id_ed25519-sk";
       };
     };
   };

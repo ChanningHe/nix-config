@@ -16,7 +16,8 @@ in
 {
   users.users.${hostSpec.username} = {
     name = hostSpec.username;
-    shell = pkgs.bash; # default shell
+    # Default shell (can be overridden by platform-specific configs)
+    shell = lib.mkDefault pkgs.bash;
 
     # These get placed into /etc/ssh/authorized_keys.d/<name> on nixos
     openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
