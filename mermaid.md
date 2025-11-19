@@ -1,4 +1,5 @@
-# NixOS Modular Framework Architecture
+# Nix-Config Modular Framework Architecture
+> Supports both NixOS and Darwin (macOS) with platform-agnostic design
 
 ## System Architecture Overview
 
@@ -37,16 +38,22 @@ graph TD
     
     subgraph "Host Configurations"
         direction TB
-        iso[ISO Installer]
-        tester[NixOS Config Tester]
-        poecilia[Poecilia]
-        pseudomugil[Pseudomugil]
-        darwin-hosts[Darwin Hosts<br />Currently Disabled]
+        subgraph "NixOS Hosts"
+            iso[ISO Installer]
+            tester[Config Tester]
+            poecilia[Poecilia]
+            pseudomugil[Pseudomugil]
+        end
+        subgraph "Darwin Hosts"
+            macbook[ChanningdeMacBook-Pro]
+        end
     end
     
     subgraph "Flake Inputs"
         nixpkgs[Nixpkgs 25.05]
-        home-manager[Home Manager]
+        nixpkgs-darwin[Nixpkgs Darwin 25.05]
+        nix-darwin[Nix-Darwin 25.05]
+        home-manager[Home Manager 25.05]
         sops-nix[Sops-nix]
         disko[Disko]
         nix-secrets[Nix-secrets]
@@ -72,24 +79,31 @@ graph TD
     Layer4 --> tester
     Layer4 --> poecilia
     Layer4 --> pseudomugil
-    Layer4 --> darwin-hosts
+    Layer4 --> macbook
     
     nixpkgs --> flake
+    nixpkgs-darwin --> flake
+    nix-darwin --> flake
     home-manager --> flake
     sops-nix --> flake
     disko --> flake
     nix-secrets --> flake
 
-    classDef systemLayer fill:#e1f5fe,stroke:#01579b
-    classDef configLayer fill:#f3e5f5,stroke:#4a148c
-    classDef moduleLayer fill:#e8f5e8,stroke:#1b5e20
-    classDef hostLayer fill:#fce4ec,stroke:#880e4f
+    classDef systemLayer stroke:#01579b,stroke-width:2px
+    classDef configLayer stroke:#4a148c,stroke-width:2px
+    classDef moduleLayer stroke:#1b5e20,stroke-width:2px
+    classDef hostLayer stroke:#880e4f,stroke-width:2px
+    classDef darwinLayer stroke:#e65100,stroke-width:2px
+    classDef inputLayer stroke:#00838f,stroke-width:2px
+    classDef neutral stroke:#616161,stroke-width:2px
     
     class flake systemLayer
     class lib,overlays,packages systemLayer
     class Layer1,Layer2,Layer3,Layer4 configLayer
     class host-spec,common-modules,nixos-modules,darwin-modules,home-manager-config moduleLayer
-    class iso,tester,poecilia,pseudomugil,darwin-hosts hostLayer
+    class iso,tester,poecilia,pseudomugil hostLayer
+    class macbook darwinLayer
+    class nixpkgs,nixpkgs-darwin,nix-darwin,home-manager,sops-nix,disko,nix-secrets inputLayer
 ```
 
 ## Configuration Inheritance Hierarchy
@@ -131,15 +145,17 @@ graph TD
     CommonCore --> HomeManager
     HomeManager --> UserConfig
     
-    classDef base fill:#fff3e0,stroke:#e65100
-    classDef platform fill:#e3f2fd,stroke:#0d47a1
-    classDef host fill:#fce4ec,stroke:#880e4f
-    classDef user fill:#f1f8e9,stroke:#33691e
+    classDef base stroke:#e65100,stroke-width:2px
+    classDef platform stroke:#0d47a1,stroke-width:2px
+    classDef host stroke:#880e4f,stroke-width:2px
+    classDef user stroke:#33691e,stroke-width:2px
+    classDef neutral stroke:#616161,stroke-width:2px
     
     class CommonCore,CommonOptional,CommonUsers base
     class NixOSBase,DarwinBase platform
     class HostConfig,Hardware host
     class HomeManager,UserConfig user
+    class Root neutral
 ```
 
 ## Module Loading Flow
@@ -194,39 +210,83 @@ graph LR
     Modules --> NixOS
     Modules --> HomeManager
     Overlays --> Packages
+    
+    classDef dataSource stroke:#6a1b9a,stroke-width:2px
+    classDef processing stroke:#00695c,stroke-width:2px
+    classDef finalConfig stroke:#c62828,stroke-width:2px
+    classDef neutral stroke:#616161,stroke-width:2px
+    
+    class Secrets,HostSpec,Hardware dataSource
+    class Flake,Modules,Overlays processing
+    class NixOS,HomeManager,Packages finalConfig
 ```
 
 ## Key Directory Structure
 
 ```
 nix-config/
-├── hosts/                    # Host configurations
-│   ├── common/              # Common configurations
-│   │   ├── core/            # Core system configuration
-│   │   ├── optional/        # Optional services
-│   │   └── users/           # User configurations
-│   ├── nixos/               # NixOS specific hosts
-│   └── darwin/              # Darwin specific hosts
-├── home/                    # Home Manager configurations
-│   └── username/            # User-specific configurations
-├── modules/                 # Reusable modules
-│   ├── common/              # Common modules
-│   ├── hosts/               # Host modules
-│   └── home/                # Home Manager modules
-├── overlays/                # Package overlays
-├── pkgs/                    # Custom packages
-└── lib/                     # Custom library functions
+├── hosts/                        # Host configurations
+│   ├── common/                   # Common configurations
+│   │   ├── core/                 # Core system configuration
+│   │   │   ├── default.nix      # Platform-agnostic core
+│   │   │   ├── nixos.nix        # NixOS-specific core
+│   │   │   ├── darwin.nix       # Darwin-specific core
+│   │   │   └── sops.nix         # Secrets management
+│   │   ├── optional/             # Optional services
+│   │   └── users/                # User configurations
+│   │       └── channinghe/       
+│   │           ├── default.nix   # Platform-agnostic user config
+│   │           ├── nixos.nix     # NixOS-specific user config
+│   │           └── darwin.nix    # Darwin-specific user config
+│   ├── nixos/                    # NixOS specific hosts
+│   │   ├── poecilia/
+│   │   ├── pseudomugil/
+│   │   ├── iso/                  # ISO installer
+│   │   └── tester/               # Config tester
+│   └── darwin/                   # Darwin specific hosts
+│       └── ChanningdeMacBook-Pro/
+├── home/                         # Home Manager configurations
+│   └── channinghe/               # User-specific configurations
+│       ├── common/
+│       │   ├── core/             # Core user modules
+│       │   │   ├── default.nix   # Platform-agnostic
+│       │   │   ├── nixos.nix     # NixOS-specific
+│       │   │   ├── darwin.nix    # Darwin-specific
+│       │   │   └── zsh.nix       # Zsh configuration
+│       │   ├── dotfiles/         # Configuration files
+│       │   │   └── p10k.zsh      # Powerlevel10k config
+│       │   └── optional/         # Optional user modules
+│       │       └── ssh-agent.nix # SSH agent management
+│       ├── poecilia.nix          # Host-specific HM config
+│       └── ChanningdeMacBook-Pro.nix
+├── modules/                      # Reusable modules
+│   ├── common/                   # Common modules
+│   │   └── host-spec.nix         # Host specification module
+│   ├── hosts/                    # Host modules
+│   └── home/                     # Home Manager modules
+├── overlays/                     # Package overlays
+├── pkgs/                         # Custom packages
+├── lib/                          # Custom library functions
+└── scripts/                      # Helper scripts
+    ├── rebuild.sh                # Platform-aware rebuild
+    └── check-sops.sh             # SOPS verification
 ```
 
 ## Quick Reference
 
-| Layer | Path | Purpose |
-|-------|------|---------|
-| Core | `hosts/common/core/` | System-wide settings |
-| Optional | `hosts/common/optional/` | Optional services |
-| Users | `hosts/common/users/` | User configurations |
-| Host | `hosts/nixos/*/default.nix` | Host-specific setup |
-| Home | `home/*/common/` | User environment |
+| Layer | Path | Purpose | Platform |
+|-------|------|---------|----------|
+| Core | `hosts/common/core/default.nix` | System-wide settings | Both |
+| Core | `hosts/common/core/nixos.nix` | NixOS-specific settings | NixOS |
+| Core | `hosts/common/core/darwin.nix` | Darwin-specific settings | Darwin |
+| Optional | `hosts/common/optional/` | Optional services | Both |
+| Users | `hosts/common/users/*/default.nix` | User configurations | Both |
+| Users | `hosts/common/users/*/nixos.nix` | User NixOS config | NixOS |
+| Users | `hosts/common/users/*/darwin.nix` | User Darwin config | Darwin |
+| Host | `hosts/nixos/*/default.nix` | NixOS host setup | NixOS |
+| Host | `hosts/darwin/*/default.nix` | Darwin host setup | Darwin |
+| Home | `home/*/common/core/` | User environment modules | Both |
+| Home | `home/*/common/dotfiles/` | Configuration files | Both |
 
 ## Layered Architecture
 
@@ -243,11 +303,128 @@ graph TD
     Layer2 --> Layer3
     Layer3 --> Layer4
     
-    classDef base fill:#fff3e0,stroke:#e65100
-    classDef platform fill:#e3f2fd,stroke:#0d47a1
-    classDef host fill:#fce4ec,stroke:#880e4f
-    classDef user fill:#f1f8e9,stroke:#33691e
+    classDef base stroke:#e65100,stroke-width:2px
+    classDef optional stroke:#7b1fa2,stroke-width:2px
+    classDef user stroke:#33691e,stroke-width:2px
+    classDef host stroke:#880e4f,stroke-width:2px
+    classDef neutral stroke:#616161,stroke-width:2px
     
     class Layer1 base
+    class Layer2 optional
+    class Layer3 user
     class Layer4 host
 ```
+
+## Platform-Specific Modular Design Pattern
+
+### Design Philosophy
+
+The configuration uses a **three-file pattern** for platform-agnostic design:
+
+```mermaid
+graph LR
+    subgraph "Module Pattern"
+        Default[default.nix<br />Platform-agnostic<br />Common logic]
+        NixOS[nixos.nix<br />Linux-specific<br />systemd, NetworkManager]
+        Darwin[darwin.nix<br />macOS-specific<br />nix-darwin, launchd]
+    end
+    
+    Default -->|lib.mkDefault| NixOS
+    Default -->|lib.mkDefault| Darwin
+    
+    classDef common stroke:#2e7d32,stroke-width:2px
+    classDef linux stroke:#1565c0,stroke-width:2px
+    classDef macos stroke:#ef6c00,stroke-width:2px
+    classDef neutral stroke:#616161,stroke-width:2px
+    
+    class Default common
+    class NixOS linux
+    class Darwin macos
+```
+
+### Key Principles
+
+1. **Platform-Agnostic Base (`default.nix`)**
+   - Use `lib.mkDefault` for values that can be overridden
+   - Only include truly cross-platform logic
+   - Example: User name, shell (with mkDefault), SSH keys
+
+2. **Platform-Specific Extensions**
+   - `nixos.nix` - Linux-only packages (ethtool, systemd)
+   - `darwin.nix` - macOS-only settings (TouchID, Homebrew paths)
+
+3. **Priority System**
+   ```nix
+   # default.nix - low priority
+   shell = lib.mkDefault pkgs.bash;
+   
+   # darwin.nix - normal priority (overrides default)
+   shell = pkgs.zsh;
+   
+   # If conflicts - use lib.mkForce (high priority)
+   nix.registry = lib.mkForce { ... };
+   ```
+
+### Examples
+
+#### Host-Level Configuration
+
+```
+hosts/common/core/
+├── default.nix    # Nix settings, common packages
+├── nixos.nix      # Linux packages, systemd
+├── darwin.nix     # macOS settings, Touch ID
+└── sops.nix       # Secrets (platform-aware)
+```
+
+#### User-Level Configuration
+
+```
+hosts/common/users/channinghe/
+├── default.nix    # Name, SSH keys (mkDefault shell)
+├── nixos.nix      # Groups, systemd tmpfiles
+└── darwin.nix     # Home path, zsh shell override
+```
+
+#### Home-Manager Configuration
+
+```
+home/channinghe/common/core/
+├── default.nix    # Import all modules
+├── nixos.nix      # Linux-specific packages
+├── darwin.nix     # macOS-specific packages
+├── zsh.nix        # Shell config (platform-agnostic)
+└── ../dotfiles/   # Config files (p10k.zsh)
+```
+
+### Platform Detection
+
+The framework uses `hostSpec.isDarwin` and `pkgs.stdenv` for platform detection:
+
+```nix
+# Method 1: Using hostSpec
+lib.mkIf (!config.hostSpec.isDarwin) {
+  # NixOS-only config
+}
+
+# Method 2: Using pkgs.stdenv
+lib.optionalAttrs pkgs.stdenv.isLinux {
+  # Linux-only config
+}
+
+# Method 3: File-level separation
+# hosts/common/core/default.nix imports:
+../users/${username}/default.nix  # Always
+../users/${username}/nixos.nix    # Only on NixOS
+../users/${username}/darwin.nix   # Only on Darwin
+```
+
+### Common Pitfalls and Solutions
+
+| Issue | Problem | Solution |
+|-------|---------|----------|
+| Option conflicts | Same option defined twice | Use `lib.mkDefault` in base |
+| Missing group | Darwin users don't have `group` | Use `lib.optionalAttrs` |
+| Wrong stateVersion | String vs Int | NixOS=string, Darwin=int |
+| Auto-optimise-store | Corrupts on Darwin | Use `nix.optimise.automatic` |
+| SOPS paths | Different SSH key paths | Conditional `sshKeyPaths` |
