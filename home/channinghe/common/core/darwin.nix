@@ -10,6 +10,7 @@
 
   # Darwin-specific packages (if needed)
   home.packages = with pkgs; [
+    rustup
     # Add Darwin-specific packages here if needed
   ];
 }

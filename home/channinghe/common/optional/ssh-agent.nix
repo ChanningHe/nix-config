@@ -1,5 +1,5 @@
-# SSH Agent auto-loading configuration for Darwin
-# This module provides intelligent SSH key management with auto-loading capabilities
+# SSH Agent configuration for Darwin - optimized for performance
+# Single ssh-agent instance shared across all terminals with lazy key loading
 {
   pkgs,
   lib,
@@ -11,95 +11,63 @@
     openssh
   ];
 
-  # Environment variables for SSH (Darwin-specific with ssh-askpass)
+  # Environment variables for SSH
   home.sessionVariables = {
-    # Use homebrew's ssh-askpass for GUI password prompts on Darwin
     SSH_ASKPASS = "/opt/homebrew/bin/ssh-askpass";
     DISPLAY = ":0";
   };
 
-  # Intelligent SSH key auto-loading
+  # SSH agent configuration with single-instance guarantee
   programs.zsh.initExtra = lib.mkAfter ''
-    # ===== SSH Agent Management =====
+    # ===== SSH Agent Management - Performance Optimized =====
     
-    # Ensure we use Nix-provided ssh-add (not system version)
+    # Force use of Nix-managed SSH tools (not macOS system versions)
     NIX_SSH_ADD="/run/current-system/sw/bin/ssh-add"
     NIX_SSH_AGENT="/run/current-system/sw/bin/ssh-agent"
     
-    # Function to check if ssh-agent is running
-    ssh_agent_check() {
-      if [ -z "$SSH_AUTH_SOCK" ]; then
-        echo "⚠️  SSH agent not running"
-        return 1
-      fi
-      
-      # Test if agent is actually responsive
-      if ! $NIX_SSH_ADD -l &>/dev/null; then
-        echo "⚠️  SSH agent not responsive"
-        return 1
-      fi
-      
-      return 0
-    }
+    SSH_ENV="$HOME/.ssh/agent-env"
     
-    # Function to check if specific key is loaded
-    ssh_key_loaded() {
-      local key_path="$1"
-      local key_fingerprint
-      
-      # Get public key fingerprint
-      if [ -f "$key_path" ]; then
-        key_fingerprint=$(ssh-keygen -lf "$key_path" 2>/dev/null | awk '{print $2}')
-        
-        # Check if this fingerprint is in loaded keys
-        if $NIX_SSH_ADD -l 2>/dev/null | grep -q "$key_fingerprint"; then
+    # Start or connect to existing agent (fast path)
+    _ssh_agent_start() {
+      # Check if env file exists and agent is still running
+      if [ -f "$SSH_ENV" ]; then
+        source "$SSH_ENV" >/dev/null
+        # Quick check: is this agent alive?
+        if kill -0 "$SSH_AGENT_PID" 2>/dev/null; then
           return 0
         fi
       fi
       
-      return 1
+      # Start new agent only if needed (using Nix ssh-agent)
+      $NIX_SSH_AGENT -s | grep -v '^echo' > "$SSH_ENV"
+      chmod 600 "$SSH_ENV"
+      source "$SSH_ENV" >/dev/null
     }
     
-    # Auto-load SSH keys on shell startup
-    ssh_autoload_keys() {
-      # Define your SSH keys to auto-load
+    # Load SSH keys lazily (only when first needed)
+    ssh() {
+      # Fast path: if keys already loaded, just run ssh
+      if $NIX_SSH_ADD -l >/dev/null 2>&1; then
+        command ssh "$@"
+        return
+      fi
+      
+      # Keys not loaded yet, load them now
       local keys=(
         "$HOME/.ssh/id_976_main"
-        # Add more keys here if needed
       )
       
-      # Check agent first
-      if ! ssh_agent_check; then
-        echo "🔐 Starting SSH agent (Nix-managed)..."
-        eval "$($NIX_SSH_AGENT -s)" &>/dev/null
-      fi
-      
-      # Load each key if not already loaded
       for key in "''${keys[@]}"; do
-        if [ -f "$key" ]; then
-          if ! ssh_key_loaded "$key"; then
-            echo "🔑 Loading SSH key: $(basename $key)"
-            $NIX_SSH_ADD "$key" 2>/dev/null
-          fi
-        fi
+        [ -f "$key" ] && $NIX_SSH_ADD "$key" 2>/dev/null
       done
       
-      # Show loaded keys status
-      local loaded_count=$($NIX_SSH_ADD -l 2>/dev/null | wc -l | tr -d ' ')
-      if [ "$loaded_count" -gt 0 ]; then
-        echo "✅ SSH agent ready ($loaded_count key(s) loaded)"
-      fi
+      command ssh "$@"
     }
     
-    # Run auto-load on shell startup (only once per session)
-    if [ -z "$SSH_KEYS_LOADED" ]; then
-      ssh_autoload_keys
-      export SSH_KEYS_LOADED=1
-    fi
+    # Initialize agent connection (non-blocking)
+    _ssh_agent_start
     
-    # Convenient aliases using Nix ssh-add/agent
-    alias ssh-add-nix="$NIX_SSH_ADD"
-    alias ssh-agent-nix="$NIX_SSH_AGENT"
+    # Aliases (using Nix ssh-add)
     alias ssh-list="$NIX_SSH_ADD -l"
     alias ssh-clear="$NIX_SSH_ADD -D"
   '';

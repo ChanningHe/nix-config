@@ -26,29 +26,33 @@ in
       "..." = "cd ../..";
     };
 
-    # P10k instant prompt - must be loaded BEFORE antidote initializes
-    initExtraFirst = ''
-      # Enable Powerlevel10k instant prompt (must be at the very top)
-      if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-        source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
-      fi
-    '';
-
-    # Load P10k config BEFORE completion init
-    initExtraBeforeCompInit = ''
-      # Load Powerlevel10k config (managed by home-manager from repo)
-      [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
-    '';
-
-    # Other initialization
-    initExtra = ''
-      # Source Nix daemon if available
-      [[ ! $(command -v nix) && -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]] && \
-        source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
-      # Colorized ls commands
-      export CLICOLOR=1  
-      export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
-    '';
+    # Initialization content with proper priority ordering
+    # Using lib.mkMerge to combine multiple initContent blocks with different priorities
+    initContent = lib.mkMerge [
+      # P10k instant prompt - must be loaded BEFORE everything (highest priority)
+      (lib.mkBefore ''
+        # Enable Powerlevel10k instant prompt (must be at the very top)
+        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+        fi
+      '')
+      
+      # Load P10k config BEFORE completion init (order 550)
+      (lib.mkOrder 550 ''
+        # Load Powerlevel10k config (managed by home-manager from repo)
+        [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+      '')
+      
+      # Other initialization (normal priority, runs after plugins)
+      ''
+        # Source Nix daemon if available
+        [[ ! $(command -v nix) && -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]] && \
+          source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+        # Colorized ls commands
+        export CLICOLOR=1  
+        export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+      ''
+    ];
 
     # Antidote plugin manager (modern, fast, simple)
     antidote = {
