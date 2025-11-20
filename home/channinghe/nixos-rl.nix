@@ -23,4 +23,7 @@
     # common/optional/sops.nix
   ];
 
+  # SSH Clients Configuration
+  # Enable specific SSH hosts from nix-secrets
+  #sshClients.enabledHosts = [ "Host1" "Host2" ];
 }

@@ -1,5 +1,4 @@
 {
-  inputs,
   lib,
   config,
   ...
@@ -43,6 +42,7 @@ in
       #
       "hosts/common/optional/no-firewall.nix"
       "hosts/common/optional/zfs-mirror-boot.nix"
+      "hosts/common/optional/services/openssh.nix"
       "hosts/common/optional/ip-forward.nix"
       "hosts/common/optional/services/easytier.nix"
     ])
@@ -102,15 +102,15 @@ in
   #
   # ====== Filesystem ======
   #
-  fileSystems."/mnt/rpool/ConfigData" =
-    { device = "rpool/ConfigData";
-      fsType = "zfs";
-    };
+  fileSystems."/mnt/rpool/ConfigData" = {
+    device = "rpool/ConfigData";
+    fsType = "zfs";
+  };
 
-  fileSystems."/mnt/rpool/container-root/docker" =
-    { device = "rpool/container-root/docker";
-      fsType = "zfs";
-    };
+  fileSystems."/mnt/rpool/container-root/docker" = {
+    device = "rpool/container-root/docker";
+    fsType = "zfs";
+  };
 
   virtualisation.docker = {
     enable = lib.mkDefault true; # Default enable, can be overridden

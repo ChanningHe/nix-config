@@ -18,15 +18,15 @@
   };
 
   # SSH agent configuration with single-instance guarantee
-  programs.zsh.initExtra = lib.mkAfter ''
+  programs.zsh.initContent = lib.mkAfter ''
     # ===== SSH Agent Management - Performance Optimized =====
-    
+
     # Force use of Nix-managed SSH tools (not macOS system versions)
     NIX_SSH_ADD="/run/current-system/sw/bin/ssh-add"
     NIX_SSH_AGENT="/run/current-system/sw/bin/ssh-agent"
-    
+
     SSH_ENV="$HOME/.ssh/agent-env"
-    
+
     # Start or connect to existing agent (fast path)
     _ssh_agent_start() {
       # Check if env file exists and agent is still running
@@ -37,13 +37,13 @@
           return 0
         fi
       fi
-      
+
       # Start new agent only if needed (using Nix ssh-agent)
       $NIX_SSH_AGENT -s | grep -v '^echo' > "$SSH_ENV"
       chmod 600 "$SSH_ENV"
       source "$SSH_ENV" >/dev/null
     }
-    
+
     # Load SSH keys lazily (only when first needed)
     ssh() {
       # Fast path: if keys already loaded, just run ssh
@@ -51,25 +51,24 @@
         command ssh "$@"
         return
       fi
-      
+
       # Keys not loaded yet, load them now
       local keys=(
         "$HOME/.ssh/id_976_main"
       )
-      
+
       for key in "''${keys[@]}"; do
         [ -f "$key" ] && $NIX_SSH_ADD "$key" 2>/dev/null
       done
-      
+
       command ssh "$@"
     }
-    
+
     # Initialize agent connection (non-blocking)
     _ssh_agent_start
-    
+
     # Aliases (using Nix ssh-add)
     alias ssh-list="$NIX_SSH_ADD -l"
     alias ssh-clear="$NIX_SSH_ADD -D"
   '';
 }
-
