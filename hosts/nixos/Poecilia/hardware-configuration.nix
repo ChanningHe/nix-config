@@ -13,7 +13,7 @@
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/boot" =
+  fileSystems."/boot1" =
     { device = "/dev/disk/by-uuid/39FD-94EF";
       fsType = "vfat";
       options = [ "fmask=0077" "dmask=0077" ];
@@ -23,7 +23,7 @@
     device = "/dev/disk/by-uuid/446B-59FA";
     fsType = "vfat";
   };
-
+  
   fileSystems."/" =
     { device = "rpool/root";
       fsType = "zfs";
