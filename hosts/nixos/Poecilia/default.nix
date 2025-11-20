@@ -112,6 +112,10 @@ in
       fsType = "zfs";
     };
 
+  virtualisation.docker = {
+    enable = lib.mkDefault true; # Default enable, can be overridden
+  };
+
   virtualisation.docker.daemon.settings = {
     data-root = "/mnt/rpool/container-root/docker";
   };
