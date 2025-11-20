@@ -6,6 +6,9 @@
 {
   programs.ssh = {
     enable = true;
+    # wait for home-manager PR #7655 to be released
+    #enableDefaultConfig = false;
+    forwardAgent = true;
     controlMaster = "auto";
     controlPath = "${config.home.homeDirectory}/.ssh/sockets/S.%r@%h:%p";
     controlPersist = "20m";

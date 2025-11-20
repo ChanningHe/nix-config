@@ -33,7 +33,7 @@ in
   home = {
     username = lib.mkDefault config.hostSpec.username;
     homeDirectory = lib.mkDefault config.hostSpec.home;
-    stateVersion = lib.mkDefault "24.11";
+    stateVersion = lib.mkDefault "25.05";
     sessionPath = [
       "$HOME/.local/bin"
     ];
