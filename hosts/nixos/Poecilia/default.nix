@@ -69,6 +69,11 @@ in
     useDHCP = false;
     dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
+    nat = {
+      enable = true;
+      internalInterfaces = [ "enp3s0" ];
+      externalInterface = "tun0";
+    };
   };
 
   services.resolved.enable = false;
