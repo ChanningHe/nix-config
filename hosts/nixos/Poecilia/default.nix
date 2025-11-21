@@ -45,6 +45,7 @@ in
       "hosts/common/optional/services/openssh.nix"
       "hosts/common/optional/ip-forward.nix"
       "hosts/common/optional/services/easytier.nix"
+      "hosts/common/optional/services/attic.nix"
     ])
   ];
 
@@ -69,6 +70,11 @@ in
     useDHCP = false;
     dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
+    # firewall = {
+    #   extraForwardRules = ''
+    #     iptables -t nat -A POSTROUTING -o tun0 -j MASQUERADE
+    #   '';
+    # };
     nat = {
       enable = true;
       internalInterfaces = [ "enp3s0" ];

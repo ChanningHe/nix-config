@@ -7,10 +7,13 @@
   lib,
   inputs,
   config,
+  pkgs,
   ...
 }:
 let
   sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
+  userGroup =
+    if pkgs.stdenv.isDarwin then "staff" else config.users.users.${config.hostSpec.username}.group;
   #sopsFolder = builtins.toString inputs.nix-secrets;
   #secretsFile = "${sopsFolder}/shared.yaml";
 in
@@ -20,20 +23,25 @@ in
   sops = {
     #defaultSopsFile = "${secretsFile}";
     # Only set default sops file if it exists, especially important for Darwin initial setup
-    defaultSopsFile = if builtins.pathExists "${sopsFolder}/${config.hostSpec.hostName}.yaml"
-      then "${sopsFolder}/${config.hostSpec.hostName}.yaml"
-      else null;
+    defaultSopsFile =
+      if builtins.pathExists "${sopsFolder}/${config.hostSpec.hostName}.yaml" then
+        "${sopsFolder}/${config.hostSpec.hostName}.yaml"
+      else
+        null;
     validateSopsFiles = false;
+
     age = {
+      keyFile = lib.mkIf config.hostSpec.isDarwin "${config.hostSpec.home}/.config/sops/age/keys.txt";
       # automatically import host SSH keys as age keys
       # NOTE: Darwin and NixOS have different SSH key paths
-      sshKeyPaths = if config.hostSpec.isDarwin then
-        [
-          # Darwin SSH keys are in a different location
-          # and might not exist yet during initial setup
-        ]
-      else
-        [ "/etc/ssh/ssh_host_ed25519_key" ];
+      sshKeyPaths =
+        if config.hostSpec.isDarwin then
+          [
+            # Darwin SSH keys are in a different location
+            # and might not exist yet during initial setup
+          ]
+        else
+          [ "/etc/ssh/ssh_host_ed25519_key" ];
     };
     # secrets will be output to /run/secrets
     # e.g. /run/secrets/msmtp-password
@@ -54,31 +62,37 @@ in
         owner = config.users.users.${config.hostSpec.username}.name;
         # NOTE: group inheritance only works on NixOS
         # Darwin users don't have a 'group' attribute in the same way
-      } // lib.optionalAttrs (config.users.users.${config.hostSpec.username} ? group) {
+      }
+      // lib.optionalAttrs (config.users.users.${config.hostSpec.username} ? group) {
         inherit (config.users.users.${config.hostSpec.username}) group;
-      } // {
+      }
+      // {
         # We need to ensure the entire directory structure is that of the user...
         path = "${config.hostSpec.home}/.config/sops/age/keys.txt";
       };
     })
     # Password secrets are only for NixOS (Darwin handles authentication differently)
-    (lib.mkIf (!config.hostSpec.isDarwin && builtins.pathExists "${sopsFolder}/${config.hostSpec.hostName}.yaml") {
-      # extract password/username to /run/secrets-for-users/ so it can be used to create the user
-      "passwords/${config.hostSpec.username}" = {
-        #sopsFile = "${sopsFolder}/shared.yaml";
-        sopsFile = "${sopsFolder}/${config.hostSpec.hostName}.yaml";
-        neededForUsers = true;
-      };
-    })
+    (lib.mkIf
+      (!config.hostSpec.isDarwin && builtins.pathExists "${sopsFolder}/${config.hostSpec.hostName}.yaml")
+      {
+        # extract password/username to /run/secrets-for-users/ so it can be used to create the user
+        "passwords/${config.hostSpec.username}" = {
+          #sopsFile = "${sopsFolder}/shared.yaml";
+          sopsFile = "${sopsFolder}/${config.hostSpec.hostName}.yaml";
+          neededForUsers = true;
+        };
+      }
+    )
     # Shared secrets from shared.yaml (if it exists)
     # Skip on Darwin during initial setup when no age keys are configured
-    (lib.mkIf (builtins.pathExists "${sopsFolder}/shared.yaml" && !config.hostSpec.isDarwin) {
+    #(lib.mkIf (builtins.pathExists "${sopsFolder}/shared.yaml" && !config.hostSpec.isDarwin) {
+    (lib.mkIf (builtins.pathExists "${sopsFolder}/shared.yaml") {
       # Attic binary cache token
       "attic/token" = {
         sopsFile = "${sopsFolder}/shared.yaml";
         mode = "0400";
         owner = config.hostSpec.username;
-        group = config.hostSpec.username;
+        group = userGroup;
       };
     })
   ];
@@ -86,15 +100,17 @@ in
   # the ownership is busted and home-manager can't target because it can't write into .config...
   # In the future this may not be needed, depending on how https://github.com/Mic92/sops-nix/issues/381 is fixed
   # NOTE: This only works on NixOS where users have a 'group' attribute
-  system.activationScripts.sopsSetAgeKeyOwnership = lib.mkIf (config.hostSpec.loadUserAgeKey && !config.hostSpec.isDarwin) (
-    let
-      ageFolder = "${config.hostSpec.home}/.config/sops/age";
-      user = config.users.users.${config.hostSpec.username}.name;
-      group = config.users.users.${config.hostSpec.username}.group;
-    in
-    ''
-      mkdir -p ${ageFolder} || true
-      chown -R ${user}:${group} ${config.hostSpec.home}/.config
-    ''
-  );
+  system.activationScripts.sopsSetAgeKeyOwnership =
+    lib.mkIf (config.hostSpec.loadUserAgeKey && !config.hostSpec.isDarwin)
+      (
+        let
+          ageFolder = "${config.hostSpec.home}/.config/sops/age";
+          user = config.users.users.${config.hostSpec.username}.name;
+          group = config.users.users.${config.hostSpec.username}.group;
+        in
+        ''
+          mkdir -p ${ageFolder} || true
+          chown -R ${user}:${group} ${config.hostSpec.home}/.config
+        ''
+      );
 }

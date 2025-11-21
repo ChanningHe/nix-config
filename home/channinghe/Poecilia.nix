@@ -22,13 +22,17 @@
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix
   ];
-  
+
   # ==== bash config for specific host ==== #
   programs.bash = {
     shellAliases = {
       "2dd" = "cd /mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
-   };
+    };
   };
+
+  home.packages = with pkgs; [
+    screen
+  ];
 
   home.sessionVariables = {
     DOCKER_DATA = "/mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";

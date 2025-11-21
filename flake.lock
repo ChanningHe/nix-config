@@ -152,10 +152,10 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1763637063,
-        "narHash": "sha256-MdcP0HeXvfpiK/CMnXYVJXrz5SA2hqbiYTNw7YjEiWo=",
+        "lastModified": 1763726560,
+        "narHash": "sha256-OyWxftwiDxuaz0IJj0Yd/ZnK23IgJXAxT0F9wXNnEBs=",
         "ref": "master",
-        "rev": "3117b340e815b9464cffc1d3b23e159eff96609b",
+        "rev": "145e2672b0fe52a1da6e272993948b8e27935860",
         "shallow": true,
         "type": "git",
         "url": "ssh://git@github.com/ChanningHe/nix-secrets.git"
@@ -358,11 +358,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1763417348,
-        "narHash": "sha256-n5xDOeNN+smocQp3EMIc11IzBlR9wvvTIJZeL0g33Fs=",
+        "lastModified": 1763607916,
+        "narHash": "sha256-VefBA1JWRXM929mBAFohFUtQJLUnEwZ2vmYUNkFnSjE=",
         "owner": "mic92",
         "repo": "sops-nix",
-        "rev": "3f66a7fb9626a9a9c077612ef10a0ce396286c7d",
+        "rev": "877bb495a6f8faf0d89fc10bd142c4b7ed2bcc0b",
         "type": "github"
       },
       "original": {

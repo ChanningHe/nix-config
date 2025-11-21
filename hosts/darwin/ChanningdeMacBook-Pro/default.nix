@@ -1,7 +1,5 @@
 {
-  inputs,
   lib,
-  config,
   ...
 }:
 {
@@ -38,6 +36,7 @@
       #
       # ========== Optional Configs ==========
       #
+      "hosts/common/optional/services/attic.nix"
     ])
   ];
 
