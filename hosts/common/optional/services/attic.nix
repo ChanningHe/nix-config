@@ -73,8 +73,6 @@ in
       # '';
 
       system.activationScripts.postActivation.text = ''
-              echo "************** RUNNING ATTIC CONFIG SETUP **************"
-
               TOKEN_PATH="/run/secrets/attic/token"
               CONFIG_DIR="${config.hostSpec.home}/.config/attic"
               CONFIG_FILE="$CONFIG_DIR/config.toml"

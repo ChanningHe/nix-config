@@ -51,8 +51,12 @@ in
       (
         ''
           # Colorized ls commands
-          export CLICOLOR=1
-          export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+          # export CLICOLOR=1
+          # export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+          # Remove / and . from WORDCHARS to make path navigation easier (Ctrl+W stops at /)
+          # Note: We use ''${...} to escape the Nix interpolation and pass it literally to Zsh
+          WORDCHARS="''${WORDCHARS//\//}"
+          WORDCHARS="''${WORDCHARS//./}"
         ''
         + lib.optionalString pkgs.stdenv.isDarwin ''
           # Source Nix daemon if available (macOS only)
@@ -73,7 +77,6 @@ in
         "zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
         "zsh-users/zsh-syntax-highlighting" # Syntax highlighting
         "zsh-users/zsh-completions" # Additional completions
-
         # Oh-My-Zsh plugins (only the ones we need)
         "ohmyzsh/ohmyzsh path:plugins/sudo" # ESC ESC to prefix sudo
       ];
