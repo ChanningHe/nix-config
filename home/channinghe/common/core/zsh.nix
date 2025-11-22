@@ -16,7 +16,7 @@ in
     enable = true;
 
     # Enable basic features
-    enableCompletion = true;
+    enableCompletion = false;
 
     # Shell aliases
     shellAliases = {
@@ -74,9 +74,10 @@ in
         "romkatv/powerlevel10k"
 
         # Essential plugins
-        "zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
+        #"zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
         "zsh-users/zsh-syntax-highlighting" # Syntax highlighting
-        "zsh-users/zsh-completions" # Additional completions
+        #"zsh-users/zsh-completions" # Additional completions
+        "marlonrichert/zsh-autocomplete"
         # Oh-My-Zsh plugins (only the ones we need)
         "ohmyzsh/ohmyzsh path:plugins/sudo" # ESC ESC to prefix sudo
       ];
