@@ -8,7 +8,8 @@
 # The module will:
 # 1. Read networkStorageInfo.${hostname} from nix-secrets
 # 2. Auto-enable any services that have enable = true in the secrets
-# 3. Apply any extraConfig defined here for common, non-sensitive settings
+# 3. Automatically configure SOPS secrets for all SMB servers
+# 4. Apply any extraConfig defined here for common, non-sensitive settings
 {
   config,
   inputs,
@@ -16,12 +17,16 @@
   ...
 }:
 let
-  hostname = config.networking.hostName;
+  hostname = config.hostSpec.hostName;
   networkStorageInfo = inputs.nix-secrets.networkStorageInfo or { };
   hostConfig = networkStorageInfo.${hostname} or { };
 
   serverConfig = hostConfig.server or { };
   clientConfig = hostConfig.client or { };
+  sambaConfig = clientConfig.samba or null;
+
+  # Extract all server names from samba configuration
+  sambaServers = if sambaConfig != null then builtins.attrNames (sambaConfig.servers or { }) else [ ];
 in
 {
   # Auto-enable services based on nix-secrets configuration
@@ -76,4 +81,17 @@ in
       # ];
     };
   };
+
+  # Automatically configure SOPS secrets for all SMB servers
+  sops.secrets = lib.mkIf (sambaConfig.enable or false) (
+    lib.listToAttrs (
+      map (serverName: {
+        name = "samba-${serverName}";
+        value = {
+          sopsFile = lib.mkDefault (inputs.nix-secrets + "/secrets/${hostname}.yaml");
+          key = "samba/${serverName}";
+        };
+      }) sambaServers
+    )
+  );
 }

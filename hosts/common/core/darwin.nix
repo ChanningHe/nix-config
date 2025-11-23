@@ -4,16 +4,15 @@
   inputs,
   config,
   lib,
-  pkgs,
   ...
 }:
 {
   # Set the host platform for Darwin
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-darwin";
-
   # Darwin-specific system settings
   system.configurationRevision = null;
-
+  # Set primary user for user-level launchd agents
+  system.primaryUser = config.hostSpec.username;
   # Enable sudo authentication via Touch ID
   security.pam.services.sudo_local.touchIdAuth = true;
 
@@ -27,7 +26,9 @@
 
     # This will add your inputs to the system's legacy channels
     # Making legacy nix commands consistent as well, awesome!
-    nixPath = lib.mkForce (lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry);
+    nixPath = lib.mkForce (
+      lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry
+    );
 
     # Deduplicate and optimize nix store (Darwin-specific)
     # NOTE: Darwin uses nix.optimise.automatic instead of settings.auto-optimise-store

@@ -1,10 +1,11 @@
-# Network Storage Module (NFS & Samba Server/Client)
+# Network Storage Module for NixOS (NFS & Samba Server/Client)
 # This module provides a way to configure NFS and Samba servers and clients
 # based on host-specific configurations from nix-secrets
 {
   config,
   lib,
   inputs,
+  pkgs,
   ...
 }:
 let
@@ -31,6 +32,28 @@ let
   sambaServerEnabled = cfg.server.samba.enable && sambaServerConfig != null;
   nfsClientEnabled = cfg.client.nfs.enable && nfsClientConfig != null;
   sambaClientEnabled = cfg.client.samba.enable && sambaClientConfig != null;
+
+  # Get samba servers list (new structure)
+  sambaServers = if sambaClientEnabled then (sambaClientConfig.servers or { }) else { };
+
+  # Flatten all samba mounts from all servers with their credentials
+  allSambaMounts =
+    if sambaClientEnabled then
+      lib.flatten (
+        lib.mapAttrsToList (
+          serverName: serverConfig:
+          map (
+            mount:
+            mount
+            // {
+              # Add credentials path from sops if not explicitly specified
+              credentials = mount.credentials or config.sops.secrets."samba-${serverName}".path;
+            }
+          ) (serverConfig.mounts or [ ])
+        ) sambaServers
+      )
+    else
+      [ ];
 in
 {
   options.networkStorage = {
@@ -237,7 +260,6 @@ in
     # ===== Samba Client Configuration =====
     (lib.mkIf sambaClientEnabled (
       let
-        mounts = sambaClientConfig.mounts or [ ];
         # Generate fileSystems configuration for each mount
         fileSystemsConfig = builtins.listToAttrs (
           map (mount: {
@@ -250,13 +272,13 @@ in
                 ++ cfg.client.samba.extraOptions
                 ++ (lib.optionals (mount ? credentials) [ "credentials=${mount.credentials}" ]);
             };
-          }) mounts
+          }) allSambaMounts
         );
       in
       {
         fileSystems = fileSystemsConfig;
         # Ensure cifs-utils is available for mounting
-        environment.systemPackages = [ config.boot.kernelPackages.kernel.nativeBuildInputs ];
+        environment.systemPackages = [ pkgs.cifs-utils ];
       }
     ))
 
