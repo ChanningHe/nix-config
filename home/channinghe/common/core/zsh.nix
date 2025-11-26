@@ -15,7 +15,7 @@ in
   programs.zsh = {
     enable = true;
 
-    # Enable basic features
+    # "marlonrichert/zsh-autocomplete" requires this to be disabled
     enableCompletion = false;
 
     # Shell aliases
@@ -63,6 +63,39 @@ in
           # Note: We use ''${...} to escape the Nix interpolation and pass it literally to Zsh
           WORDCHARS="''${WORDCHARS//\//}"
           WORDCHARS="''${WORDCHARS//./}"
+
+          # ==== marlonrichert/zsh-autocomplete configuration ====
+          # Cycle through listed completions, without changing what's listed in the menu
+          #bindkey              '^I'         menu-complete
+          #bindkey "$terminfo[kcbt]" reverse-menu-complete
+          # Enter the menu instead of inserting a completion
+          bindkey              '^I' menu-select
+          bindkey "$terminfo[kcbt]" reverse-menu-select
+          # Restore Zsh-default history shortcuts
+          bindkey -M emacs \
+            "^[p"   .history-search-backward \
+            "^[n"   .history-search-forward \
+            "^P"    .up-line-or-history \
+            "^[OA"  .up-line-or-history \
+            "^[[A"  .up-line-or-history \
+            "^N"    .down-line-or-history \
+            "^[OB"  .down-line-or-history \
+            "^[[B"  .down-line-or-history \
+            "^R"    .history-incremental-search-backward \
+            "^S"    .history-incremental-search-forward
+
+          bindkey -a \
+            "^P"    .up-history \
+            "^N"    .down-history \
+            "k"     .up-line-or-history \
+            "^[OA"  .up-line-or-history \
+            "^[[A"  .up-line-or-history \
+            "j"     .down-line-or-history \
+            "^[OB"  .down-line-or-history \
+            "^[[B"  .down-line-or-history \
+            "/"     .vi-history-search-backward \
+            "?"     .vi-history-search-forward
+          # ==== marlonrichert/zsh-autocomplete configuration ====
         ''
         + lib.optionalString pkgs.stdenv.isDarwin ''
           # Source Nix daemon if available (macOS only)
@@ -80,12 +113,10 @@ in
         "romkatv/powerlevel10k"
 
         # Essential plugins
-        #"zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
+        "zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
         "zsh-users/zsh-syntax-highlighting" # Syntax highlighting
         #"zsh-users/zsh-completions" # Additional completions
         "marlonrichert/zsh-autocomplete"
-        # Oh-My-Zsh plugins (only the ones we need)
-        #"ohmyzsh/ohmyzsh path:plugins/sudo" # ESC ESC to prefix sudo
       ];
     };
 
