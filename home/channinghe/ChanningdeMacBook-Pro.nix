@@ -14,13 +14,14 @@
     # ========== Host-specific Optional Configs ==========
     #
     # SSH Agent with auto-loading
-    common/optional/ssh-agent.nix
+    common/optional/darwin/ssh-agent.nix
 
     # FIXME(starter): add or remove any optional config directories or files here
     # common/optional/browsers
     # common/optional/desktops
     # common/optional/comms
     # common/optional/media
+    common/optional/neovim.nix
 
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix

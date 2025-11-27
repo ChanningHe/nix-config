@@ -113,7 +113,7 @@ in
         "romkatv/powerlevel10k"
 
         # Essential plugins
-        "zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
+        #"zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
         "zsh-users/zsh-syntax-highlighting" # Syntax highlighting
         #"zsh-users/zsh-completions" # Additional completions
         "marlonrichert/zsh-autocomplete"

@@ -38,7 +38,7 @@ in
       "$HOME/.local/bin"
     ];
     sessionVariables = {
-      FLAKE = "$HOME/src/nix/nix-config";
+      FLAKE = "$HOME/nix-src/nix-config";
       SHELL = "zsh";
       # Locale settings
       LANG = "en_US.UTF-8";

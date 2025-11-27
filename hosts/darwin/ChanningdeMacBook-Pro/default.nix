@@ -37,7 +37,7 @@
       # ========== Optional Configs ==========
       #
       "hosts/common/optional/services/attic.nix"
-      "hosts/common/optional/autofs-darwin.nix"
+      "hosts/common/optional/darwin/darwin-smb.nix"
     ])
   ];
 

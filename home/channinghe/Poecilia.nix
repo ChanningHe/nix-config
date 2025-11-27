@@ -40,4 +40,9 @@
   home.sessionVariables = {
     DOCKER_DATA = "/mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
   };
+
+  sshClients.enabledHosts = [
+    "Pseudomugil"
+    "nixos-rl"
+  ];
 }
