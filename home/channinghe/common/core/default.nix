@@ -53,11 +53,11 @@ in
   # Platform-specific packages are defined in nixos.nix and darwin.nix
   home.packages = with pkgs; [
     curl
-    pfetch # system info
+    fastfetch # system info
     pre-commit # git hooks
-    p7zip # compression & encryption
-    unzip # zip extraction
-    unrar # rar extraction
+    # p7zip # compression & encryption
+    # unzip # zip extraction
+    # unrar # rar extraction
     sops
     age
     ssh-to-age
