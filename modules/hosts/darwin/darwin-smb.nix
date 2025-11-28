@@ -68,22 +68,23 @@ let
       credFile = if mount.credentials != null then mount.credentials else "";
     in
     ''
-      mount_${lib.replaceStrings [ "-" "/" "." ] [ "_" "_" "_" ] mountName}() {
+       mount_${lib.replaceStrings [ "-" "/" "." ] [ "_" "_" "_" ] mountName}() {
         local server_path="${serverPath}"
         local mount_name="${mountName}"
         local credentials_file="${credFile}"
 
-        # Check if already mounted
+        # Check if already mounted by looking for the exact share URL
+        # macOS may append -1, -2 etc to mount point, so we check by share name
         local mount_dir
-        mount_dir=$(mount | grep "$server_path" | grep -v autofs | head -1 | awk '{print $3}')
+        mount_dir=$(mount | grep -F "//$USERNAME@$server_path" | head -1 | awk '{print $3}')
 
         if [ -n "$mount_dir" ]; then
           # Test if mount is healthy
-          if timeout 5 ls "$mount_dir" >/dev/null 2>&1; then
-            log "✓ $mount_name: healthy"
+          if [ -d "$mount_dir" ] && timeout 5 ls "$mount_dir" >/dev/null 2>&1; then
+            log "✓ $mount_name: healthy at $mount_dir"
             return 0
           else
-            log "⚠ $mount_name: stale mount, remounting..."
+            log "⚠ $mount_name: stale mount at $mount_dir, cleaning up..."
             diskutil unmount force "$mount_dir" 2>/dev/null || true
             sleep 2
           fi
