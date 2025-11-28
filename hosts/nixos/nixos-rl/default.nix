@@ -1,5 +1,4 @@
 {
-  inputs,
   lib,
   config,
   ...
@@ -42,6 +41,8 @@ in
       # ========== Optional Configs ==========
       "hosts/common/optional/no-firewall.nix"
       "hosts/common/optional/ip-forward.nix"
+      "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/openssh.nix"
     ])
   ];
 
@@ -108,9 +109,9 @@ in
     DOCKER_DATA = "/mnt/Kiwi/VM/SCALE4stor/DockerConfig/nixos-rl/DOCKER_DATA";
   };
 
-  boot.initrd = {
-    systemd.enable = true;
-  };
+  # boot.initrd = {
+  #   systemd.enable = true;
+  # };
 
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion
   system.stateVersion = "25.05";

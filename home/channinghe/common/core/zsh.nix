@@ -35,20 +35,14 @@ in
     initContent = lib.mkMerge [
       # P10k instant prompt - must be loaded BEFORE everything (highest priority)
       (lib.mkBefore ''
-          # ==== marlonrichert/zsh-autocomplete configuration ====
-          # Fix issue with marlonrichert/zsh-autocomplete
-          #bindkey "''${key[Up]}" up-line-or-search
-          zstyle -e ':autocomplete:*:*' list-lines 'reply=( $(( LINES / 3 )) )'
-          # Override for history search only
-          zstyle ':autocomplete:history-incremental-search-backward:*' list-lines 8
         # Enable Powerlevel10k instant prompt (must be at the very top)
         if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
           source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
         fi
       '')
 
-      # Load P10k config BEFORE completion init (order 550)
-      (lib.mkOrder 550 ''
+      # Load P10k config AFTER plugins are loaded
+      (lib.mkAfter ''
         # Load Powerlevel10k config (managed by home-manager from repo)
         [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
       '')
@@ -64,6 +58,14 @@ in
           WORDCHARS="''${WORDCHARS//\//}"
           WORDCHARS="''${WORDCHARS//./}"
 
+          # ==== marlonrichert/zsh-autocomplete configuration ====
+          # Fix issue with marlonrichert/zsh-autocomplete
+          #bindkey "''${key[Up]}" up-line-or-search
+          zstyle -e ':autocomplete:*:*' list-lines 'reply=( $(( LINES / 3 )) )'
+          # Override for history search only
+          zstyle ':autocomplete:history-incremental-search-backward:*' list-lines 8
+          zstyle ':autocomplete:*' min-delay 0.1
+          zstyle ':autocomplete:*' min-input 2
           # ==== marlonrichert/zsh-autocomplete configuration ====
           # Cycle through listed completions, without changing what's listed in the menu
           #bindkey              '^I'         menu-complete
