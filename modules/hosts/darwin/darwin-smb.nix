@@ -74,17 +74,23 @@ let
         local credentials_file="${credFile}"
 
         # Check if already mounted by looking for the exact share URL
-        # macOS may append -1, -2 etc to mount point, so we check by share name
-        local mount_dir
-        mount_dir=$(mount | grep -F "//$USERNAME@$server_path" | head -1 | awk '{print $3}')
+        # Use " on " as delimiter to ensure exact match (avoid substring issues like Media vs MediaCentre)
+        if ! mount | grep -qF "//$USERNAME@$server_path on "; then
+          # Not mounted at all
+          log "→ $mount_name: not mounted, mounting..."
+        else
+          # Already mounted, get the actual mount point
+          local mount_dir
+          mount_dir=$(mount | grep -F "//$USERNAME@$server_path on " | head -1 | awk '{print $3}')
 
-        if [ -n "$mount_dir" ]; then
-          # Test if mount is healthy
-          if [ -d "$mount_dir" ] && timeout 5 ls "$mount_dir" >/dev/null 2>&1; then
-            log "✓ $mount_name: healthy at $mount_dir"
+          # Lightweight health check: just stat the mount point itself
+          # Don't use 'ls' as it triggers directory listing which can be slow on SMB
+          if timeout 3 stat "$mount_dir" >/dev/null 2>&1; then
+            # Mount is healthy, no action needed
             return 0
           else
-            log "⚠ $mount_name: stale mount at $mount_dir, cleaning up..."
+            # stat failed - mount point is truly unresponsive
+            log "⚠ $mount_name: mount point unresponsive at $mount_dir, remounting..."
             diskutil unmount force "$mount_dir" 2>/dev/null || true
             sleep 2
           fi
@@ -127,6 +133,9 @@ let
 
     set -euo pipefail
 
+    # Ensure full PATH for all commands
+    export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.nix-profile/bin:/run/current-system/sw/bin"
+
     SCRIPT_DIR="$HOME/.config/darwin-nix/smb-mounter"
     LOG_FILE="$SCRIPT_DIR/mounts.log"
     USERNAME="${config.hostSpec.username}"
@@ -155,6 +164,9 @@ let
     # Periodically checks mount health and remounts if needed
 
     set -euo pipefail
+
+    # LaunchAgent runs with minimal PATH, set it explicitly
+    export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.nix-profile/bin:/run/current-system/sw/bin"
 
     SCRIPT_DIR="$HOME/.config/darwin-nix/smb-mounter"
     LOG_FILE="$SCRIPT_DIR/mounts.log"
