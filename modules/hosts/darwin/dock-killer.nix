@@ -39,6 +39,7 @@ let
     LOG_FILE="$SCRIPT_DIR/killer.log"
     DELAY=${toString cfg.debounceDelay}
     LOG_LEVEL="${cfg.logLevel}"
+    FORCE_KILL="${if cfg.forceKill then "true" else "false"}"
     LAST_EVENT_FILE="/tmp/dock-killer-last-event-$$"
 
     # Cleanup on exit
@@ -57,7 +58,7 @@ let
       fi
     }
 
-    log_info "Dock Killer started (log level: $LOG_LEVEL, debounce: ''${DELAY}s)"
+    log_info "Dock Killer started (log level: $LOG_LEVEL, debounce: ''${DELAY}s, force kill: $FORCE_KILL)"
 
     # Listen to display-related system logs
     # CoreDisplay subsystem captures all display configuration changes
@@ -80,12 +81,20 @@ let
           elapsed=$((now - last))
 
           if [ "$elapsed" -ge "$DELAY" ]; then
-            log_info "Display change detected, killing Dock..."
-
-            if killall Dock 2>/dev/null; then
-              log_info "Dock killed successfully"
+            if [ "$FORCE_KILL" = "true" ]; then
+              log_info "Display change detected, killing Dock with SIGKILL (-9)..."
+              if killall -9 Dock 2>/dev/null; then
+                log_info "Dock killed successfully (SIGKILL)"
+              else
+                log_info "Dock kill command executed (Dock may already be restarting)"
+              fi
             else
-              log_info "Dock kill command executed (Dock may already be restarting)"
+              log_info "Display change detected, killing Dock with SIGTERM..."
+              if killall Dock 2>/dev/null; then
+                log_info "Dock killed successfully (SIGTERM)"
+              else
+                log_info "Dock kill command executed (Dock may already be restarting)"
+              fi
             fi
 
             # Clean up timestamp file
@@ -129,6 +138,17 @@ in
         - DEBUG: Log all display events and debounce process
       '';
     };
+
+    forceKill = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Use SIGKILL (-9) instead of SIGTERM for killing Dock.
+        Enable this if normal killall doesn't work when Dock is frozen.
+        - false: killall Dock (graceful termination)
+        - true: killall -9 Dock (forced termination)
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -156,6 +176,7 @@ in
       echo "  - killer.log: Unified log file"
       echo "  - Log level: ${cfg.logLevel}"
       echo "  - Debounce delay: ${toString cfg.debounceDelay}s"
+      echo "  - Force kill (SIGKILL): ${if cfg.forceKill then "enabled" else "disabled"}"
 
       # Reload LaunchAgent if already loaded
       AGENT_LABEL="com.darwin-nix.dock-killer"

@@ -11,6 +11,7 @@
 #   dockAutoKiller.enable = true;           # Enable the killer (default: false)
 #   dockAutoKiller.debounceDelay = 3;       # Delay in seconds (default: 3)
 #   dockAutoKiller.logLevel = "INFO";       # "INFO" or "DEBUG" (default: "INFO")
+#   dockAutoKiller.forceKill = false;       # Use SIGKILL (-9) instead of SIGTERM (default: false)
 #
 # Features:
 # - Real-time display event monitoring
@@ -22,7 +23,8 @@
 {
   dockAutoKiller = {
     enable = true;
-    debounceDelay = 3; # Change this value to adjust delay (in seconds)
+    debounceDelay = 5; # Change this value to adjust delay (in seconds)
     logLevel = "INFO"; # Change to "DEBUG" for verbose logging
+    forceKill = true; # Uncomment if normal killall doesn't work (uses SIGKILL -9)
   };
 }
