@@ -118,6 +118,7 @@ in
         #"zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
         "zsh-users/zsh-syntax-highlighting" # Syntax highlighting
         #"zsh-users/zsh-completions" # Additional completions
+        # Important: in nix-config/hosts/common/users/channinghe/default.nix: disable completion and global comp init
         "marlonrichert/zsh-autocomplete"
       ];
     };
