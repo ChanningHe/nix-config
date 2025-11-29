@@ -23,8 +23,16 @@ in
     openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
   };
 
+  programs.zsh = {
+    enable = true;
+    # important: disable completion and global comp init
+    # or else it'll be slow zsh startup with marlonrichert/zsh-autocomplete
+    # referenced from: https://www.reddit.com/r/NixOS/comments/15zhf37/do_you_have_loading_delay_with_zsh/
+    enableCompletion = false;
+    enableGlobalCompInit = false;
+  };
+
   # No matter what environment we are in we want these tools
-  programs.zsh.enable = true;
   environment.systemPackages = [
     pkgs.just
     pkgs.rsync
