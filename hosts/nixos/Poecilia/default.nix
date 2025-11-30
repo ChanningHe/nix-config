@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }:
 let
@@ -70,23 +71,30 @@ in
     useDHCP = false;
     dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
-    # firewall = {
-    #   extraForwardRules = ''
-    #     iptables -t nat -A POSTROUTING -o tun0 -j MASQUERADE
-    #   '';
-    # };
-    nat = {
-      enable = true;
-      # internalInterfaces = [ "enp3s0" ];
-      # externalInterface = "tun0";
-      networking.nat.extraCommands = ''
-        iptables -A FORWARD -i ens19 -o tun-et -j ACCEPT
-        iptables -t nat -A POSTROUTING -o tun-et -j MASQUERADE
-      '';
-    };
   };
 
   services.resolved.enable = false;
+
+  #
+  # ========== Custom NAT Rules ==========
+  #
+  systemd.services.custom-nat = {
+    description = "Custom NAT rules for EasyTier";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ${pkgs.iptables}/bin/iptables -A FORWARD -i enp3s0 -o tun-et -j ACCEPT
+      ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -o tun-et -j MASQUERADE
+    '';
+    preStop = ''
+      ${pkgs.iptables}/bin/iptables -D FORWARD -i enp3s0 -o tun-et -j ACCEPT 2>/dev/null || true
+      ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -o tun-et -j MASQUERADE 2>/dev/null || true
+    '';
+  };
 
   # systemd-networkd
   systemd.network = {
