@@ -77,8 +77,12 @@ in
     # };
     nat = {
       enable = true;
-      internalInterfaces = [ "enp3s0" ];
-      externalInterface = "tun0";
+      # internalInterfaces = [ "enp3s0" ];
+      # externalInterface = "tun0";
+      networking.nat.extraCommands = ''
+        iptables -A FORWARD -i ens19 -o tun-et -j ACCEPT
+        iptables -t nat -A POSTROUTING -o tun-et -j MASQUERADE
+      '';
     };
   };
 
