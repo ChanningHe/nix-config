@@ -23,7 +23,7 @@ let
 
   stable-packages = final: _prev: {
     stable = import inputs.nixpkgs-stable {
-      inherit (final) system;
+      system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
       #overlays = [
       #];
@@ -32,7 +32,7 @@ let
 
   unstable-packages = final: _prev: {
     unstable = import inputs.nixpkgs-unstable {
-      inherit (final) system;
+      system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
       #overlays = [
       #];
@@ -40,10 +40,12 @@ let
   };
 
   # Proxmox VE overlay - only available on x86_64-linux
-  proxmox-overlay = final: prev: 
-    if prev.stdenv.hostPlatform.system == "x86_64-linux" 
-    then inputs.proxmox-nixos.overlays.${prev.stdenv.hostPlatform.system} final prev
-    else {};
+  proxmox-overlay =
+    final: prev:
+    if prev.stdenv.hostPlatform.system == "x86_64-linux" then
+      inputs.proxmox-nixos.overlays.${prev.stdenv.hostPlatform.system} final prev
+    else
+      { };
 
 in
 {

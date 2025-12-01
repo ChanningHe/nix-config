@@ -6,9 +6,13 @@
 {
   programs.git = {
     enable = true;
-    package = pkgs.gitAndTools.gitFull;
-    userName = "Channing He";
-    userEmail = "channinghey@gmail.com";
+    package = pkgs.gitFull;
+    settings = {
+      user = {
+        name = "Channing He";
+        email = "channinghey@gmail.com";
+      };
+    };
     ignores = [
       ".csvignore"
       # nix
