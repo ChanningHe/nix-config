@@ -66,6 +66,9 @@ in
           zstyle ':autocomplete:history-incremental-search-backward:*' list-lines 8
           zstyle ':autocomplete:*' min-delay 0.1
           zstyle ':autocomplete:*' min-input 2
+          # systemctl completion without directories/files
+          zstyle ':completion:*:systemctl-*:*' file-patterns
+          zstyle ':completion:*:systemctl-*:*' tag-order '! directories ! files' -
           # ==== marlonrichert/zsh-autocomplete configuration ====
           # Cycle through listed completions, without changing what's listed in the menu
           #bindkey              '^I'         menu-complete

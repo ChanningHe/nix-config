@@ -7,7 +7,7 @@
   programs.git = {
     enable = true;
     package = pkgs.gitAndTools.gitFull;
-    userName  = "Channing He";
+    userName = "Channing He";
     userEmail = "channinghey@gmail.com";
     ignores = [
       ".csvignore"
@@ -20,7 +20,8 @@
       ".venv/"
       # direnv
       ".direnv"
+      ".cursor/"
     ];
- };
+  };
 
 }
