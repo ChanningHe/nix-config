@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
@@ -11,10 +10,6 @@ let
   #sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
 in
 {
-  imports = [
-    "${inputs.nixpkgs-unstable}/nixos/modules/services/networking/easytier.nix"
-  ];
-
   config = lib.mkIf (hostEasytier != { }) {
     services.easytier = {
       enable = true;
