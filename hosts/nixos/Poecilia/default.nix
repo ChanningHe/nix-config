@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  pkgs,
   ...
 }:
 let
@@ -47,6 +46,7 @@ in
       "hosts/common/optional/ip-forward.nix"
       "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/znapzend.nix"
     ])
   ];
 
@@ -74,27 +74,6 @@ in
   };
 
   services.resolved.enable = false;
-
-  #
-  # ========== Custom NAT Rules ==========
-  #
-  systemd.services.custom-nat = {
-    description = "Custom NAT rules for EasyTier";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "network.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      ${pkgs.iptables}/bin/iptables -A FORWARD -i enp3s0 -o tun-et -j ACCEPT
-      ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -o tun-et -j MASQUERADE
-    '';
-    preStop = ''
-      ${pkgs.iptables}/bin/iptables -D FORWARD -i enp3s0 -o tun-et -j ACCEPT 2>/dev/null || true
-      ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -o tun-et -j MASQUERADE 2>/dev/null || true
-    '';
-  };
 
   # systemd-networkd
   systemd.network = {
@@ -141,29 +120,6 @@ in
 
   virtualisation.docker.daemon.settings = {
     data-root = "/mnt/rpool/container-root/docker";
-  };
-
-  # ==== snapshot tasks ==== #
-  services.znapzend.enable = true;
-  services.znapzend.zetup = {
-    "rpool/ConfigData" = {
-      enable = true;
-      dataset = "rpool/ConfigData";
-      timestampFormat = "znapzend-auto-%Y-%m-%dT%H:%M:%SZ";
-      plan = "1w=>1h,1m=>1d";
-      recursive = true;
-      # destinations = {
-      #   local = {
-      #     dataset = "rpool/ConfigData";
-      #     #presend = "zpool import -N btank";
-      #     #postsend = "zpool export btank";
-      #   };
-      #   remote = {
-      #     #host = "john@example.com";
-      #     #dataset = "tank/john";
-      #   };
-      # };
-    };
   };
 
   # ===== environment variables ===== #

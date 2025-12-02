@@ -39,6 +39,7 @@ in
     ];
     sessionVariables = {
       FLAKE = "$HOME/nix-src/nix-config";
+      NH_FLAKE = "$HOME/nix-src/nix-config";
       SHELL = "zsh";
       # Locale settings
       LANG = "en_US.UTF-8";
@@ -64,6 +65,7 @@ in
     tree
     jq
     ripgrep
+    nh
   ];
 
   nix = {

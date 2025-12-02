@@ -24,6 +24,10 @@ rebuild: rebuild-pre && rebuild-post
   # NOTE: Add --option eval-cache false if you end up caching a failure you can't get around
   scripts/rebuild.sh
 
+# Build only without switching (dry run)
+build: rebuild-pre
+  scripts/rebuild.sh build
+
 # Rebuild the system and run a flake check
 rebuild-full: rebuild-pre && rebuild-post
   scripts/rebuild.sh

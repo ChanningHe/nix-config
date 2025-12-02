@@ -25,13 +25,16 @@ function yellow() {
 	fi
 }
 
+HOST=$(hostname)
+ACTION="switch"
+
 switch_args="--show-trace --impure --flake "
 if [[ -n $1 && $1 == "trace" ]]; then
 	switch_args="$switch_args --show-trace "
+elif [[ -n $1 && $1 == "build" ]]; then
+	ACTION="build"
 elif [[ -n $1 ]]; then
 	HOST=$1
-else
-	HOST=$(hostname)
 fi
 switch_args="$switch_args .#$HOST switch"
 
@@ -66,41 +69,51 @@ if [ "$os" == "Darwin" ]; then
 		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 	fi
 
-	green "====== REBUILD ======"
-	# Test if there's no darwin-rebuild, then use nix build and then run it
-	if ! which darwin-rebuild &>/dev/null; then
-		nix build --show-trace .#darwinConfigurations."$HOST".system
-		sudo ./result/sw/bin/darwin-rebuild $switch_args
-	else
-		echo $switch_args
-		sudo darwin-rebuild $switch_args
-	fi
-else
-	green "====== REBUILD ======"
+	green "====== ${ACTION^^} ======"
 	if command -v nh &>/dev/null; then
 		REPO_PATH=$(pwd)
 		export REPO_PATH
-		nh os switch . -- --impure --show-trace
+		nh darwin $ACTION . -- --impure --show-trace
 	else
-		sudo nixos-rebuild $switch_args
+		# Fallback: bootstrap or use darwin-rebuild directly
+		if ! which darwin-rebuild &>/dev/null; then
+			nix build --show-trace .#darwinConfigurations."$HOST".system
+			sudo ./result/sw/bin/darwin-rebuild $switch_args
+		else
+			sudo darwin-rebuild $switch_args
+		fi
+	fi
+else
+	green "====== ${ACTION^^} ======"
+	if command -v nh &>/dev/null; then
+		REPO_PATH=$(pwd)
+		export REPO_PATH
+		nh os $ACTION . -- --impure --show-trace
+	else
+		sudo nixos-rebuild $ACTION --show-trace --impure --flake .#"$HOST"
 	fi
 fi
 
 # shellcheck disable=SC2181
 if [ $? -eq 0 ]; then
-	green "====== POST-REBUILD ======"
-	green "Rebuilt successfully"
-
-	# Check if there are any pending changes that would affect the build succeeding.
-	if git diff --exit-code >/dev/null && git diff --staged --exit-code >/dev/null; then
-		# Check if the current commit has a buildable tag
-		if git tag --points-at HEAD | grep -q buildable; then
-			yellow "Current commit is already tagged as buildable"
-		else
-			git tag buildable-"$(date +%Y%m%d%H%M%S)" -m ''
-			green "Tagged current commit as buildable"
-		fi
+	if [ "$ACTION" == "build" ]; then
+		green "====== BUILD COMPLETE ======"
+		green "Build successful (not switched)"
 	else
-		yellow "WARN: There are pending changes that would affect the build succeeding. Commit them before tagging"
+		green "====== POST-REBUILD ======"
+		green "Rebuilt successfully"
+
+		# Check if there are any pending changes that would affect the build succeeding.
+		if git diff --exit-code >/dev/null && git diff --staged --exit-code >/dev/null; then
+			# Check if the current commit has a buildable tag
+			if git tag --points-at HEAD | grep -q buildable; then
+				yellow "Current commit is already tagged as buildable"
+			else
+				git tag buildable-"$(date +%Y%m%d%H%M%S)" -m ''
+				green "Tagged current commit as buildable"
+			fi
+		else
+			yellow "WARN: There are pending changes that would affect the build succeeding. Commit them before tagging"
+		fi
 	fi
 fi
