@@ -13,11 +13,12 @@
     SOPS_AGE_KEY_FILE = "~/.config/sops/age/keys.txt";
     SOPS_EDITOR = "nano";
     EDITOR = "/opt/homebrew/bin/nano";
+    NH_FLAKE = "$HOME/nix-src/nix-config";
   };
 
   # Darwin-specific packages (if needed)
   home.packages = with pkgs; [
-    rustup
+    #rustup
     #nixpkgs-fmt
     # Add Darwin-specific packages here if needed
   ];

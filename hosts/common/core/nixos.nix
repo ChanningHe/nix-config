@@ -33,20 +33,20 @@
     "console=ttyS0,115200"
     "console=tty1"
   ];
+
+  # Allow cursor/vscode to dynamically linked binaries built for other Linux distributions
+  programs.nix-ld.enable = true;
+
   #
   # ========== Nix Helper ==========
   #
-  # Provide better build output and will also handle garbage collection in place of standard nix gc (garbace collection)
-  # FIXME(starter): customize garbage collection rules as desired.
+  # Provide better build output and garbage collection
   programs.nh = {
     enable = true;
     clean.enable = true;
     clean.extraArgs = "--keep-since 20d --keep 20";
-    flake = "/home/user/${config.hostSpec.home}/nix-config";
+    flake = "${config.hostSpec.home}/nix-config";
   };
-
-  # Allow cursor/vscode to dynamically linked binaries built for other Linux distributions
-  programs.nix-ld.enable = true;
 
   #
   # ========== Nix Registry & NixPath ==========

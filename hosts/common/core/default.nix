@@ -63,15 +63,10 @@ in
     git
     curl
     nano
-    btop
     nmap
-    unzip
     sops
     age
     ssh-to-age
-    just
-    deadnix
-    pre-commit
     dnsutils
   ];
   # Force home-manager to use global packages

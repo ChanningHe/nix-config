@@ -25,7 +25,6 @@
 
     nativeBuildInputs = builtins.attrValues {
       inherit (pkgs)
-
         # NOTE(starter): add any packages you want available in the shell when accessing the parent directory.
         # These will be installed regardless of what was installed specific for the host or home configs
         nix
@@ -36,8 +35,8 @@
         pre-commit
         deadnix
         sops
-        yq-go # jq for yaml, used for build scripts
-        bats # for bash testing
+        #yq-go # jq for yaml, used for build scripts
+        #bats # for bash testing
         age # for bootstrap script
         ssh-to-age # for bootstrap script
         ;

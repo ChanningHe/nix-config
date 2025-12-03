@@ -16,6 +16,50 @@
   # Enable sudo authentication via Touch ID
   security.pam.services.sudo_local.touchIdAuth = true;
 
+  #
+  # ========== Nix Helper ==========
+  #
+  # NOTE: Darwin doesn't have programs.nh module, so we set the environment variable directly
+  # environment.variables = {
+  #   NH_FLAKE = "${config.hostSpec.home}/nix-src/nix-config";
+  # };
+
+  #
+  # ========== Darwin settings ==========
+  #
+  # Reference: https://nix-darwin.github.io/nix-darwin/manual/index.html
+  system.defaults = {
+    # false means “One at a time” true means “All at once”
+    WindowManager.AppWindowGroupingBehavior = false;
+
+    NSGlobalDomain = {
+      #Sets the speed of window resizing
+      NSWindowResizeTime = 0.5;
+    };
+    finder = {
+      AppleShowAllExtensions = true;
+      AppleShowAllFiles = true;
+      CreateDesktop = false;
+      FXEnableExtensionChangeWarning = false;
+      ShowPathbar = true;
+      ShowStatusBar = true;
+      _FXShowPosixPathInTitle = true;
+    };
+    dock = {
+      autohide = false;
+      show-recents = false;
+      expose-animation-duration = 0.2;
+      autohide-time-modifier = 0.2;
+      tilesize = 50;
+      magnification = true;
+      largesize = 64;
+      orientation = "bottom";
+      mineffect = "scale";
+      launchanim = false;
+    };
+    ".GlobalPreferences"."com.apple.mouse.scaling" = -1.0;
+  };
+
   # ========== Nix Registry & NixPath ==========
   #
   # NOTE: On Darwin, we need to use mkForce to override nix-darwin's defaults

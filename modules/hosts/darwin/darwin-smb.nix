@@ -96,6 +96,17 @@ let
           fi
         fi
 
+        # Extract server IP/hostname from server_path (format: "server/share")
+        local server_host
+        server_host=$(echo "$server_path" | cut -d'/' -f1)
+
+        # Check if SMB port (445) is reachable before attempting mount
+        # Use nc (netcat) with 2-second timeout - more reliable than ping
+        if ! nc -z -w 2 "$server_host" 445 >/dev/null 2>&1; then
+          log "✗ $mount_name: server $server_host unreachable (port 445), skipping mount"
+          return 1
+        fi
+
         # Build SMB URL
         local smb_url
         if [ -n "$credentials_file" ] && [ -f "$credentials_file" ]; then

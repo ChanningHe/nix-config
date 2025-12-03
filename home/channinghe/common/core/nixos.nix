@@ -10,7 +10,7 @@
     pciutils # PCI device utilities (lspci)
     usbutils # USB device utilities (lsusb)
     lm_sensors # Hardware monitoring
-    sysstat # System statistics
+    # sysstat # System statistics
     traceroute
   ];
 

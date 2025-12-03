@@ -38,8 +38,6 @@ in
       "$HOME/.local/bin"
     ];
     sessionVariables = {
-      FLAKE = "$HOME/nix-src/nix-config";
-      NH_FLAKE = "$HOME/nix-src/nix-config";
       SHELL = "zsh";
       # Locale settings
       LANG = "en_US.UTF-8";
@@ -55,7 +53,7 @@ in
   home.packages = with pkgs; [
     curl
     fastfetch # system info
-    pre-commit # git hooks
+    #pre-commit # git hooks
     # p7zip # compression & encryption
     # unzip # zip extraction
     # unrar # rar extraction
@@ -66,6 +64,7 @@ in
     jq
     ripgrep
     nh
+    btop
   ];
 
   nix = {
