@@ -15,6 +15,7 @@
     members = [
       "channinghe"
       "rl-man"
+      "docker"
     ];
   };
 
@@ -22,15 +23,15 @@
   users.users.rl-man = {
     uid = 5000;
     group = "rl";
-    isNormalUser = true;  # Regular user, not system user
+    isNormalUser = true; # Regular user, not system user
     shell = pkgs.bash;
     home = "/home/rl-man";
     createHome = true;
-    description = "Regular user for running applications with minimal packages";
-    
+    description = "Rootless user for running applications";
+
     # Minimal system groups - only what's absolutely necessary
     extraGroups = [ ];
-    
+
     # No password login initially - can be changed later if needed
     hashedPassword = "!";
   };
@@ -43,7 +44,8 @@
   ];
 
   # Define minimal system packages for this user only if home-manager is available
-} // lib.optionalAttrs (inputs ? "home-manager") {
+}
+// lib.optionalAttrs (inputs ? "home-manager") {
   home-manager = {
     extraSpecialArgs = {
       inherit pkgs inputs;

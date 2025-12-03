@@ -10,7 +10,7 @@
 
   # Darwin-specific environment variables
   home.sessionVariables = {
-    SOPS_AGE_KEY_FILE = "~/.config/sops/age/keys.txt";
+    SOPS_AGE_KEY_FILE = "$HOME/.config/sops/age/keys.txt";
     SOPS_EDITOR = "nano";
     EDITOR = "/opt/homebrew/bin/nano";
     NH_FLAKE = "$HOME/nix-src/nix-config";
