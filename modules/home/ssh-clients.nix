@@ -1,6 +1,9 @@
 # SSH Clients Configuration Module
 # This module provides a way to selectively enable SSH client configurations
 # from nix-secrets based on host-specific needs
+#
+# Host configs are written to ~/.ssh/config.d/hosts and included via
+# the Include directive, avoiding conflicts with programs.ssh.matchBlocks
 {
   config,
   lib,
@@ -13,39 +16,29 @@ let
   # Read SSH clients info from nix-secrets
   sshClientsInfo = inputs.nix-secrets.sshClientsInfo or { };
 
-  # Normalize SSH config string: trim and fix indentation
-  normalizeConfig =
-    config:
+  # Format a single host block with proper indentation
+  formatHostBlock =
+    name: configStr:
     let
-      # Remove leading/trailing whitespace from the entire string
-      trimmed = lib.trim config;
-      # Split into lines
-      lines = lib.splitString "\n" trimmed;
-      # Remove leading whitespace from each line using replaceStrings
-      trimLine =
-        line:
-        let
-          # Remove all leading spaces
-          stripped = builtins.match "[ \t]*(.*)" line;
-        in
-        if stripped != null then builtins.head stripped else line;
-      # Remove leading whitespace from each line and re-indent with 2 spaces
-      normalizedLines = map (line: "  ${trimLine line}") lines;
+      # Trim and split into lines
+      trimmed = lib.trim configStr;
+      lines = lib.filter (l: l != "") (lib.splitString "\n" trimmed);
+      # Indent each config line with 2 spaces (Host line itself is not indented)
+      indentedLines = map (line: "  ${lib.trim line}") lines;
+      configContent = lib.concatStringsSep "\n" indentedLines;
     in
-    lib.concatStringsSep "\n" normalizedLines;
+    "Host ${name}\n${configContent}";
 
-  # Filter and concatenate enabled SSH host configurations
+  # Generate complete SSH config file from enabled hosts
   generateSshConfig =
     enabledHosts:
     let
       # Filter only the enabled hosts
       enabledConfigs = lib.filterAttrs (name: _: builtins.elem name enabledHosts) sshClientsInfo;
-      # Convert to list of config strings with Host prefix and normalized indentation
-      configList = lib.mapAttrsToList (
-        name: config: "Host ${name}\n${normalizeConfig config}"
-      ) enabledConfigs;
+      # Format each host block
+      hostBlocks = lib.mapAttrsToList formatHostBlock enabledConfigs;
     in
-    lib.concatStringsSep "\n\n" configList;
+    lib.concatStringsSep "\n\n" hostBlocks;
 in
 {
   options.sshClients = {
@@ -79,6 +72,7 @@ in
       hostsToEnable = if cfg.enableAll then builtins.attrNames sshClientsInfo else cfg.enabledHosts;
     in
     lib.mkIf (hostsToEnable != [ ]) {
-      programs.ssh.extraConfig = generateSshConfig hostsToEnable;
+      # Write host configs to separate file that gets included by ssh.nix
+      home.file.".ssh/config.d/hosts".text = generateSshConfig hostsToEnable;
     };
 }
