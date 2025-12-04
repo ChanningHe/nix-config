@@ -102,27 +102,48 @@ in
     # NOTE: registry and nixPath configuration moved to platform-specific files
     # (darwin.nix and nixos.nix) due to different handling between platforms
 
-    settings = {
-      # See https://jackson.dev/post/nix-reasonable-defaults/
-      connect-timeout = 5;
-      log-lines = 25;
-      min-free = 128000000; # 128MB
-      max-free = 1000000000; # 1GB
+    settings =
+      let
+        # Office cache (local LAN buffer for cache.nixos.org)
+        ncpsCache = config.hostSpec.serviceInfo.nixCacheInfo.ncps or { };
+        ncpsCacheHost = ncpsCache.host or "";
+        ncpsCachePubkey = ncpsCache.pubkey or "";
+        hasNcpsCache = ncpsCacheHost != "" && ncpsCachePubkey != "";
+      in
+      {
+        # See https://jackson.dev/post/nix-reasonable-defaults/
+        connect-timeout = 5;
+        log-lines = 25;
+        min-free = 128000000; # 128MB
+        max-free = 1000000000; # 1GB
 
-      trusted-users = [ "@wheel" ];
-      # NOTE: auto-optimise-store moved to platform-specific files
-      # (Darwin uses nix.optimise.automatic, NixOS uses nix.settings.auto-optimise-store)
-      warn-dirty = false;
+        trusted-users = [
+          "@wheel"
+          "root"
+          config.hostSpec.username
+        ];
+        # NOTE: auto-optimise-store moved to platform-specific files
+        # (Darwin uses nix.optimise.automatic, NixOS uses nix.settings.auto-optimise-store)
+        warn-dirty = false;
 
-      #https://github.com/NixOS/nix/issues/11728#issuecomment-2725297584
-      download-buffer-size = 524288000;
+        #https://github.com/NixOS/nix/issues/11728#issuecomment-2725297584
+        download-buffer-size = 524288000;
 
-      allow-import-from-derivation = true;
+        allow-import-from-derivation = true;
 
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-    };
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+
+        # Default cache configuration: office-cache (LAN buffer) -> cache.nixos.org
+        substituters = lib.optional hasNcpsCache "https://${ncpsCacheHost}" ++ [
+          "https://cache.nixos.org"
+        ];
+
+        trusted-public-keys = lib.optional hasNcpsCache "${ncpsCacheHost}:${ncpsCachePubkey}" ++ [
+          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        ];
+      };
   };
 }

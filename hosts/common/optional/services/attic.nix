@@ -30,17 +30,10 @@ in
       ];
 
       nix.settings = {
-        substituters = [
-          "https://${endpoint}"
-          "https://cache.nixos.org/"
-        ];
-        trusted-public-keys = [
-          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" # NixOS cache
+        # Prepend attic cache to the front (before office-cache and cache.nixos.org)
+        substituters = lib.mkBefore [ "https://${endpoint}" ];
+        trusted-public-keys = lib.mkBefore [
           "${endpointHost}:m9rTuwjBlORefVuHByPil1ymtrcqtJIQPh9AmXv93cU="
-        ];
-        trusted-users = [
-          "root"
-          "${config.hostSpec.username}"
         ];
         # Point Nix to the netrc file for authentication
         netrc-file = netrcPath;
