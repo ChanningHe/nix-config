@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  modulesPath,
   ...
 }:
 let
@@ -8,6 +9,7 @@ let
 in
 {
   imports = lib.flatten [
+    # import for nixos in lxc container
     "${modulesPath}/virtualisation/lxc-container.nix"
     #
     # ========== Hardware ==========
@@ -43,6 +45,7 @@ in
       "hosts/common/optional/no-firewall.nix"
       "hosts/common/optional/ip-forward.nix"
       "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/komodo-periphery.nix"
       "hosts/common/optional/services/openssh.nix"
     ])
   ];
