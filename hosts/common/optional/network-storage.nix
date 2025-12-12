@@ -10,6 +10,11 @@
 # 2. Auto-enable any services that have enable = true in the secrets
 # 3. Automatically configure SOPS secrets for all SMB servers
 # 4. Apply any extraConfig defined here for common, non-sensitive settings
+
+# Reference: https://nixos.wiki/wiki/Samba
+# For a user called `my_user` to be authenticated on the samba server, you must add their password using
+# smbpasswd -a my_user
+
 {
   config,
   inputs,

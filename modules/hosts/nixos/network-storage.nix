@@ -224,6 +224,11 @@ in
           inherit settings;
         };
 
+        # Enable WS-Discovery for Windows client auto-discovery
+        services.samba-wsdd = {
+          enable = true;
+        };
+
         # Open firewall for Samba
         networking.firewall.allowedTCPPorts = [
           139

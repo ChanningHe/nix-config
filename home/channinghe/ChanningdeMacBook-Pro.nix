@@ -27,7 +27,45 @@
     # common/optional/sops.nix
   ];
 
+  programs.zsh.shellAliases = {
+    "2c" = "cd /Volumes/Codes/";
+  };
+
   # SSH Clients Configuration
   # Enable specific SSH hosts from nix-secrets
   sshClients.enableAll = true;
+
+  # Nix Remote Builders Configuration
+  nix = {
+    distributedBuilds = true;
+    buildMachines = [
+      {
+        hostName = "Poecilia";
+        systems = [ "x86_64-linux" ];
+        sshUser = "channinghe";
+        maxJobs = 4;
+        speedFactor = 2;
+        supportedFeatures = [
+          "nixos-test"
+          "benchmark"
+          "big-parallel"
+          "kvm"
+        ];
+      }
+      {
+        hostName = "nixos-rl";
+        systems = [ "x86_64-linux" ];
+        sshUser = "channinghe";
+        protocol = "ssh-ng";
+        maxJobs = 8;
+        speedFactor = 8;
+        supportedFeatures = [
+          "nixos-test"
+          "benchmark"
+          "big-parallel"
+          "kvm"
+        ];
+      }
+    ];
+  };
 }

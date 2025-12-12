@@ -25,23 +25,26 @@
     NIX_SSH_ADD="/run/current-system/sw/bin/ssh-add"
     NIX_SSH_AGENT="/run/current-system/sw/bin/ssh-agent"
 
-    SSH_ENV="$HOME/.ssh/agent-env"
+    # Use fixed socket path for stability (survives restarts, accessible by root)
+    SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+    export SSH_AUTH_SOCK
 
     # Start or connect to existing agent (fast path)
     _ssh_agent_start() {
-      # Check if env file exists and agent is still running
-      if [ -f "$SSH_ENV" ]; then
-        source "$SSH_ENV" >/dev/null
-        # Quick check: is this agent alive?
-        if kill -0 "$SSH_AGENT_PID" 2>/dev/null; then
+      # Check if socket exists and agent is responsive
+      if [ -S "$SSH_AUTH_SOCK" ]; then
+        # Quick check: can we list keys? (agent is alive)
+        if $NIX_SSH_ADD -l >/dev/null 2>&1; then
           return 0
         fi
       fi
 
-      # Start new agent only if needed (using Nix ssh-agent)
-      $NIX_SSH_AGENT -s | grep -v '^echo' > "$SSH_ENV"
-      chmod 600 "$SSH_ENV"
-      source "$SSH_ENV" >/dev/null
+      # Clean up stale socket
+      [ -e "$SSH_AUTH_SOCK" ] && rm -f "$SSH_AUTH_SOCK"
+
+      # Start new agent with fixed socket path
+      $NIX_SSH_AGENT -a "$SSH_AUTH_SOCK" -s >/dev/null
+      chmod 600 "$SSH_AUTH_SOCK"
     }
 
     # Load SSH keys lazily (only when first needed)

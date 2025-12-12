@@ -19,9 +19,6 @@ Fork from [EmergentMind/nix-config-starter](https://github.com/EmergentMind/nix-
 
 ## Guidance and Resources
 
-- Watch NixOS related videos on my [YouTube channel](https://www.youtube.com/@Emergent_Mind).
-- Chat with me directly on our [Discord server](https://discord.gg/XTFg57xGxC).
-
 - [NixOS.org Manuals](https://nixos.org/learn/)
 - [Official Nix Documentation](https://nix.dev)
   - [Best practices](https://nix.dev/guides/best-practices)
@@ -31,7 +28,8 @@ Fork from [EmergentMind/nix-config-starter](https://github.com/EmergentMind/nix-
 - [NixOS Options Search](https://search.nixos.org/options?)
 - [Home Manager Option Search](https://home-manager-options.extranix.com/)
 - [NixOS & Flakes Book](https://nixos-and-flakes.thiscute.world/) - an excellent introductory book by Ryan Yin
-
+- [nix-darwin](https://github.com/nix-darwin/nix-darwin) - Nix-Darwin is a NixOS module for Darwin systems, like macOS.
+- [nix-darwin Documentation](https://nix-darwin.github.io/nix-darwin/manual/index.html)
 
 ## Acknowledgements
 

@@ -19,6 +19,7 @@
   # Darwin-specific packages (if needed)
   home.packages = with pkgs; [
     #rustup
+    coreutils
     #nixpkgs-fmt
     # Add Darwin-specific packages here if needed
   ];

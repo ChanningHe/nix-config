@@ -43,11 +43,9 @@ in
       "hosts/common/optional/no-firewall.nix"
       "hosts/common/optional/zfs-mirror-boot.nix"
       "hosts/common/optional/services/openssh.nix"
-      "hosts/common/optional/ip-forward.nix"
-      "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/attic.nix"
-      "hosts/common/optional/services/znapzend.nix"
-      "hosts/common/optional/network-storage.nix"
+      #"hosts/common/optional/services/znapzend.nix"
+      #"hosts/common/optional/network-storage.nix"
     ])
   ];
 
@@ -56,7 +54,7 @@ in
   #
 
   hostSpec = {
-    hostName = "Poecilia";
+    hostName = "Macrouridae";
     #scaling = lib.mkForce "1";
     # [FIXME] if you want to load your primary user age key in this host
     # loadUserAgeKey = true;
@@ -66,7 +64,7 @@ in
   # ========== Host Network ==========
   #
   networking = {
-    hostId = "e4ae58db";
+    #hostId = "e4ae58db";
     networkmanager.enable = false;
     enableIPv6 = false;
     useDHCP = false;
@@ -105,28 +103,8 @@ in
   #
   # ====== Filesystem ======
   #
-  fileSystems."/mnt/rpool/ConfigData" = {
-    device = "rpool/ConfigData";
-    fsType = "zfs";
-  };
-
-  fileSystems."/mnt/rpool/container-root/docker" = {
-    device = "rpool/container-root/docker";
-    fsType = "zfs";
-  };
-
-  virtualisation.docker = {
-    enable = lib.mkDefault true; # Default enable, can be overridden
-  };
-
-  virtualisation.docker.daemon.settings = {
-    data-root = "/mnt/rpool/container-root/docker";
-  };
 
   # ===== environment variables ===== #
-  environment.variables = {
-    DOCKER_DATA = "/mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
-  };
 
   # ===== Kernel config =====
   boot.kernelParams = [
@@ -134,16 +112,7 @@ in
     #"amd_pstate=passive"
     "iommu=pt"
     "zfs.zfs_arc_max=4294967296"
-    "pcie_aspm=off"
-    "pcie_port_pm=off"
-    "pcie_aspm.policy=performance"
   ];
-
-  boot.kernel.sysctl = {
-    "net.ipv4.ip_unprivileged_port_start" = 80;
-    "net.ipv4.ip_nonlocal_bind" = 1;
-    "net.bridge.bridge-nf-call-iptables" = 0;
-  };
 
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion
   system.stateVersion = "25.05";

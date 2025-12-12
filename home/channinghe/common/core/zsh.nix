@@ -64,7 +64,7 @@ in
           zstyle -e ':autocomplete:*:*' list-lines 'reply=( $(( LINES / 3 )) )'
           # Override for history search only
           zstyle ':autocomplete:history-incremental-search-backward:*' list-lines 8
-          zstyle ':autocomplete:*' min-delay 0.1
+          zstyle ':autocomplete:*' min-delay 0.5
           zstyle ':autocomplete:*' min-input 2
           # systemctl completion without directories/files
           zstyle ':completion:*:systemctl-*:*' file-patterns

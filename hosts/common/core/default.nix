@@ -120,6 +120,8 @@ in
         trusted-users = [
           "@wheel"
           "root"
+          # For linux-builder
+          "@admin"
           config.hostSpec.username
         ];
         # NOTE: auto-optimise-store moved to platform-specific files
