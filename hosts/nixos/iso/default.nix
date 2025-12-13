@@ -31,8 +31,8 @@
     isProduction = lib.mkForce false;
 
     # FIXME(starter): add your github username and github-noreply email address
-    handle = "hiroprotagonist";
-    email.gitHub = "foo@users.noreply.github.com";
+    handle = "channinghe";
+    email.gitHub = "channinghey@gmail.com";
   };
 
   # root's ssh key are mainly used for remote deployment
@@ -85,8 +85,21 @@
   boot = {
     kernelPackages = pkgs.linuxPackages_latest;
     supportedFilesystems = lib.mkForce [
-      "btrfs"
+      "zfs"
       "vfat"
+    ];
+
+    kernelParams = [
+      "systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
+      "systemd.show_status=true"
+      #"systemd.log_level=debug"
+      "systemd.log_target=console"
+      "systemd.journald.forward_to_console=1"
+      "nomodeset"
+      "vga=normal"
+      # Console output
+      "console=ttyS0,115200"
+      "console=tty1"
     ];
   };
 

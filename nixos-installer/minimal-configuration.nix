@@ -10,8 +10,7 @@
     (map lib.custom.relativeToRoot [
       "modules/common/host-spec.nix"
       "hosts/common/core/ssh.nix"
-      "hosts/common/users/channinghe"
-      "hosts/common/users/channinghe/nixos.nix"
+      "hosts/common/users"
       "hosts/common/optional/minimal-user.nix"
     ])
   ];
@@ -42,11 +41,12 @@
     #"systemd.log_level=debug"
     "systemd.log_target=console"
     "systemd.journald.forward_to_console=1"
-      # Console output
+    "nomodeset"
+    "vga=normal"
+    # Console output
     "console=ttyS0,115200"
     "console=tty1"
   ];
-
 
   environment.systemPackages = builtins.attrValues {
     inherit (pkgs)

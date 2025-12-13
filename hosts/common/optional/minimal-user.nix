@@ -10,7 +10,7 @@
     # This is a hashed version of the plain-text password "nixos" for use in the ISO. Even though,
     # the password is known, we use `hashedPassword` here instead of `password` to mitigate
     # occurrences of the latter not being used during build.
-    hashedPassword = "$y$j9T$zdroJsWJS.3qYKAOcechc0$fcjPNW22gLOcSrrArkX9Yz3j/kroMJxtydRG5TEVn88";
+    hashedPassword = "$y$j9T$3eYW3dFtYIxZeKhwc1Pnw.$on6nsn0dVob35N3BSrP6yglLEZ1jY1JzCKtwq.XC../";
     extraGroups = [ "wheel" ];
   };
 }
