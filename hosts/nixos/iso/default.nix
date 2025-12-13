@@ -19,7 +19,7 @@
       "modules/common/host-spec.nix"
       # We want channinghe default so we get ssh authorized keys, zsh, and some basic tty tools. It also pulls in the hm spec for iso.
       # Note that we are not pulling in "hosts/common/users/channinghe/nixos.nix" for the iso as it's not needed.
-      "hosts/common/users/channinghe/"
+      "hosts/common/users/channinghe/default.nix"
       "hosts/common/optional/minimal-user.nix"
     ])
   ];
@@ -37,7 +37,14 @@
 
   # root's ssh key are mainly used for remote deployment
   users.extraUsers.root = {
-    inherit (config.users.users.${config.hostSpec.username}) hashedPassword;
+    # Clear all password options set by installation-cd-minimal.nix
+    initialHashedPassword = lib.mkForce null;
+    initialPassword = lib.mkForce null;
+
+    # Explicitly set the password from channinghe user
+    hashedPassword = lib.mkForce config.users.users.${config.hostSpec.username}.hashedPassword;
+
+    # Copy SSH keys
     openssh.authorizedKeys.keys =
       config.users.users.${config.hostSpec.username}.openssh.authorizedKeys.keys;
   };
@@ -61,6 +68,8 @@
 
   # The default compression-level is (6) and takes too long on some machines (>30m). 3 takes <2m
   isoImage.squashfsCompression = "zstd -Xcompression-level 3";
+
+  isoImage.forceTextMode = true;
 
   nixpkgs = {
     hostPlatform = lib.mkDefault "x86_64-linux";

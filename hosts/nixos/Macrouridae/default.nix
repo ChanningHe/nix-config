@@ -64,7 +64,7 @@ in
   # ========== Host Network ==========
   #
   networking = {
-    #hostId = "e4ae58db";
+    hostId = "6799b07f";
     networkmanager.enable = false;
     enableIPv6 = false;
     useDHCP = false;
@@ -83,11 +83,11 @@ in
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
-            "${hostNetwork.ip6}/64"
+            #"${hostNetwork.ip6}/64"
           ];
           Gateway = [
             "${hostNetwork.gateway4}"
-            "${hostNetwork.gateway6}"
+            #"${hostNetwork.gateway6}"
           ];
           DHCP = "no";
           IPv6AcceptRA = false;
@@ -111,7 +111,8 @@ in
     #"amd_iommu=on"
     #"amd_pstate=passive"
     "iommu=pt"
-    "zfs.zfs_arc_max=4294967296"
+    "intel_iommu=on"
+    "zfs.zfs_arc_max=1073741824"
   ];
 
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion
