@@ -22,7 +22,7 @@
     # common/optional/comms
     # common/optional/media
     common/optional/neovim.nix
-
+    common/optional/darwin/ssh-client.nix
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix
   ];
@@ -31,18 +31,33 @@
     "2c" = "cd /Volumes/Codes/";
   };
 
-  # SSH Clients Configuration
-  # Enable specific SSH hosts from nix-secrets
-  sshClients.enableAll = true;
-
-  # Nix Remote Builders Configuration
   nix = {
+    # # ===== Darwin Local Nix Linux Builder Configuration ===== #
+    # linux-builder = {
+    #   enable = true;
+    #   ephemeral = true;
+    #   maxJobs = 4;
+    #   config = {
+    #     virtualisation = {
+    #       darwin-builder = {
+    #         # 40GB disk size
+    #         diskSize = 40 * 1024;
+    #         # 12GB memory size
+    #         memorySize = 12 * 1024;
+    #       };
+    #       cores = 8;
+    #     };
+    #   };
+    # };
+
+    # ===== Nix Remote Builders Configuration ===== #
     distributedBuilds = true;
     buildMachines = [
       {
         hostName = "Poecilia";
         systems = [ "x86_64-linux" ];
         sshUser = "channinghe";
+        sshKey = "/Users/channinghe/.ssh/hl-intrl";
         maxJobs = 4;
         speedFactor = 2;
         supportedFeatures = [
@@ -56,6 +71,7 @@
         hostName = "nixos-rl";
         systems = [ "x86_64-linux" ];
         sshUser = "channinghe";
+        sshKey = "/Users/channinghe/.ssh/hl-intrl";
         protocol = "ssh-ng";
         maxJobs = 8;
         speedFactor = 8;

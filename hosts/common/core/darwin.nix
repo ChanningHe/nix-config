@@ -51,7 +51,7 @@
       expose-animation-duration = 0.2;
       autohide-time-modifier = 0.2;
       tilesize = 50;
-      magnification = true;
+      magnification = false;
       largesize = 64;
       orientation = "bottom";
       mineffect = "scale";

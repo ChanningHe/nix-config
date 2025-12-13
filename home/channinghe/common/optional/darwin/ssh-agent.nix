@@ -26,7 +26,7 @@
     NIX_SSH_AGENT="/run/current-system/sw/bin/ssh-agent"
 
     # Use fixed socket path for stability (survives restarts, accessible by root)
-    SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+    SSH_AUTH_SOCK="$HOME/.ssh/ssh-agent.sock"
     export SSH_AUTH_SOCK
 
     # Start or connect to existing agent (fast path)

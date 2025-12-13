@@ -41,7 +41,7 @@ in
       # ========== Optional Configs ==========
       #
       "hosts/common/optional/no-firewall.nix"
-      "hosts/common/optional/zfs-mirror-boot.nix"
+      "hosts/common/optional/zfs-boot.nix"
       "hosts/common/optional/services/openssh.nix"
       "hosts/common/optional/services/attic.nix"
       #"hosts/common/optional/services/znapzend.nix"

@@ -16,7 +16,7 @@ in
     # Root-only SSH config for nix-darwin remote builders
     # Only applies when effective UID is 0 (root)
     Match user root
-      IdentityAgent ${primaryUserHome}/.ssh/agent.sock
+      IdentityAgent ${primaryUserHome}/.ssh/ssh-agent.sock
       UserKnownHostsFile ${primaryUserHome}/.ssh/known_hosts
       GlobalKnownHostsFile /etc/ssh/ssh_known_hosts
       StrictHostKeyChecking accept-new
@@ -29,10 +29,10 @@ in
     (pkgs.writeShellScriptBin "test-root-ssh" ''
       echo "Testing root SSH configuration for builders..."
       echo "Primary user: ${primaryUser}"
-      echo "Agent socket: ${primaryUserHome}/.ssh/agent.sock"
+      echo "Agent socket: ${primaryUserHome}/.ssh/ssh-agent.sock"
       echo ""
 
-      if [ ! -S "${primaryUserHome}/.ssh/agent.sock" ]; then
+      if [ ! -S "${primaryUserHome}/.ssh/ssh-agent.sock" ]; then
         echo "❌ Agent socket not found. Is ${primaryUser} logged in with ssh-agent running?"
         exit 1
       fi
@@ -40,12 +40,12 @@ in
       echo "✅ Agent socket exists"
 
       # Test agent access as root
-      if sudo SSH_AUTH_SOCK="${primaryUserHome}/.ssh/agent.sock" ${pkgs.openssh}/bin/ssh-add -l >/dev/null 2>&1; then
+      if sudo SSH_AUTH_SOCK="${primaryUserHome}/.ssh/ssh-agent.sock" ${pkgs.openssh}/bin/ssh-add -l >/dev/null 2>&1; then
         echo "✅ Root can access agent"
-        sudo SSH_AUTH_SOCK="${primaryUserHome}/.ssh/agent.sock" ${pkgs.openssh}/bin/ssh-add -l
+        sudo SSH_AUTH_SOCK="${primaryUserHome}/.ssh/ssh-agent.sock" ${pkgs.openssh}/bin/ssh-add -l
       else
         echo "❌ Root cannot access agent (permission issue?)"
-        ls -la "${primaryUserHome}/.ssh/agent.sock"
+        ls -la "${primaryUserHome}/.ssh/ssh-agent.sock"
         exit 1
       fi
 
