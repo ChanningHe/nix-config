@@ -13,7 +13,13 @@
     enable = true;
     efiSupport = true;
     zfsSupport = true;
-    #efi.canTouchEfiVariables = true;
+    mirroredBoots = [
+      {
+        devices = [ "nodev" ];
+        path = "/boot1";
+        efiSysMountPoint = "/boot1";
+      }
+    ];
   };
 
 }

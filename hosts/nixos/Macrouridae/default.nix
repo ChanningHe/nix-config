@@ -79,7 +79,7 @@ in
     enable = true;
     networks = {
       "10-wired" = {
-        matchConfig.Name = "enp3s0";
+        matchConfig.Name = "enp6s0f1";
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
@@ -101,19 +101,50 @@ in
   };
 
   #
+  # ====== Fancontrol ======
+  #
+  hardware.fancontrol = {
+    enable = true;
+    config = ''
+      INTERVAL=10
+      DEVPATH=hwmon1=devices/platform/coretemp.0 hwmon2=devices/platform/nct6775.2576
+      DEVNAME=hwmon1=coretemp hwmon2=nct6106
+      FCTEMPS=hwmon2/pwm2=hwmon1/temp1_input
+      FCFANS= hwmon2/pwm2=hwmon2/fan2_input
+      MINTEMP=hwmon2/pwm2=50
+      MAXTEMP=hwmon2/pwm2=80
+      MINSTART=hwmon2/pwm2=150
+      MINSTOP=hwmon2/pwm2=30
+      MAXPWM=hwmon2/pwm2=200
+    '';
+  };
+
+  #
   # ====== Filesystem ======
   #
 
   # ===== environment variables ===== #
 
   # ===== Kernel config =====
-  boot.kernelParams = [
-    #"amd_iommu=on"
-    #"amd_pstate=passive"
-    "iommu=pt"
-    "intel_iommu=on"
-    "zfs.zfs_arc_max=1073741824"
-  ];
+  boot = {
+    kernelParams = [
+      #"amd_iommu=on"
+      #"amd_pstate=passive"
+      "iommu=pt"
+      "intel_iommu=on"
+      "zfs.zfs_arc_max=1073741824"
+      "intel_pstate=enable"
+    ];
+    kernelModules = [
+      "coretemp"
+      "nct6775"
+    ];
+  };
+
+  powerManagement = {
+    enable = true;
+    cpuFreqGovernor = "ondemand";
+  };
 
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion
   system.stateVersion = "25.05";
