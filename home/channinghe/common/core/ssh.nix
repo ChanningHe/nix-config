@@ -17,7 +17,8 @@
       # Avoids infinite hang if control socket connection interrupted. ex: vpn goes down/up
       serverAliveCountMax = 3;
       serverAliveInterval = 5; # 3 * 5s
-      hashKnownHosts = true;
+      #hashKnownHosts = true;
+      hashKnownHosts = false;
       addKeysToAgent = "yes";
     };
 

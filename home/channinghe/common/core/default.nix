@@ -65,6 +65,8 @@ in
     ripgrep
     nh
     btop
+    wget
+    go
   ];
 
   nix = {

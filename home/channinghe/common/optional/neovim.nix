@@ -1,4 +1,5 @@
 {
+  pkgs,
   ...
 }:
 {
@@ -13,4 +14,9 @@
     viAlias = true;
   };
 
+  home.packages = with pkgs; [
+    tree-sitter
+    fd
+    fzf
+  ];
 }
