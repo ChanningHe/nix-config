@@ -20,6 +20,7 @@
   home.packages = with pkgs; [
     #rustup
     coreutils
+    #fontforge
     #nixpkgs-fmt
     # Add Darwin-specific packages here if needed
   ];

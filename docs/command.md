@@ -1,5 +1,15 @@
 Notes
+## NixOS
 
+###
+build nixos live installer image
+```
+nix build --impure .#nixosConfigurations.iso.config.system.build.isoImage
+# or
+# just iso
+```
+
+### Add New Hosts
 Activate the dev shell
 ```bash
 nix develop --extra-experimental-features "nix-command flakes"

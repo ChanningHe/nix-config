@@ -143,6 +143,11 @@
       #url = "github:nix-darwin/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
+    # Rosetta Linux builder for Apple Silicon
+    nix-rosetta-builder = {
+      url = "github:cpick/nix-rosetta-builder";
+      inputs.nixpkgs.follows = "nixpkgs-darwin";
+    };
 
     # VS Code Server for remote development
     vscode-server = {

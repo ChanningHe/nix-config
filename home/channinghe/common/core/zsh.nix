@@ -62,13 +62,14 @@ in
           # Fix issue with marlonrichert/zsh-autocomplete
           #bindkey "''${key[Up]}" up-line-or-search
           zstyle -e ':autocomplete:*:*' list-lines 'reply=( $(( LINES / 3 )) )'
+          zstyle ':completion:*' completer _expand _complete _complete:-loose _complete:-fuzzy _ignored
           # Override for history search only
           zstyle ':autocomplete:history-incremental-search-backward:*' list-lines 8
           zstyle ':autocomplete:*' min-delay 0.5
           zstyle ':autocomplete:*' min-input 2
           # systemctl completion without directories/files
-          zstyle ':completion:*:systemctl-*:*' file-patterns
-          zstyle ':completion:*:systemctl-*:*' tag-order '! directories ! files' -
+          # zstyle ':completion:*:systemctl-*:*' file-patterns
+          # zstyle ':completion:*:systemctl-*:*' tag-order '! directories ! files' -
           # ==== marlonrichert/zsh-autocomplete configuration ====
           # Cycle through listed completions, without changing what's listed in the menu
           #bindkey              '^I'         menu-complete

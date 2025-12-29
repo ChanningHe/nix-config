@@ -66,7 +66,9 @@ in
     nh
     btop
     wget
+    # langs
     go
+    gcc
   ];
 
   nix = {
