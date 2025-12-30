@@ -32,6 +32,12 @@ in
       "hosts/common/users/channinghe"
       "hosts/common/users/channinghe/${platform}.nix"
     ])
+    # NixOS-only modules (not available on Darwin)
+    (lib.optionals (!isDarwin) (
+      map lib.custom.relativeToRoot [
+        "hosts/common/core/openssh-server.nix"
+      ]
+    ))
   ];
 
   #

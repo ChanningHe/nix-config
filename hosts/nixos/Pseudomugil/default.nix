@@ -40,12 +40,11 @@ in
 
       #
       # ========== Optional Configs ==========
-      "hosts/common/optional/no-firewall.nix"
-      "hosts/common/optional/zfs-mirror-boot.nix"
-      "hosts/common/optional/ip-forward.nix"
+      "hosts/common/optional/system/no-firewall.nix"
+      "hosts/common/optional/system/zfs-mirror-boot.nix"
+      "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/tailscale.nix"
-      "hosts/common/optional/services/openssh-init.nix"
       "hosts/common/optional/services/komodo-periphery.nix"
       "hosts/common/optional/services/attic.nix"
       #"hosts/common/optional/services/proxmox-ve.nix"
@@ -147,12 +146,15 @@ in
       "10-wired" = {
         matchConfig.Name = "enp197s0f1np1";
         networkConfig = {
-          VLAN = [ "vlan-mgmt" "vlan10" ];
+          VLAN = [
+            "vlan-mgmt"
+            "vlan10"
+          ];
           DHCP = "no";
           IPv6AcceptRA = false;
         };
       };
-      
+
       "20-vlan-mgmt" = {
         matchConfig.Name = "vlan-mgmt";
         networkConfig = {
@@ -161,7 +163,7 @@ in
           IPv6AcceptRA = false;
         };
       };
-      
+
       "20-br-mgmt" = {
         matchConfig.Name = "br-mgmt";
         networkConfig = {
@@ -177,7 +179,7 @@ in
           IPv6AcceptRA = false;
         };
       };
-      
+
       "30-vlan10" = {
         matchConfig.Name = "vlan10";
         networkConfig = {
@@ -186,7 +188,7 @@ in
           IPv6AcceptRA = false;
         };
       };
-      
+
       "30-vmbr10" = {
         matchConfig.Name = "vmbr10";
         networkConfig = {
@@ -196,7 +198,6 @@ in
       };
     };
   };
-
 
   #SB
   systemd.network.networks."10-enp193s0" = {

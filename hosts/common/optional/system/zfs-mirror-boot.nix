@@ -1,4 +1,7 @@
-{ config, lib, pkgs, ... }:
+{
+  pkgs,
+  ...
+}:
 {
   # Not use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = false;
@@ -12,8 +15,16 @@
     zfsSupport = true;
     #efi.canTouchEfiVariables = true;
     mirroredBoots = [
-	    { devices = [ "nodev" ]; path = "/boot1"; efiSysMountPoint = "/boot1"; }
-	    { devices = [ "nodev" ]; path = "/boot2"; efiSysMountPoint = "/boot2"; }
+      {
+        devices = [ "nodev" ];
+        path = "/boot1";
+        efiSysMountPoint = "/boot1";
+      }
+      {
+        devices = [ "nodev" ];
+        path = "/boot2";
+        efiSysMountPoint = "/boot2";
+      }
     ];
   };
 

@@ -40,14 +40,14 @@ in
       #
       # ========== Optional Configs ==========
       #
-      "hosts/common/optional/no-firewall.nix"
-      "hosts/common/optional/zfs-mirror-boot.nix"
-      "hosts/common/optional/services/openssh.nix"
-      "hosts/common/optional/ip-forward.nix"
+      "hosts/common/optional/system/no-firewall.nix"
+      "hosts/common/optional/system/zfs-mirror-boot.nix"
+      "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/services/znapzend.nix"
       "hosts/common/optional/network-storage.nix"
+      "hosts/common/optional/ups.nix"
     ])
   ];
 

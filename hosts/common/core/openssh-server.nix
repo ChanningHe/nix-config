@@ -1,14 +1,18 @@
+# OpenSSH Server Configuration (NixOS only)
+#
+# This module is imported only on Linux via default.nix.
+# Darwin handles SSH differently via launchd.
+
 {
   config,
   ...
 }:
 let
-  # FIXME(starter): if you are not defining ports in your "soft" nix-secrets, you can 
-  # replace the following line with: sshPort = 22; 
+  # FIXME(starter): if you are not defining ports in your "soft" nix-secrets, you can
+  # replace the following line with: sshPort = 22;
   # and substitute 22 with a custom port number if needed.
   sshPort = config.hostSpec.networking.ports.tcp.ssh;
 in
-
 {
   services.openssh = {
     enable = true;
