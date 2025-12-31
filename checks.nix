@@ -66,8 +66,15 @@
       };
 
       # ========== shellscripts ==========
-      shfmt.enable = true;
-      shellcheck.enable = true;
+      # Only check .sh files, exclude .zsh files (like p10k.zsh)
+      shfmt = {
+        enable = true;
+        files = "\\.sh$";
+      };
+      shellcheck = {
+        enable = true;
+        excludes = [ "\\.zsh$" ];
+      };
 
       end-of-file-fixer.enable = true;
     };

@@ -26,6 +26,7 @@ in
 
       # Common shortcuts
       ll = "ls -lah";
+      ls = "ls --color=auto";
       ".." = "cd ..";
       "..." = "cd ../..";
     };
@@ -57,26 +58,73 @@ in
           # Note: We use ''${...} to escape the Nix interpolation and pass it literally to Zsh
           WORDCHARS="''${WORDCHARS//\//}"
           WORDCHARS="''${WORDCHARS//./}"
+          # ==== ZSH Syntax Highlighting Styles ====
+          # Commands (retro green)
+          ZSH_HIGHLIGHT_STYLES[command]='fg=112'        # External commands
+          ZSH_HIGHLIGHT_STYLES[builtin]='fg=112'        # Builtin commands
+          ZSH_HIGHLIGHT_STYLES[function]='fg=112'       # Functions
+          ZSH_HIGHLIGHT_STYLES[alias]='fg=112'          # Aliases
+          ZSH_HIGHLIGHT_STYLES[precommand]='fg=114'     # Precommands (sudo, time, etc.)
 
+          # Subcommands and first argument (lighter green for distinction)
+          ZSH_HIGHLIGHT_STYLES[arg0]='fg=150'           # Subcommands like 'push', 'develop'
+
+          # Arguments and parameters (muted color)
+          ZSH_HIGHLIGHT_STYLES[argument]='fg=109'
+          ZSH_HIGHLIGHT_STYLES[parameter]='fg=109'
+          ZSH_HIGHLIGHT_STYLES[parameter-expansion]='fg=109'
+
+          # Options (same as arguments)
+          ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=109'
+          ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=109'
+          ZSH_HIGHLIGHT_STYLES[option]='fg=109'
+
+          # Paths (subtle blue-gray)
+          ZSH_HIGHLIGHT_STYLES[path]='fg=145'
+          ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=145,underline'
+
+          # Errors
+          ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=124,bold'
+
+          # Highlight current selection with distinct background color
+          zle_highlight=(suffix:fg=092,bold)
           # ==== marlonrichert/zsh-autocomplete configuration ====
           # Fix issue with marlonrichert/zsh-autocomplete
           #bindkey "''${key[Up]}" up-line-or-search
           zstyle -e ':autocomplete:*:*' list-lines 'reply=( $(( LINES / 3 )) )'
           zstyle ':completion:*' completer _expand _complete _complete:-loose _complete:-fuzzy _ignored
+
           # Override for history search only
           zstyle ':autocomplete:history-incremental-search-backward:*' list-lines 8
+
+          # autocomplete delay and input
           zstyle ':autocomplete:*' min-delay 0.5
           zstyle ':autocomplete:*' min-input 2
-          # systemctl completion without directories/files
-          # zstyle ':completion:*:systemctl-*:*' file-patterns
-          # zstyle ':completion:*:systemctl-*:*' tag-order '! directories ! files' -
-          # ==== marlonrichert/zsh-autocomplete configuration ====
+
           # Cycle through listed completions, without changing what's listed in the menu
           #bindkey              '^I'         menu-complete
           #bindkey "$terminfo[kcbt]" reverse-menu-complete
           # Enter the menu instead of inserting a completion
-          bindkey              '^I' menu-select
-          bindkey "$terminfo[kcbt]" reverse-menu-select
+          # bindkey              '^I' menu-select
+          # bindkey "$terminfo[kcbt]" reverse-menu-select
+
+          # completion widget first insert the longest sequence of characters
+          zstyle ':autocomplete:*complete*:*' insert-unambiguous yes
+
+          # Tab: menu-complete (cycle through completions, works with insert-unambiguous)
+          bindkey '^I' menu-complete
+
+          # Shift+Tab: enter menu-select mode (arrow key navigation)
+          bindkey "$terminfo[kcbt]" menu-select
+
+          # In menuselect mode, Tab/Shift+Tab move selection
+          bindkey -M menuselect '^I' menu-complete
+          bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
+
+          # Right arrow: accept current selection and continue to next level completion
+          bindkey -M menuselect '^[[C' accept-and-menu-complete
+          bindkey -M menuselect '^[OC' accept-and-menu-complete
+
           # Restore Zsh-default history shortcuts
           bindkey -M emacs \
             "^[p"   .history-search-backward \
