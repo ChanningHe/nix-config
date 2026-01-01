@@ -67,7 +67,8 @@ in
           ZSH_HIGHLIGHT_STYLES[precommand]='fg=114'     # Precommands (sudo, time, etc.)
 
           # Subcommands and first argument (lighter green for distinction)
-          ZSH_HIGHLIGHT_STYLES[arg0]='fg=150'           # Subcommands like 'push', 'develop'
+          ZSH_HIGHLIGHT_STYLES[arg0]='fg=f8f8f2'           # Subcommands like 'push', 'develop'
+          ZSH_HIGHLIGHT_STYLES[default]='fg=f8f8f2'
 
           # Arguments and parameters (muted color)
           ZSH_HIGHLIGHT_STYLES[argument]='fg=109'
@@ -122,8 +123,8 @@ in
           bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
 
           # Right arrow: accept current selection and continue to next level completion
-          bindkey -M menuselect '^[[C' accept-and-menu-complete
-          bindkey -M menuselect '^[OC' accept-and-menu-complete
+          #bindkey -M menuselect '^[[C' accept-and-menu-complete
+          #bindkey -M menuselect '^[OC' accept-and-menu-complete
 
           # Restore Zsh-default history shortcuts
           bindkey -M emacs \
