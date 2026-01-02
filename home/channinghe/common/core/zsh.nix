@@ -4,13 +4,13 @@
   pkgs,
   ...
 }:
-let
-  # Path to p10k config from dotfiles directory
-  p10kConfig = ../dotfiles/p10k.zsh;
-in
 {
-  # Link p10k config from repo to home directory
-  home.file.".p10k.zsh".source = p10kConfig;
+  dotfiles = {
+    enable = true;
+    components = [
+      "p10k"
+    ];
+  };
 
   programs.zsh = {
     enable = true;
@@ -112,11 +112,13 @@ in
           # completion widget first insert the longest sequence of characters
           zstyle ':autocomplete:*complete*:*' insert-unambiguous yes
 
-          # Tab: menu-complete (cycle through completions, works with insert-unambiguous)
-          bindkey '^I' menu-complete
+          # Tab: menu-select mode (arrow key navigation)
+          #bindkey '^I' menu-complete
+          bindkey '^I' menu-select
 
-          # Shift+Tab: enter menu-select mode (arrow key navigation)
-          bindkey "$terminfo[kcbt]" menu-select
+          # Shift+Tab: menu-complete (cycle through completions, works with insert-unambiguous)
+          #bindkey "$terminfo[kcbt]" menu-select
+          bindkey "$terminfo[kcbt]" menu-complete
 
           # In menuselect mode, Tab/Shift+Tab move selection
           bindkey -M menuselect '^I' menu-complete

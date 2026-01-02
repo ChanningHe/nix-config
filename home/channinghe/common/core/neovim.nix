@@ -3,10 +3,6 @@
   ...
 }:
 {
-  # home.packages = with pkgs; [
-  #   neovim
-  # ];
-
   programs.neovim = {
     enable = true;
     #defaultEditor = true;
@@ -18,5 +14,14 @@
     tree-sitter
     fd
     fzf
+    ripgrep # Required for Telescope live_grep
+    lazygit # Git integration
+    nodejs # Required for many LSP servers
   ];
+
+  dotfiles = {
+    components = [
+      "nvim"
+    ];
+  };
 }
