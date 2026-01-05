@@ -72,6 +72,7 @@ in
     # langs
     go
     gcc
+    cargo
   ];
 
   nix = {

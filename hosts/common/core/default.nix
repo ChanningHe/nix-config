@@ -74,6 +74,7 @@ in
     age
     ssh-to-age
     dnsutils
+    unzip
   ];
   # Force home-manager to use global packages
   home-manager.useGlobalPkgs = true;
