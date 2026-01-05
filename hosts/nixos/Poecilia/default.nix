@@ -46,6 +46,7 @@ in
       "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/services/znapzend.nix"
+      #"hosts/common/optional/services/nxv.nix"
       "hosts/common/optional/network-storage.nix"
       "hosts/common/optional/ups.nix"
     ])

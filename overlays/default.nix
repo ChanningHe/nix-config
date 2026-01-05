@@ -47,6 +47,10 @@ let
     else
       { };
 
+  # nxv - Nix version index CLI
+  # Provides fast package version search across nixpkgs history
+  nxv-overlay = final: prev: inputs.nxv.overlays.default final prev;
+
 in
 {
   default =
@@ -57,5 +61,6 @@ in
     // (linuxModifications final prev)
     // (stable-packages final prev)
     // (unstable-packages final prev)
-    // (proxmox-overlay final prev);
+    // (proxmox-overlay final prev)
+    // (nxv-overlay final prev);
 }

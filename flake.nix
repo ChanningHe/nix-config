@@ -1,5 +1,5 @@
 {
-  description = "EmergentMind's Nix-Config Starter";
+  description = "ChanningHe's Nix-Config Starter";
   outputs =
     {
       self,
@@ -158,6 +158,10 @@
     #
     # ========= Utilities =========
     #
+    nxv = {
+      url = "github:jamesbrink/nxv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";

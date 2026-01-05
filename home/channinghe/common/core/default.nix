@@ -68,6 +68,7 @@ in
     nh
     btop
     wget
+    nxv # Nix pkg index CLI
     # langs
     go
     gcc
