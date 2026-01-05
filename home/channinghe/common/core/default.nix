@@ -73,6 +73,7 @@ in
     go
     gcc
     cargo
+    python3
   ];
 
   nix = {
