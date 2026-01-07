@@ -57,7 +57,8 @@ in
         logging.otlpEndpoint = lib.mkDefault (hostKomodo.otlpEndpoint or "");
 
         # Security options (v1 style for compatibility)
-        passkeys = lib.mkDefault (hostKomodo.passkeys or [ ]);
+        # Note: passkeys should not be set here as they're always passed via environment variables
+        # Use passkeyFiles (set below in sops integration) for file-based secrets
 
         # Terminal options
         disableTerminals = lib.mkDefault (hostKomodo.disableTerminals or false);
