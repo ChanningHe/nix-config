@@ -22,7 +22,7 @@ in
     ./direnv.nix
     ./fonts.nix
     ./git.nix
-    ./kitty.nix
+    #./kitty.nix
     ./ssh.nix
     ./zed.nix
     ./zsh.nix
