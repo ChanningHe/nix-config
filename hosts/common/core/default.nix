@@ -75,7 +75,6 @@ in
     ssh-to-age
     dnsutils
     unzip
-    openssl
   ];
   # Force home-manager to use global packages
   home-manager.useGlobalPkgs = true;

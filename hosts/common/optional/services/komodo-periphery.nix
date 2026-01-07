@@ -21,13 +21,8 @@ let
   hostKomodo = config.hostSpec.serviceInfo.${hostName}.komodo or { };
   sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
   sopsFile = "${sopsFolder}/${hostName}.yaml";
-  hasSopsFile = builtins.pathExists sopsFile;
-
-  # Check which sops secrets are defined
-  hasPasskeysSecret = hasSopsFile && (config.sops.secrets ? "komodo/passkeys");
-  hasSslKeySecret = hasSopsFile && (config.sops.secrets ? "komodo/ssl_key");
-  hasSslCertSecret = hasSopsFile && (config.sops.secrets ? "komodo/ssl_cert");
-  #hasGithubTokenSecret = hasSopsFile && (config.sops.secrets ? "komodo/github_token");
+  # Use lib.pathExists instead of builtins.pathExists to avoid evaluation issues
+  hasSopsFile = lib.pathExists sopsFile;
 in
 {
   # Import the pure NixOS module
@@ -128,22 +123,19 @@ in
         # };
       };
 
-      # Override SSL paths to use sops secret paths
+      # Override SSL paths to use sops secret paths (only when SSL enabled)
       services.komodo-periphery.ssl = lib.mkIf cfg.ssl.enable {
-        keyFile = lib.mkIf hasSslKeySecret (lib.mkForce config.sops.secrets."komodo/ssl_key".path);
-        certFile = lib.mkIf hasSslCertSecret (lib.mkForce config.sops.secrets."komodo/ssl_cert".path);
+        keyFile = lib.mkForce config.sops.secrets."komodo/ssl_key".path;
+        certFile = lib.mkForce config.sops.secrets."komodo/ssl_cert".path;
       };
 
       # Load passkeys from sops secret file
       # The module will use this file path in the generated config
-      services.komodo-periphery.extraSettings = lib.mkIf hasPasskeysSecret {
-        passkeys = [ "file:${config.sops.secrets."komodo/passkeys".path}" ];
-      };
-
-      # If GitHub token secret exists, add it to extraSettings
-      # services.komodo-periphery.extraSettings = lib.mkIf hasGithubTokenSecret {
-      #   secrets.GITHUB_TOKEN = "file:${config.sops.secrets."komodo/github_token".path}";
-      # };
+      services.komodo-periphery.extraSettings = lib.mkMerge [
+        { passkeys = [ "file:${config.sops.secrets."komodo/passkeys".path}" ]; }
+        # If GitHub token secret exists, add it here
+        # { secrets.GITHUB_TOKEN = "file:${config.sops.secrets."komodo/github_token".path}"; }
+      ];
     })
 
     # Additional configuration when service is enabled
