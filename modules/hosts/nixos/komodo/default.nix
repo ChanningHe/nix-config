@@ -38,6 +38,23 @@ let
       actualServerEnabled =
         if usingOldServerEnabled then cfg.serverEnabled else cfg.inbound.serverEnabled;
 
+      # Determine if sensitive data should be excluded from config file
+      # (will be passed via environment variables instead for security)
+      hasPasskeyFiles = cfg.passkeyFiles != [ ];
+      hasPasskeys = cfg.passkeys != [ ];
+      hasPrivateKeyFile = cfg.auth.privateKeyFile != null;
+      hasPrivateKey = cfg.auth.privateKey != "";
+      hasCorePublicKeyFiles = cfg.auth.corePublicKeyFiles != [ ];
+      hasCorePublicKeys = cfg.auth.corePublicKeys != [ ];
+      hasOnboardingKeyFile = cfg.outbound.onboardingKeyFile != null;
+      hasOnboardingKey = cfg.outbound.onboardingKey != "";
+
+      # Exclude sensitive fields if they will be provided via environment
+      excludePasskeys = hasPasskeyFiles || hasPasskeys;
+      excludePrivateKey = hasPrivateKeyFile || hasPrivateKey;
+      excludeCorePublicKeys = hasCorePublicKeyFiles || hasCorePublicKeys;
+      excludeOnboardingKey = hasOnboardingKeyFile || hasOnboardingKey;
+
       baseSettings = {
         root_directory = cfg.rootDirectory;
         repo_dir = "${cfg.rootDirectory}/repos";
@@ -55,15 +72,19 @@ let
         include_disk_mounts = cfg.includeDiskMounts;
         exclude_disk_mounts = cfg.excludeDiskMounts;
 
-        # Authentication
+        # Authentication - exclude sensitive fields if using *File options or env vars
+        # Private key: only include if not using File option and has explicit value
         private_key =
-          if cfg.auth.privateKey != "" then
+          if !excludePrivateKey && cfg.auth.privateKey != "" then
             cfg.auth.privateKey
+          else if !excludePrivateKey then
+            "file:${cfg.rootDirectory}/keys/periphery.key"
           else
-            "file:${cfg.rootDirectory}/keys/periphery.key";
-        core_public_keys = cfg.auth.corePublicKeys;
-        # [Deprecated] Legacy v1.X compatibility
-        passkeys = cfg.passkeys;
+            "";
+        # Core public keys: exclude if using Files or will be env-provided
+        core_public_keys = if !excludeCorePublicKeys then cfg.auth.corePublicKeys else [ ];
+        # [Deprecated] Legacy v1.X compatibility - exclude if using Files or will be env-provided
+        passkeys = if !excludePasskeys then cfg.passkeys else [ ];
 
         # Inbound mode
         server_enabled = actualServerEnabled;
@@ -77,10 +98,10 @@ let
         ssl_cert_file = actualSslCertFile;
       }
       // {
-        # Outbound mode
+        # Outbound mode - exclude onboarding key if using File or will be env-provided
         core_address = cfg.outbound.coreAddress;
         connect_as = cfg.outbound.connectAs;
-        onboarding_key = cfg.outbound.onboardingKey;
+        onboarding_key = if !excludeOnboardingKey then cfg.outbound.onboardingKey else "";
       }
       // {
         logging = {
@@ -104,6 +125,78 @@ let
       settingsFormat.generate "komodo-periphery.toml" genFinalSettings
     else
       cfg.configFile;
+
+  # Script to generate environment file with sensitive data
+  # This script will run as the service user to ensure proper permissions
+  genEnvScript = pkgs.writeShellScript "komodo-periphery-gen-env" ''
+    set -euo pipefail
+
+    ENV_FILE="/run/komodo-periphery/env"
+    # RuntimeDirectory is already created by systemd with correct ownership
+    rm -f "$ENV_FILE"
+    touch "$ENV_FILE"
+    # Set restrictive permissions - only the service user can read
+    chmod 400 "$ENV_FILE"
+
+    # Helper function to read file and escape for environment variable
+    read_secret() {
+      if [ -f "$1" ]; then
+        cat "$1" | tr -d '\n'
+      fi
+    }
+
+    # Passkeys (Legacy v1.X) - prefer Files over direct config
+    ${lib.optionalString (cfg.passkeyFiles != [ ]) ''
+      PASSKEY_ARRAY="["
+      FIRST=true
+      ${lib.concatMapStringsSep "\n" (file: ''
+        if [ "$FIRST" = true ]; then
+          FIRST=false
+        else
+          PASSKEY_ARRAY="$PASSKEY_ARRAY,"
+        fi
+        PASSKEY_ARRAY="$PASSKEY_ARRAY\"$(read_secret '${file}')\""
+      '') cfg.passkeyFiles}
+      PASSKEY_ARRAY="$PASSKEY_ARRAY]"
+      echo "PERIPHERY_PASSKEYS=$PASSKEY_ARRAY" >> "$ENV_FILE"
+    ''}
+    ${lib.optionalString (cfg.passkeyFiles == [ ] && cfg.passkeys != [ ]) ''
+      echo 'PERIPHERY_PASSKEYS=${builtins.toJSON cfg.passkeys}' >> "$ENV_FILE"
+    ''}
+
+    # Private key (v2.0+) - prefer File over direct config
+    ${lib.optionalString (cfg.auth.privateKeyFile != null) ''
+      echo "PERIPHERY_PRIVATE_KEY_FILE=${cfg.auth.privateKeyFile}" >> "$ENV_FILE"
+    ''}
+    ${lib.optionalString (cfg.auth.privateKeyFile == null && cfg.auth.privateKey != "") ''
+      echo 'PERIPHERY_PRIVATE_KEY=${cfg.auth.privateKey}' >> "$ENV_FILE"
+    ''}
+
+    # Core public keys (v2.0+) - prefer Files over direct config
+    ${lib.optionalString (cfg.auth.corePublicKeyFiles != [ ]) ''
+      PUBKEY_STRING=""
+      ${lib.concatMapStringsSep "\n" (file: ''
+        if [ -n "$PUBKEY_STRING" ]; then
+          PUBKEY_STRING="$PUBKEY_STRING,"
+        fi
+        PUBKEY_STRING="$PUBKEY_STRING$(read_secret '${file}')"
+      '') cfg.auth.corePublicKeyFiles}
+      echo "PERIPHERY_CORE_PUBLIC_KEYS=$PUBKEY_STRING" >> "$ENV_FILE"
+    ''}
+    ${lib.optionalString (cfg.auth.corePublicKeyFiles == [ ] && cfg.auth.corePublicKeys != [ ]) ''
+      echo 'PERIPHERY_CORE_PUBLIC_KEYS=${lib.concatStringsSep "," cfg.auth.corePublicKeys}' >> "$ENV_FILE"
+    ''}
+
+    # Onboarding key (v2.0+) - prefer File over direct config
+    ${lib.optionalString (cfg.outbound.onboardingKeyFile != null) ''
+      echo "PERIPHERY_ONBOARDING_KEY=$(read_secret '${cfg.outbound.onboardingKeyFile}')" >> "$ENV_FILE"
+    ''}
+    ${lib.optionalString (cfg.outbound.onboardingKeyFile == null && cfg.outbound.onboardingKey != "") ''
+      echo 'PERIPHERY_ONBOARDING_KEY=${cfg.outbound.onboardingKey}' >> "$ENV_FILE"
+    ''}
+
+    echo "Environment file generated at $ENV_FILE"
+  '';
 in
 {
   options.services.komodo-periphery = {
@@ -245,9 +338,27 @@ in
       description = ''
         (Deprecated - Legacy v1.X compatibility) Passkeys required to access the periphery API.
         Consider migrating to the new authentication mechanism using `auth.privateKey` and `auth.corePublicKeys`.
-        WARNING: These will be stored in the Nix store in plain text!
+
+        For better security, use `passkeyFiles` instead to avoid storing secrets in the Nix store.
+        If set, this will be passed via environment variable at runtime.
       '';
       example = [ "your-secure-passkey" ];
+    };
+
+    passkeyFiles = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = [ ];
+      description = ''
+        (Deprecated - Legacy v1.X compatibility) Paths to files containing passkeys.
+        Each file should contain a single passkey.
+        This is more secure than `passkeys` as secrets won't be stored in the Nix store.
+
+        Note: The service runs as `user` (default: komodo-periphery), so ensure
+        the secret files are readable by that user.
+
+        Consider migrating to the new v2.0+ authentication mechanism.
+      '';
+      example = [ "/run/secrets/komodo-passkey" ];
     };
 
     extraSettings = lib.mkOption {
@@ -333,8 +444,24 @@ in
           Use `file:/path/to/file` to load from a file. If the file doesn't exist,
           Periphery will generate and write a new key to the path.
           If empty, defaults to `file:''${rootDirectory}/keys/periphery.key`.
+
+          For better security with secrets management, use `privateKeyFile` instead.
         '';
         example = "file:/etc/komodo/keys/periphery.key";
+      };
+
+      privateKeyFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          (v2.0+) Path to file containing the private key for Noise handshake.
+          This is more secure than `privateKey` as the secret won't be stored in the Nix store.
+          Takes precedence over `privateKey` if set.
+
+          Note: The service runs as `user` (default: komodo-periphery), so ensure
+          the secret file is readable by that user.
+        '';
+        example = "/run/secrets/komodo-private-key";
       };
 
       corePublicKeys = lib.mkOption {
@@ -344,10 +471,30 @@ in
           (v2.0+) Accepted public keys to allow Core(s) to connect.
           Accepts Spki base64 DER directly or PEM file using `file:/path/to/core.pub`.
           If neither these nor passkeys are provided, inbound connections will not be authenticated.
+
+          For better security, use `corePublicKeyFiles` instead to avoid storing keys in the Nix store.
         '';
         example = [
           "MCowBQYDK2VuAyEATZgrjGHeF0KJUe0+n77+qAWOg3YzEzXOmQWaRgO3OGQ="
           "file:/etc/komodo/keys/core.pub"
+        ];
+      };
+
+      corePublicKeyFiles = lib.mkOption {
+        type = lib.types.listOf lib.types.path;
+        default = [ ];
+        description = ''
+          (v2.0+) Paths to files containing Core public keys.
+          Each file should contain a single public key in Spki base64 DER or PEM format.
+          This is more secure than `corePublicKeys` as keys won't be stored in the Nix store.
+          Takes precedence over `corePublicKeys` if set.
+
+          Note: The service runs as `user` (default: komodo-periphery), so ensure
+          the secret files are readable by that user.
+        '';
+        example = [
+          "/run/secrets/core1.pub"
+          "/run/secrets/core2.pub"
         ];
       };
     };
@@ -450,8 +597,24 @@ in
           (v2.0+) Onboarding key for registering new servers.
           Make Onboarding Keys in Server settings.
           Not needed if connecting as a Server that already exists.
+
+          For better security, use `onboardingKeyFile` instead to avoid storing the key in the Nix store.
         '';
         example = "MC4CAQAwBQYDK2VuBCIEIHPHNA/0M9ejFviE2y4dpyczAvnAwPWDQtGGGhEJ2G6K";
+      };
+
+      onboardingKeyFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          (v2.0+) Path to file containing the onboarding key.
+          This is more secure than `onboardingKey` as the secret won't be stored in the Nix store.
+          Takes precedence over `onboardingKey` if set.
+
+          Note: The service runs as `user` (default: komodo-periphery), so ensure
+          the secret file is readable by that user.
+        '';
+        example = "/run/secrets/komodo-onboarding-key";
       };
     };
 
@@ -567,6 +730,22 @@ in
         assertion = !(cfg.auth.corePublicKeys != [ ] && cfg.passkeys != [ ]);
         message = "services.komodo-periphery: Cannot use both auth.corePublicKeys (v2) and passkeys (v1 legacy) authentication simultaneously.";
       }
+      {
+        assertion = !(cfg.passkeyFiles != [ ] && cfg.passkeys != [ ]);
+        message = "services.komodo-periphery: Cannot use both passkeyFiles and passkeys. Use passkeyFiles for better security.";
+      }
+      {
+        assertion = !(cfg.auth.privateKeyFile != null && cfg.auth.privateKey != "");
+        message = "services.komodo-periphery: Cannot use both auth.privateKeyFile and auth.privateKey. Use auth.privateKeyFile for better security.";
+      }
+      {
+        assertion = !(cfg.auth.corePublicKeyFiles != [ ] && cfg.auth.corePublicKeys != [ ]);
+        message = "services.komodo-periphery: Cannot use both auth.corePublicKeyFiles and auth.corePublicKeys. Use auth.corePublicKeyFiles for better security.";
+      }
+      {
+        assertion = !(cfg.outbound.onboardingKeyFile != null && cfg.outbound.onboardingKey != "");
+        message = "services.komodo-periphery: Cannot use both outbound.onboardingKeyFile and outbound.onboardingKey. Use outbound.onboardingKeyFile for better security.";
+      }
     ];
 
     # Enable Docker only if no custom dockerHost is specified
@@ -637,6 +816,11 @@ in
         RestartSec = "10s";
         WorkingDirectory = cfg.rootDirectory;
 
+        # Generate environment file before starting the service
+        # This runs as the service user (cfg.user) to ensure proper file permissions
+        # and access to secret files that might be restricted to that user
+        ExecStartPre = genEnvScript;
+
         ExecStart = lib.escapeShellArgs [
           (if cfg.binaryPath != null then cfg.binaryPath else "${lib.getExe' cfg.package "periphery"}")
           "--config-path"
@@ -652,8 +836,17 @@ in
             DOCKER_HOST = cfg.dockerHost;
           }
         );
-        EnvironmentFile = lib.mkIf (cfg.environmentFile != null) cfg.environmentFile;
 
+        # Load environment files in order:
+        # 1. Generated environment file with sensitive data (from *File options or direct config)
+        # 2. User-provided environmentFile (if specified)
+        EnvironmentFile = [
+          "/run/komodo-periphery/env"
+        ]
+        ++ lib.optional (cfg.environmentFile != null) cfg.environmentFile;
+
+        RuntimeDirectory = "komodo-periphery";
+        RuntimeDirectoryMode = "0700";
         StateDirectory = "komodo-periphery";
         StateDirectoryMode = "0755";
 

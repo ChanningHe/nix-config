@@ -106,7 +106,7 @@ in
         };
 
         # Passkeys (for v1 authentication)
-        # This will be written to a file, and we'll read it via extraSettings
+        # The module will read this file via passkeyFiles option
         "komodo/passkeys" = {
           sopsFile = sopsFile;
           owner = cfg.user;
@@ -129,13 +129,17 @@ in
         certFile = lib.mkForce config.sops.secrets."komodo/ssl_cert".path;
       };
 
-      # Load passkeys from sops secret file
-      # The module will use this file path in the generated config
-      services.komodo-periphery.extraSettings = lib.mkMerge [
-        { passkeys = [ "file:${config.sops.secrets."komodo/passkeys".path}" ]; }
-        # If GitHub token secret exists, add it here
-        # { secrets.GITHUB_TOKEN = "file:${config.sops.secrets."komodo/github_token".path}"; }
-      ];
+      # Use the new passkeyFiles option to load passkeys from sops
+      # The module will automatically:
+      # 1. Generate config without passkeys field
+      # 2. Read passkeys from file at service startup
+      # 3. Pass them via PERIPHERY_PASSKEYS environment variable
+      services.komodo-periphery.passkeyFiles = [ config.sops.secrets."komodo/passkeys".path ];
+
+      # Optional: If using GitHub token, add it here
+      # services.komodo-periphery.environment = {
+      #   GITHUB_TOKEN = config.sops.secrets."komodo/github_token".path;
+      # };
     })
 
     # Additional configuration when service is enabled
