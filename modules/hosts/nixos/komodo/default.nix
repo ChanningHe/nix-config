@@ -839,9 +839,10 @@ in
 
         # Load environment files in order:
         # 1. Generated environment file with sensitive data (from *File options or direct config)
+        #    The '-' prefix means "don't fail if file doesn't exist"
         # 2. User-provided environmentFile (if specified)
         EnvironmentFile = [
-          "/run/komodo-periphery/env"
+          "-/run/komodo-periphery/env"
         ]
         ++ lib.optional (cfg.environmentFile != null) cfg.environmentFile;
 
