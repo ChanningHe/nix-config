@@ -155,13 +155,16 @@ let
         else
           PASSKEY_ARRAY="$PASSKEY_ARRAY,"
         fi
-        PASSKEY_ARRAY="$PASSKEY_ARRAY\"$(read_secret '${file}')\""
+        PASSKEY_VALUE=$(read_secret '${file}')
+        PASSKEY_ARRAY="$PASSKEY_ARRAY\"$PASSKEY_VALUE\""
       '') cfg.passkeyFiles}
       PASSKEY_ARRAY="$PASSKEY_ARRAY]"
-      echo "PERIPHERY_PASSKEYS=$PASSKEY_ARRAY" >> "$ENV_FILE"
+      # Wrap the entire JSON array in single quotes for systemd EnvironmentFile
+      echo "PERIPHERY_PASSKEYS='$PASSKEY_ARRAY'" >> "$ENV_FILE"
     ''}
     ${lib.optionalString (cfg.passkeyFiles == [ ] && cfg.passkeys != [ ]) ''
-      echo 'PERIPHERY_PASSKEYS=${builtins.toJSON cfg.passkeys}' >> "$ENV_FILE"
+      # Wrap the JSON value in single quotes for systemd EnvironmentFile
+      echo "PERIPHERY_PASSKEYS='${builtins.toJSON cfg.passkeys}'" >> "$ENV_FILE"
     ''}
 
     # Private key (v2.0+) - prefer File over direct config
