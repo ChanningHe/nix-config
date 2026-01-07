@@ -149,6 +149,10 @@
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
+    #
+    # ========= Applications =========
+    #
+
     # VS Code Server for remote development
     vscode-server = {
       url = "github:nix-community/nixos-vscode-server";

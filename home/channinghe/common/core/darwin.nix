@@ -11,8 +11,8 @@
   # Darwin-specific environment variables
   home.sessionVariables = {
     SOPS_AGE_KEY_FILE = "$HOME/.config/sops/age/keys.txt";
-    SOPS_EDITOR = "nano";
-    EDITOR = "/opt/homebrew/bin/nano";
+    SOPS_EDITOR = "nvim";
+    EDITOR = "nvim";
     NH_FLAKE = "$HOME/nix-src/nix-config";
   };
 
@@ -20,6 +20,7 @@
   home.packages = with pkgs; [
     #rustup
     coreutils
+    ghostty-bin # Ghostty terminal emulator
     #fontforge
     #nixpkgs-fmt
     # Add Darwin-specific packages here if needed

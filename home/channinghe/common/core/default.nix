@@ -22,7 +22,7 @@ in
     ./direnv.nix
     ./fonts.nix
     ./git.nix
-    #./kitty.nix
+    ./kitty.nix
     ./ssh.nix
     ./zed.nix
     ./zsh.nix
@@ -73,7 +73,7 @@ in
     go
     gcc
     cargo
-    python3
+    #python3
   ];
 
   nix = {

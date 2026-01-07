@@ -19,9 +19,9 @@
     nodejs # Required for many LSP servers
   ];
 
-  dotfiles = {
-    components = [
-      "nvim"
-    ];
-  };
+  # dotfiles = {
+  #   components = [
+  #     "nvim"
+  #   ];
+  # };
 }

@@ -28,12 +28,16 @@ let
 
   defaultRepoUrl = "git@github.com:ChanningHe/dotfiles.git";
 
-  # Build install.sh arguments
+  # Build getdots.sh arguments
+  # When installAll=true: run without args to install everything
+  # When installAll=false: run with -i flag to install specific components
   installArgs =
-    if cfg.components == [ ] then
-      "" # Install all
+    if cfg.installAll then
+      "" # No args = install all dotfiles
+    else if cfg.components != [ ] then
+      "-i ${lib.concatStringsSep " " cfg.components}"
     else
-      "-i ${lib.concatStringsSep " " cfg.components}";
+      ""; # Fallback: if installAll=false but no components specified, install all
 in
 {
   options.dotfiles = {
@@ -58,11 +62,25 @@ in
       description = "Git branch to checkout";
     };
 
+    installAll = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Install all dotfiles by running getdots.sh without arguments.
+        When true, the 'components' option is ignored.
+        Set to false to install only specific components.
+      '';
+    };
+
     components = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
       apply = lib.unique; # Deduplicate merged lists
-      description = "List of dotfile components to install (empty = all). Multiple definitions are merged.";
+      description = ''
+        List of dotfile components to install with -i flag.
+        Only used when installAll = false.
+        Multiple definitions are merged.
+      '';
       example = [
         "nvim"
         "p10k"

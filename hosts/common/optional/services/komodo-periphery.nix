@@ -1,9 +1,13 @@
 # Project-specific integration for Komodo Periphery
 # This file handles:
-# - sops-nix integration  
-# - networkInfo configuration reading
+# - Import of the pure NixOS module
+# - sops-nix integration for secrets
+# - hostSpec.serviceInfo configuration reading
 # - Docker auto-enablement
 # - Any other nix-config specific logic
+#
+# NOTE: Currently using v1-style options for compatibility testing.
+# Migration to v2 options (inbound/outbound) can be done later.
 {
   config,
   lib,
@@ -16,48 +20,14 @@ let
   hostName = config.hostSpec.hostName;
   hostKomodo = config.hostSpec.serviceInfo.${hostName}.komodo or { };
   sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
+  sopsFile = "${sopsFolder}/${hostName}.yaml";
+  hasSopsFile = builtins.pathExists sopsFile;
 
-  # Simple sops config template - let module handle config generation
-  sopsConfigTemplate = ''
-    # Auto-generated configuration with sops integration
-    port = ${toString cfg.port}
-    bind_ip = "${cfg.bindIp}"
-    root_directory = "${cfg.rootDirectory}"
-    repo_dir = "${cfg.rootDirectory}/repos"
-    stack_dir = "${cfg.rootDirectory}/stacks"
-    ssl_enabled = ${lib.boolToString cfg.ssl.enable}
-    ${lib.optionalString cfg.ssl.enable ''
-    ssl_key_file = "${cfg.ssl.keyFile}"
-    ssl_cert_file = "${cfg.ssl.certFile}"
-    ''}
-    
-    [logging]
-    level = "${cfg.logging.level}"
-    stdio = "${cfg.logging.stdio}"
-    ${lib.optionalString (cfg.logging.otlpEndpoint != "") ''
-    otlp_endpoint = "${cfg.logging.otlpEndpoint}"
-    ''}
-    
-    allowed_ips = ${builtins.toJSON cfg.allowedIps}
-    ${lib.optionalString (config.sops.secrets ? "komodo/passkeys") ''
-    passkeys = ["${config.sops.placeholder."komodo/passkeys"}"]
-    ''}
-    ${lib.optionalString (!(config.sops.secrets ? "komodo/passkeys") && cfg.passkeys != []) ''
-    passkeys = ${builtins.toJSON cfg.passkeys}
-    ''}
-    disable_terminals = ${lib.boolToString cfg.disableTerminals}
-    disable_container_exec = ${lib.boolToString cfg.disableContainerExec}
-    stats_polling_rate = "${cfg.statsPollingRate}"
-    container_stats_polling_rate = "${cfg.containerStatsPollingRate}"
-    legacy_compose_cli = ${lib.boolToString cfg.legacyComposeCli}
-    include_disk_mounts = ${builtins.toJSON cfg.includeDiskMounts}
-    exclude_disk_mounts = ${builtins.toJSON cfg.excludeDiskMounts}
-    
-    ${lib.optionalString (config.sops.secrets ? "komodo/github_token") ''
-    [secrets]
-    GITHUB_TOKEN = "${config.sops.placeholder."komodo/github_token"}"
-    ''}
-  '';
+  # Check which sops secrets are defined
+  hasPasskeysSecret = hasSopsFile && (config.sops.secrets ? "komodo/passkeys");
+  hasSslKeySecret = hasSopsFile && (config.sops.secrets ? "komodo/ssl_key");
+  hasSslCertSecret = hasSopsFile && (config.sops.secrets ? "komodo/ssl_cert");
+  #hasGithubTokenSecret = hasSopsFile && (config.sops.secrets ? "komodo/github_token");
 in
 {
   # Import the pure NixOS module
@@ -65,106 +35,125 @@ in
     (lib.custom.relativeToRoot "modules/hosts/nixos/komodo")
   ];
 
-  # Configure from networkInfo if available
   config = lib.mkMerge [
-    # Import settings from hostSpec.networkInfo if komodo config exists
+    # Import settings from hostSpec.serviceInfo if komodo config exists
     (lib.mkIf (hostKomodo != { }) {
       services.komodo-periphery = {
         enable = lib.mkDefault (hostKomodo.enable or false);
         package = lib.mkDefault pkgs.unstable.komodo;
+
+        # v1-style network options (for compatibility testing)
         port = lib.mkDefault (hostKomodo.port or 8120);
-        # Only override user/group if explicitly set in hostKomodo config
+        bindIp = lib.mkDefault (hostKomodo.bindIp or "[::]");
+        allowedIps = lib.mkDefault (hostKomodo.allowedIps or [ ]);
+
+        # SSL configuration (v1 style)
+        ssl.enable = lib.mkDefault (hostKomodo.sslEnabled or true);
+        # SSL paths will be overridden by sops if secrets exist
+
+        # User/Group configuration
         user = lib.mkIf (hostKomodo ? user) (lib.mkDefault hostKomodo.user);
         group = lib.mkIf (hostKomodo ? group) (lib.mkDefault hostKomodo.group);
-        # rootDirectory uses module defaults which adapts to the user
         rootDirectory = lib.mkIf (hostKomodo ? rootDirectory) (lib.mkDefault hostKomodo.rootDirectory);
-        ssl.enable = lib.mkDefault (hostKomodo.sslEnabled or true);
+
+        # Logging configuration
         logging.level = lib.mkDefault (hostKomodo.logLevel or "info");
-        # Security options
-        allowedIps = lib.mkDefault (hostKomodo.allowedIps or [ ]);
+        logging.stdio = lib.mkDefault (hostKomodo.logStdio or "standard");
+        logging.otlpEndpoint = lib.mkDefault (hostKomodo.otlpEndpoint or "");
+
+        # Security options (v1 style for compatibility)
         passkeys = lib.mkDefault (hostKomodo.passkeys or [ ]);
-        # Advanced options
+
+        # Terminal options
         disableTerminals = lib.mkDefault (hostKomodo.disableTerminals or false);
         disableContainerExec = lib.mkDefault (hostKomodo.disableContainerExec or false);
+
+        # Stats polling
         statsPollingRate = lib.mkDefault (hostKomodo.statsPollingRate or "5-sec");
         containerStatsPollingRate = lib.mkDefault (hostKomodo.containerStatsPollingRate or "30-sec");
-        # Optional: disable container stats polling if no containers are expected
-        # containerStatsPollingRate = lib.mkDefault "never";
+
+        # Docker options
         legacyComposeCli = lib.mkDefault (hostKomodo.legacyComposeCli or false);
+
+        # Disk mount options
         includeDiskMounts = lib.mkDefault (hostKomodo.includeDiskMounts or [ ]);
         excludeDiskMounts = lib.mkDefault (hostKomodo.excludeDiskMounts or [ ]);
-        # Environment variables (updated for new module)
+
+        # Environment variables
         environment = lib.mkDefault (hostKomodo.environment or { });
-        environmentFile = lib.mkIf (hostKomodo ? environmentFile) (lib.mkDefault hostKomodo.environmentFile);
+        environmentFile = lib.mkIf (hostKomodo ? environmentFile) (
+          lib.mkDefault hostKomodo.environmentFile
+        );
+
+        # Extra settings (if specified in hostKomodo)
+        extraSettings = lib.mkIf (hostKomodo ? extraSettings) (lib.mkDefault hostKomodo.extraSettings);
       };
     })
 
-    # sops-nix integration (only if service is enabled and passkeys secret exists)
-    (lib.mkIf (cfg.enable && builtins.pathExists "${sopsFolder}/${hostName}.yaml") {
-      # Create sops template for config if we have any sops secrets
-      sops.templates."komodo-periphery-config.toml" = lib.mkIf (
-        config.sops.secrets ? "komodo/passkeys" || 
-        config.sops.secrets ? "komodo/github_token"
-      ) {
-        owner = cfg.user;
-        group = cfg.group;
-        mode = "0400";
-        content = sopsConfigTemplate;
-      };
-
-      # Use the sops template path if any sops secrets exist, otherwise let module generate config
-      services.komodo-periphery.configFile = lib.mkIf (
-        config.sops.secrets ? "komodo/passkeys" || 
-        config.sops.secrets ? "komodo/github_token"
-      ) config.sops.templates."komodo-periphery-config.toml".path;
-    })
-
-    # Additional configuration when service is enabled
-    (lib.mkIf cfg.enable {
-      # Ensure user is in docker group if using an existing user (not komodo-periphery or root)
-      #users.users.${cfg.user} = lib.mkIf (cfg.user != "root" && cfg.user != "komodo-periphery") {
-      users.users.${cfg.user} = lib.mkIf (cfg.user != "root") {
-        extraGroups = [ "docker" ];
-      };
-
-      # The pure module will generate config at /etc/komodo-periphery/config.toml
-
-      # Define sops secrets (only if sops file exists)
-      sops.secrets = lib.mkIf (builtins.pathExists "${sopsFolder}/${hostName}.yaml") {
-        # SSL certificates
+    # sops-nix integration (only if service is enabled and sops file exists)
+    (lib.mkIf (cfg.enable && hasSopsFile) {
+      # Define sops secrets
+      sops.secrets = {
+        # SSL certificates - only if SSL is enabled
         "komodo/ssl_key" = lib.mkIf cfg.ssl.enable {
-          sopsFile = "${sopsFolder}/${hostName}.yaml";
+          sopsFile = sopsFile;
           owner = cfg.user;
           group = cfg.group;
           mode = "0400";
           path = "${cfg.rootDirectory}/ssl/key.pem";
         };
         "komodo/ssl_cert" = lib.mkIf cfg.ssl.enable {
-          sopsFile = "${sopsFolder}/${hostName}.yaml";
+          sopsFile = sopsFile;
           owner = cfg.user;
           group = cfg.group;
           mode = "0400";
           path = "${cfg.rootDirectory}/ssl/cert.pem";
         };
-        
-        # Passkeys (for API authentication)
+
+        # Passkeys (for v1 authentication)
+        # This will be written to a file, and we'll read it via extraSettings
         "komodo/passkeys" = {
-          sopsFile = "${sopsFolder}/${hostName}.yaml";
+          sopsFile = sopsFile;
           owner = cfg.user;
           group = cfg.group;
           mode = "0400";
         };
-        
+
         # Optional: GitHub token (uncomment if you have this secret)
         # "komodo/github_token" = {
-        #   sopsFile = "${sopsFolder}/${hostName}.yaml";
+        #   sopsFile = sopsFile;
         #   owner = cfg.user;
         #   group = cfg.group;
         #   mode = "0400";
         # };
       };
 
-      # Enable Docker (required for Komodo Periphery)
+      # Override SSL paths to use sops secret paths
+      services.komodo-periphery.ssl = lib.mkIf cfg.ssl.enable {
+        keyFile = lib.mkIf hasSslKeySecret (lib.mkForce config.sops.secrets."komodo/ssl_key".path);
+        certFile = lib.mkIf hasSslCertSecret (lib.mkForce config.sops.secrets."komodo/ssl_cert".path);
+      };
+
+      # Load passkeys from sops secret file
+      # The module will use this file path in the generated config
+      services.komodo-periphery.extraSettings = lib.mkIf hasPasskeysSecret {
+        passkeys = [ "file:${config.sops.secrets."komodo/passkeys".path}" ];
+      };
+
+      # If GitHub token secret exists, add it to extraSettings
+      # services.komodo-periphery.extraSettings = lib.mkIf hasGithubTokenSecret {
+      #   secrets.GITHUB_TOKEN = "file:${config.sops.secrets."komodo/github_token".path}";
+      # };
+    })
+
+    # Additional configuration when service is enabled
+    (lib.mkIf cfg.enable {
+      # Ensure user is in docker group (the module already handles this for default user)
+      users.users.${cfg.user} = lib.mkIf (cfg.user != "root" && cfg.user != "komodo-periphery") {
+        extraGroups = [ "docker" ];
+      };
+
+      # Enable Docker (the module already handles this by default)
       virtualisation.docker = {
         enable = lib.mkDefault true;
         autoPrune = {
@@ -174,16 +163,21 @@ in
       };
 
       # Wait for sops-nix service if using any sops secrets
-      systemd.services.komodo-periphery.after = lib.mkIf (
-        config.sops.secrets ? "komodo/passkeys" || 
-        config.sops.secrets ? "komodo/ssl_key" || 
-        config.sops.secrets ? "komodo/github_token"
-      ) [ "sops-nix.service" ];
+      systemd.services.komodo-periphery = {
+        after = lib.mkIf hasSopsFile [ "sops-nix.service" ];
+        wants = lib.mkIf hasSopsFile [ "sops-nix.service" ];
 
-      systemd.services.komodo-periphery.path = [ pkgs.git pkgs.age pkgs.sops pkgs.docker pkgs.bash];
-      # systemd.services.komodo-periphery.environment = {
-      #   SOPS_AGE_SSH_PRIVATE_KEY_FILE = "/xxxxxx/ssh_host_ed25519_key";
-      # };
+        # Add required tools to PATH
+        path = with pkgs; [
+          git
+          age
+          sops
+          docker
+          bash
+          openssh
+        ];
+      };
+
       # Optionally open firewall port
       # Uncomment if you need external access to Periphery
       # networking.firewall.allowedTCPPorts = [ cfg.port ];

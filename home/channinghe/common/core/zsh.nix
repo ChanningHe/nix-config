@@ -7,9 +7,11 @@
 {
   dotfiles = {
     enable = true;
-    components = [
-      "p10k"
-    ];
+    installAll = true;
+    # components = [
+    #   "p10k"
+    #   "ghostty"
+    # ];
   };
 
   programs.zsh = {
@@ -29,6 +31,7 @@
       ls = "ls --color=auto";
       ".." = "cd ..";
       "..." = "cd ../..";
+      "2dot" = "cd $HOME/.config/dotfiles";
     };
 
     # Initialization content with proper priority ordering
