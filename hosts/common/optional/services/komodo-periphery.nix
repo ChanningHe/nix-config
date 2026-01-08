@@ -107,7 +107,7 @@ in
         };
 
         # Passkeys (for v1 authentication)
-        # The module will read this file via passkeyFiles option
+        # Komodo Periphery will read this file directly via PERIPHERY_PASSKEYS_FILE
         "komodo/passkeys" = {
           sopsFile = sopsFile;
           owner = cfg.user;
@@ -130,12 +130,10 @@ in
         certFile = lib.mkForce config.sops.secrets."komodo/ssl_cert".path;
       };
 
-      # Use the new passkeyFiles option to load passkeys from sops
-      # The module will automatically:
-      # 1. Generate config without passkeys field
-      # 2. Read passkeys from file at service startup
-      # 3. Pass them via PERIPHERY_PASSKEYS environment variable
-      services.komodo-periphery.passkeyFiles = [ config.sops.secrets."komodo/passkeys".path ];
+      # Use passkeyFiles to let Komodo Periphery read the secret file directly
+      # The module will set PERIPHERY_PASSKEYS_FILE environment variable
+      # pointing to this file, and Komodo will read it at startup
+      services.komodo-periphery.passkeyFiles = config.sops.secrets."komodo/passkeys".path;
 
       # Optional: If using GitHub token, add it here
       # services.komodo-periphery.environment = {
