@@ -25,6 +25,7 @@
       # direnv
       ".direnv"
       ".cursor/"
+      ".DS_Store"
     ];
   };
 

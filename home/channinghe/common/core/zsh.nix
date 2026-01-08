@@ -61,6 +61,19 @@
           # Note: We use ''${...} to escape the Nix interpolation and pass it literally to Zsh
           WORDCHARS="''${WORDCHARS//\//}"
           WORDCHARS="''${WORDCHARS//./}"
+          # ==== ZSH Command Line  ====
+          # Edit Command Line
+          autoload -Uz edit-command-line
+          zle -N edit-command-line
+          bindkey '^xe' edit-command-line
+
+          # Magic Space
+          bindkey ' ' magic-space
+          # Undo
+          bindkey '^_' undo
+          # Redo
+          bindkey '^x^_' redo
+
           # ==== ZSH Syntax Highlighting Styles ====
           # Commands (retro green)
           ZSH_HIGHLIGHT_STYLES[command]='fg=112'        # External commands
