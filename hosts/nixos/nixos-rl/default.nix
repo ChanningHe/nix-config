@@ -46,6 +46,7 @@ in
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/services/komodo-periphery.nix"
+      "hosts/common/optional/services/docker.nix"
     ])
   ];
 
