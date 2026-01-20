@@ -25,6 +25,8 @@
       # direnv
       ".direnv"
       ".cursor/"
+      ".claude/"
+      ".opencode/"
       ".DS_Store"
     ];
   };

@@ -69,7 +69,7 @@ in
           system = firstUpsName;
           user = "upsmon";
           passwordFile = config.sops.secrets."ups/upsmon-password".path;
-          type = "primary";
+          type = upsInfo.upsmon.type or "slave";
           powerValue = 1;
         };
         settings = upsInfo.upsmon.settings or { };
