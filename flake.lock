@@ -206,10 +206,10 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1768896435,
-        "narHash": "sha256-7wdIPBZNBPFfKZZL8VdtmCxeOxi1/SHAp6YQ7iz3RdI=",
+        "lastModified": 1769054749,
+        "narHash": "sha256-drkDE7Cs15OL/rgJlwgY4CfN6uzvqe+Ps1o2IobA91U=",
         "ref": "master",
-        "rev": "b879eed151c801c4b0ba606cc87cb13f6aa7f0f3",
+        "rev": "24565adb0f92da93f20bb75c1f5dbd4c17939b9b",
         "shallow": true,
         "type": "git",
         "url": "ssh://git@github.com/ChanningHe/nix-secrets.git"
