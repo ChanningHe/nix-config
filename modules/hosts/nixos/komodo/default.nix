@@ -132,8 +132,7 @@ let
       echo "PERIPHERY_PASSKEYS_FILE=${cfg.passkeyFiles}" >> "$ENV_FILE"
     ''}
     ${lib.optionalString (cfg.passkeys != [ ]) ''
-      # Wrap the JSON value in single quotes for systemd EnvironmentFile
-      echo "PERIPHERY_PASSKEYS='${builtins.toJSON cfg.passkeys}'" >> "$ENV_FILE"
+      printf 'PERIPHERY_PASSKEYS=%s\n' ${lib.escapeShellArg (builtins.toJSON cfg.passkeys)} >> "$ENV_FILE"
     ''}
 
     # Private key (v2.0+) - direct configuration
