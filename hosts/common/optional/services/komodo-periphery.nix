@@ -78,12 +78,12 @@ in
         # };
 
         # Core public keys (uncomment if managing via sops)
-        # "komodo/core_public_keys" = {
-        #   sopsFile = sopsFile;
-        #   owner = cfg.user;
-        #   group = cfg.group;
-        #   mode = "0400";
-        # };
+        "komodo/core_public_keys" = {
+          sopsFile = sopsFile;
+          owner = cfg.user;
+          group = cfg.group;
+          mode = "0400";
+        };
 
         # Onboarding key (uncomment if using outbound mode)
         # "komodo/onboarding_key" = {
@@ -111,8 +111,10 @@ in
       # Use passkeyFiles to let Komodo Periphery read the secret file directly
       # The module will set PERIPHERY_PASSKEYS_FILE environment variable
       # pointing to this file, and Komodo will read it at startup
-      services.komodo-periphery.passkeyFiles = config.sops.secrets."komodo/passkeys".path;
-
+      services.komodo-periphery = {
+        passkeyFiles = config.sops.secrets."komodo/passkeys".path;
+        auth.corePublicKeys = [ config.sops.secrets."komodo/core_public_keys".path ];
+      };
       # Optional: If using GitHub token, add it here
       # services.komodo-periphery.environment = {
       #   GITHUB_TOKEN = config.sops.secrets."komodo/github_token".path;

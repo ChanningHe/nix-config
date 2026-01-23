@@ -30,6 +30,10 @@
     "2c" = "cd /Volumes/Codes/";
   };
 
+  home.sessionPath = [
+    "$HOME/.bun/bin"
+  ];
+
   nix = {
     # # ===== Darwin Local Nix Linux Builder Configuration ===== #
     # linux-builder = {
