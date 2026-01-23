@@ -20,6 +20,21 @@ let
   sopsFile = "${sopsFolder}/${hostName}.yaml";
   # Use lib.pathExists instead of builtins.pathExists to avoid evaluation issues
   hasSopsFile = lib.pathExists sopsFile;
+
+  # Detect which komodo secrets exist in the sops file
+  # YAML key names are plaintext, so we can check for their presence
+  sopsContent = if hasSopsFile then builtins.readFile sopsFile else "";
+  hasSecretKey = key: builtins.match ".*${key}:.*" sopsContent != null;
+
+  # Check for different authentication methods
+  hasPasskeys = hasSecretKey "komodo/passkeys";
+  hasPrivateKey = hasSecretKey "komodo/private_key";
+  hasCorePublicKeys = hasSecretKey "komodo/core_public_keys";
+  hasOnboardingKey = hasSecretKey "komodo/onboarding_key";
+
+  # SSL certificates
+  hasSslKey = hasSecretKey "komodo/ssl_key";
+  hasSslCert = hasSecretKey "komodo/ssl_cert";
 in
 {
   # Import the pure NixOS module
@@ -41,80 +56,94 @@ in
 
     # sops-nix integration (only if service is enabled and sops file exists)
     (lib.mkIf (cfg.enable && hasSopsFile) {
-      # Define sops secrets
-      sops.secrets = {
-        # SSL certificates - only if SSL is enabled (v2: inbound.ssl.enable)
-        "komodo/ssl_key" = lib.mkIf cfg.inbound.ssl.enable {
-          sopsFile = sopsFile;
-          owner = cfg.user;
-          group = cfg.group;
-          mode = "0400";
-          path = "${cfg.rootDirectory}/ssl/key.pem";
+      # Define sops secrets - only for keys that exist in the sops file
+      sops.secrets =
+        # SSL certificates - only if SSL is enabled and keys exist
+        lib.optionalAttrs (cfg.inbound.ssl.enable && hasSslKey) {
+          "komodo/ssl_key" = {
+            sopsFile = sopsFile;
+            owner = cfg.user;
+            group = cfg.group;
+            mode = "0400";
+            path = "${cfg.rootDirectory}/ssl/key.pem";
+          };
+        }
+        // lib.optionalAttrs (cfg.inbound.ssl.enable && hasSslCert) {
+          "komodo/ssl_cert" = {
+            sopsFile = sopsFile;
+            owner = cfg.user;
+            group = cfg.group;
+            mode = "0400";
+            path = "${cfg.rootDirectory}/ssl/cert.pem";
+          };
+        }
+        # v1 authentication - Passkeys (legacy)
+        // lib.optionalAttrs hasPasskeys {
+          "komodo/passkeys" = {
+            sopsFile = sopsFile;
+            owner = cfg.user;
+            group = cfg.group;
+            mode = "0400";
+          };
+        }
+        # v2 authentication - Private key
+        // lib.optionalAttrs hasPrivateKey {
+          "komodo/private_key" = {
+            sopsFile = sopsFile;
+            owner = cfg.user;
+            group = cfg.group;
+            mode = "0400";
+          };
+        }
+        # v2 authentication - Core public keys
+        // lib.optionalAttrs hasCorePublicKeys {
+          "komodo/core_public_keys" = {
+            sopsFile = sopsFile;
+            owner = cfg.user;
+            group = cfg.group;
+            mode = "0400";
+          };
+        }
+        # v2 outbound - Onboarding key
+        // lib.optionalAttrs hasOnboardingKey {
+          "komodo/onboarding_key" = {
+            sopsFile = sopsFile;
+            owner = cfg.user;
+            group = cfg.group;
+            mode = "0400";
+          };
         };
-        "komodo/ssl_cert" = lib.mkIf cfg.inbound.ssl.enable {
-          sopsFile = sopsFile;
-          owner = cfg.user;
-          group = cfg.group;
-          mode = "0400";
-          path = "${cfg.rootDirectory}/ssl/cert.pem";
-        };
 
-        # Passkeys (for v1 authentication - legacy)
-        # Komodo Periphery will read this file directly via PERIPHERY_PASSKEYS_FILE
-        "komodo/passkeys" = {
-          sopsFile = sopsFile;
-          owner = cfg.user;
-          group = cfg.group;
-          mode = "0400";
-        };
+      # Configure Komodo Periphery to use sops secrets
+      services.komodo-periphery = lib.mkMerge [
+        # SSL configuration (v2: inbound.ssl)
+        (lib.mkIf (cfg.inbound.ssl.enable && hasSslKey && hasSslCert) {
+          inbound.ssl = {
+            keyFile = lib.mkForce config.sops.secrets."komodo/ssl_key".path;
+            certFile = lib.mkForce config.sops.secrets."komodo/ssl_cert".path;
+          };
+        })
 
-        # Optional: v2 authentication keys
-        # Private key (uncomment if managing via sops)
-        # "komodo/private_key" = {
-        #   sopsFile = sopsFile;
-        #   owner = cfg.user;
-        #   group = cfg.group;
-        #   mode = "0400";
-        # };
+        # v1 authentication - Passkeys
+        (lib.mkIf hasPasskeys {
+          passkeyFiles = config.sops.secrets."komodo/passkeys".path;
+        })
 
-        # Core public keys (uncomment if managing via sops)
-        "komodo/core_public_keys" = {
-          sopsFile = sopsFile;
-          owner = cfg.user;
-          group = cfg.group;
-          mode = "0400";
-        };
+        # v2 authentication - Private key
+        (lib.mkIf hasPrivateKey {
+          auth.privateKey = "file:${config.sops.secrets."komodo/private_key".path}";
+        })
 
-        # Onboarding key (uncomment if using outbound mode)
-        # "komodo/onboarding_key" = {
-        #   sopsFile = sopsFile;
-        #   owner = cfg.user;
-        #   group = cfg.group;
-        #   mode = "0400";
-        # };
+        # v2 authentication - Core public keys
+        (lib.mkIf hasCorePublicKeys {
+          auth.corePublicKeys = [ "file:${config.sops.secrets."komodo/core_public_keys".path}" ];
+        })
 
-        # Optional: GitHub token (uncomment if you have this secret)
-        # "komodo/github_token" = {
-        #   sopsFile = sopsFile;
-        #   owner = cfg.user;
-        #   group = cfg.group;
-        #   mode = "0400";
-        # };
-      };
-
-      # Override SSL paths to use sops secret paths (v2: inbound.ssl)
-      services.komodo-periphery.inbound.ssl = lib.mkIf cfg.inbound.ssl.enable {
-        keyFile = lib.mkForce config.sops.secrets."komodo/ssl_key".path;
-        certFile = lib.mkForce config.sops.secrets."komodo/ssl_cert".path;
-      };
-
-      # Use passkeyFiles to let Komodo Periphery read the secret file directly
-      # The module will set PERIPHERY_PASSKEYS_FILE environment variable
-      # pointing to this file, and Komodo will read it at startup
-      services.komodo-periphery = {
-        passkeyFiles = config.sops.secrets."komodo/passkeys".path;
-        auth.corePublicKeys = [ config.sops.secrets."komodo/core_public_keys".path ];
-      };
+        # v2 outbound - Onboarding key
+        (lib.mkIf hasOnboardingKey {
+          outbound.onboardingKeyFile = config.sops.secrets."komodo/onboarding_key".path;
+        })
+      ];
       # Optional: If using GitHub token, add it here
       # services.komodo-periphery.environment = {
       #   GITHUB_TOKEN = config.sops.secrets."komodo/github_token".path;
