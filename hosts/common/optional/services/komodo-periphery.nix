@@ -32,6 +32,9 @@ let
   hasCorePublicKeys = hasSecretKey "komodo/core_public_keys";
   hasOnboardingKey = hasSecretKey "komodo/onboarding_key";
 
+  # SOPS age key for decrypting secrets in git repos
+  hasSopsAgeKey = hasSecretKey "komodo/sops_age_key";
+
   # SSL certificates
   hasSslKey = hasSecretKey "komodo/ssl_key";
   hasSslCert = hasSecretKey "komodo/ssl_cert";
@@ -112,6 +115,15 @@ in
             group = cfg.group;
             mode = "0400";
           };
+        }
+        # SOPS age key for decrypting secrets in git repos
+        // lib.optionalAttrs hasSopsAgeKey {
+          "komodo/sops_age_key" = {
+            sopsFile = sopsFile;
+            owner = cfg.user;
+            group = cfg.group;
+            mode = "0400";
+          };
         };
 
       # Configure Komodo Periphery to use sops secrets
@@ -142,6 +154,11 @@ in
         # v2 outbound - Onboarding key
         (lib.mkIf hasOnboardingKey {
           outbound.onboardingKeyFile = config.sops.secrets."komodo/onboarding_key".path;
+        })
+
+        # SOPS age key for decrypting secrets in git repos
+        (lib.mkIf hasSopsAgeKey {
+          environment.SOPS_AGE_KEY_FILE = config.sops.secrets."komodo/sops_age_key".path;
         })
       ];
       # Optional: If using GitHub token, add it here
