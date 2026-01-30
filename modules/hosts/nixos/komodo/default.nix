@@ -8,6 +8,27 @@ let
   cfg = config.services.komodo-periphery;
   settingsFormat = pkgs.formats.toml { };
 
+  # Backward compatibility: check if old-style options are used
+  usingOldPort = cfg.port != 8120;
+  usingOldBindIp = cfg.bindIp != "[::]";
+  usingOldAllowedIps = cfg.allowedIps != [ ];
+  usingOldSsl =
+    cfg.ssl.enable != true
+    || cfg.ssl.keyFile != "${cfg.rootDirectory}/ssl/key.pem"
+    || cfg.ssl.certFile != "${cfg.rootDirectory}/ssl/cert.pem";
+  usingOldServerEnabled = cfg.serverEnabled != null;
+
+  # Determine actual values (prefer new inbound.* options, fall back to old top-level options)
+  actualSslEnable = if usingOldSsl then cfg.ssl.enable else cfg.inbound.ssl.enable;
+  actualSslKeyFile = if usingOldSsl then cfg.ssl.keyFile else cfg.inbound.ssl.keyFile;
+  actualSslCertFile = if usingOldSsl then cfg.ssl.certFile else cfg.inbound.ssl.certFile;
+
+  # Path configurations - passed via environment variables for flexibility
+  # This allows Periphery to reference these paths internally as variables
+  actualRepoDir = if cfg.repoDir != null then cfg.repoDir else "${cfg.rootDirectory}/repos";
+  actualStackDir = if cfg.stackDir != null then cfg.stackDir else "${cfg.rootDirectory}/stacks";
+  actualBuildDir = if cfg.buildDir != null then cfg.buildDir else "${cfg.rootDirectory}/builds";
+
   genFinalSettings =
     let
       # Determine the actual value for disable_container_terminals
@@ -18,35 +39,25 @@ let
         else
           cfg.disableContainerTerminals;
 
-      # Backward compatibility: check if old-style options are used
-      usingOldPort = cfg.port != 8120;
-      usingOldBindIp = cfg.bindIp != "[::]";
-      usingOldAllowedIps = cfg.allowedIps != [ ];
-      usingOldSsl =
-        cfg.ssl.enable != true
-        || cfg.ssl.keyFile != "${cfg.rootDirectory}/ssl/key.pem"
-        || cfg.ssl.certFile != "${cfg.rootDirectory}/ssl/cert.pem";
-      usingOldServerEnabled = cfg.serverEnabled != null;
-
-      # Determine actual values (prefer new inbound.* options, fall back to old top-level options)
       actualPort = if usingOldPort then cfg.port else cfg.inbound.port;
       actualBindIp = if usingOldBindIp then cfg.bindIp else cfg.inbound.bindIp;
       actualAllowedIps = if usingOldAllowedIps then cfg.allowedIps else cfg.inbound.allowedIps;
-      actualSslEnable = if usingOldSsl then cfg.ssl.enable else cfg.inbound.ssl.enable;
-      actualSslKeyFile = if usingOldSsl then cfg.ssl.keyFile else cfg.inbound.ssl.keyFile;
-      actualSslCertFile = if usingOldSsl then cfg.ssl.certFile else cfg.inbound.ssl.certFile;
       actualServerEnabled =
-        if usingOldServerEnabled then cfg.serverEnabled else cfg.inbound.serverEnabled;
+        if usingOldServerEnabled then
+          cfg.serverEnabled
+        else if cfg.inbound.serverEnabled != null then
+          cfg.inbound.serverEnabled
+        else
+          # Per documentation: defaults to false when outbound.coreAddress is defined, otherwise true
+          (cfg.outbound.coreAddress == "");
 
       # ALL sensitive data will be passed via environment variables for security
       # Only check for private key as it has special default behavior
       hasAnyPrivateKey = cfg.auth.privateKey != "";
 
       baseSettings = {
-        root_directory = cfg.rootDirectory;
-        repo_dir = "${cfg.rootDirectory}/repos";
-        stack_dir = "${cfg.rootDirectory}/stacks";
-        build_dir = if cfg.buildDir != null then cfg.buildDir else "${cfg.rootDirectory}/builds";
+        # Path configs (root_directory, repo_dir, stack_dir, build_dir) are set via environment variables
+        # SSL file paths are also set via environment variables since they depend on root_directory
 
         default_terminal_command = cfg.defaultTerminalCommand;
         disable_terminals = cfg.disableTerminals;
@@ -71,10 +82,7 @@ let
         bind_ip = actualBindIp;
         allowed_ips = actualAllowedIps;
         ssl_enabled = actualSslEnable;
-      }
-      // lib.optionalAttrs actualSslEnable {
-        ssl_key_file = actualSslKeyFile;
-        ssl_cert_file = actualSslCertFile;
+        # ssl_key_file and ssl_cert_file are set via environment variables
       }
       // {
         # Outbound mode - exclude onboarding key (passed via environment variable)
@@ -137,12 +145,12 @@ let
 
     # Private key (v2.0+) - direct configuration
     ${lib.optionalString (cfg.auth.privateKey != "") ''
-      echo 'PERIPHERY_PRIVATE_KEY=${cfg.auth.privateKey}' >> "$ENV_FILE"
+      printf '%s\n' ${lib.escapeShellArg "PERIPHERY_PRIVATE_KEY=${cfg.auth.privateKey}"} >> "$ENV_FILE"
     ''}
 
     # Core public keys (v2.0+) - direct configuration (may include file: prefixes)
     ${lib.optionalString (cfg.auth.corePublicKeys != [ ]) ''
-      echo 'PERIPHERY_CORE_PUBLIC_KEYS=${lib.concatStringsSep "," cfg.auth.corePublicKeys}' >> "$ENV_FILE"
+      printf '%s\n' ${lib.escapeShellArg "PERIPHERY_CORE_PUBLIC_KEYS=${lib.concatStringsSep "," cfg.auth.corePublicKeys}"} >> "$ENV_FILE"
     ''}
 
     # Onboarding key (v2.0+)
@@ -150,7 +158,7 @@ let
       echo "PERIPHERY_ONBOARDING_KEY_FILE=${cfg.outbound.onboardingKeyFile}" >> "$ENV_FILE"
     ''}
     ${lib.optionalString (cfg.outbound.onboardingKey != "") ''
-      echo 'PERIPHERY_ONBOARDING_KEY=${cfg.outbound.onboardingKey}' >> "$ENV_FILE"
+      printf '%s\n' ${lib.escapeShellArg "PERIPHERY_ONBOARDING_KEY=${cfg.outbound.onboardingKey}"} >> "$ENV_FILE"
     ''}
 
     echo "Environment file generated at $ENV_FILE"
@@ -225,6 +233,20 @@ in
       type = lib.types.path;
       default = "/var/lib/komodo-periphery";
       description = "Root directory for Komodo Periphery data.";
+    };
+
+    repoDir = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      defaultText = lib.literalExpression ''"''${config.services.komodo-periphery.rootDirectory}/repos"'';
+      description = "Directory for Komodo Periphery to manage repos. If null, defaults to `\${rootDirectory}/repos`.";
+    };
+
+    stackDir = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      defaultText = lib.literalExpression ''"''${config.services.komodo-periphery.rootDirectory}/stacks"'';
+      description = "Directory for Komodo Periphery to manage stacks. If null, defaults to `\${rootDirectory}/stacks`.";
     };
 
     buildDir = lib.mkOption {
@@ -427,7 +449,6 @@ in
           [
             # Direct key value
             "MCowBQYDK2VuAyEATZgrjGHeF0KJUe0+n77+qAWOg3YzEzXOmQWaRgO3OGQ="
-
             # Reference secret files
             "file:''${config.age.secrets.komodo-core1-pub.path}"
             "file:''${config.age.secrets.komodo-core2-pub.path}"
@@ -693,17 +714,17 @@ in
         user = cfg.user;
         group = cfg.group;
       };
-      "${cfg.rootDirectory}/repos".d = {
+      "${actualRepoDir}".d = {
         mode = "0755";
         user = cfg.user;
         group = cfg.group;
       };
-      "${cfg.rootDirectory}/stacks".d = {
+      "${actualStackDir}".d = {
         mode = "0755";
         user = cfg.user;
         group = cfg.group;
       };
-      "${cfg.rootDirectory}/builds".d = {
+      "${actualBuildDir}".d = {
         mode = "0755";
         user = cfg.user;
         group = cfg.group;
@@ -752,14 +773,29 @@ in
         ];
 
         Environment = lib.mapAttrsToList (name: value: "${name}=${value}") (
-          cfg.environment
-          // lib.optionalAttrs (!cfg.disableTerminals) {
-            PATH = "$PATH:/run/current-system/sw/bin:/run/wrappers/bin";
+          # Path configurations via environment variables (only when using generated config)
+          # When using custom configFile, user has full control over configuration
+          lib.optionalAttrs (cfg.configFile == null) {
+            PERIPHERY_ROOT_DIRECTORY = cfg.rootDirectory;
+            PERIPHERY_REPO_DIR = actualRepoDir;
+            PERIPHERY_STACK_DIR = actualStackDir;
+            PERIPHERY_BUILD_DIR = actualBuildDir;
+          }
+          // lib.optionalAttrs (cfg.configFile == null && actualSslEnable) {
+            PERIPHERY_SSL_KEY_FILE = actualSslKeyFile;
+            PERIPHERY_SSL_CERT_FILE = actualSslCertFile;
           }
           // lib.optionalAttrs (cfg.dockerHost != null) {
             DOCKER_HOST = cfg.dockerHost;
           }
+          // cfg.environment
         );
+
+        # Provide additional executable search paths for terminal functionality
+        ExecSearchPath = lib.optionals (!cfg.disableTerminals) [
+          "/run/current-system/sw/bin"
+          "/run/wrappers/bin"
+        ];
 
         # Load environment files in order:
         # 1. Generated environment file with sensitive data (all *File options and direct config)

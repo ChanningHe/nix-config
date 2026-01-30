@@ -116,7 +116,7 @@
 
           # autocomplete delay and input
           zstyle ':autocomplete:*' min-delay 0.5
-          zstyle ':autocomplete:*' min-input 2
+          zstyle ':autocomplete:*' min-input 1
 
           # Cycle through listed completions, without changing what's listed in the menu
           #bindkey              '^I'         menu-complete
