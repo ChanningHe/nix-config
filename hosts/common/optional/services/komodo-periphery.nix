@@ -24,7 +24,13 @@ let
   # Detect which komodo secrets exist in the sops file
   # YAML key names are plaintext, so we can check for their presence
   sopsContent = if hasSopsFile then builtins.readFile sopsFile else "";
-  hasSecretKey = key: builtins.match ".*${key}:.*" sopsContent != null;
+  # Match each part of the key path separately (YAML uses nested indentation, not "a/b:" format)
+  hasSecretKey =
+    key:
+    let
+      parts = lib.splitString "/" key;
+    in
+    lib.all (part: builtins.match ".*${part}:.*" sopsContent != null) parts;
 
   # Check for different authentication methods
   hasPasskeys = hasSecretKey "komodo/passkeys";
