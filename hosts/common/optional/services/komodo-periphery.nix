@@ -164,7 +164,9 @@ in
 
         # SOPS age key for decrypting secrets in git repos
         (lib.mkIf hasSopsAgeKey {
-          environment.SOPS_AGE_KEY_FILE = config.sops.secrets."komodo/sops_age_key".path;
+          environment = lib.mkDefault {
+            SOPS_AGE_KEY_FILE = config.sops.secrets."komodo/sops_age_key".path;
+          };
         })
       ];
       # Optional: If using GitHub token, add it here
