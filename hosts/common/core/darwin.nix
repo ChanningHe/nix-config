@@ -39,7 +39,7 @@
     finder = {
       AppleShowAllExtensions = true;
       AppleShowAllFiles = true;
-      CreateDesktop = false;
+      CreateDesktop = true;
       FXEnableExtensionChangeWarning = false;
       ShowPathbar = true;
       ShowStatusBar = true;
