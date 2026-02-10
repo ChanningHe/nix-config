@@ -34,6 +34,17 @@
     "console=tty1"
   ];
 
+  # boot.extraModprobeConfig = ''
+  # # example settings
+  # options yourmodulename optionA=valueA optionB=valueB # syntax
+  # options thinkpad_acpi  fan_control=1                 # example #1 kernel module parameter
+  # options usbcore        blinkenlights=1               # example #2 kernel module parameter
+  # '';
+
+  boot.kernelModules = [
+    "rpcrdma"
+  ];
+
   # Allow cursor/vscode to dynamically linked binaries built for other Linux distributions
   programs.nix-ld.enable = true;
 

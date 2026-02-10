@@ -46,7 +46,7 @@ in
       # Colorized ls commands
       CLICOLOR = 1;
       #LS_COLORS = "di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43";
-      LS_COLORS = "rs=0:di=38;5;141:ln=38;5;147:so=38;5;135:pi=38;5;135:ex=38;5;114:bd=38;5;160:cd=38;5;160:su=38;5;124:sg=38;5;124:tw=38;5;161:ow=38;5;161:fi=0:";
+      #LS_COLORS = "rs=0:di=38;5;141:ln=38;5;147:so=38;5;135:pi=38;5;135:ex=38;5;114:bd=38;5;160:cd=38;5;160:su=38;5;124:sg=38;5;124:tw=38;5;161:ow=38;5;161:fi=0:";
     };
   };
 
@@ -68,7 +68,11 @@ in
     nh
     btop
     wget
+    vivid
     #nxv # Nix pkg index CLI
+    # lsp
+    nil
+    nixd
     # langs
     go
     gcc

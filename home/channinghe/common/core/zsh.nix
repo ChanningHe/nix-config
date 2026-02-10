@@ -55,8 +55,8 @@
       (
         ''
           # Colorized ls commands
-          # export CLICOLOR=1
-          # export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
+          export CLICOLOR=1
+          export LS_COLORS=$(vivid generate nord)
           # Remove / and . from WORDCHARS to make path navigation easier (Ctrl+W stops at /)
           # Note: We use ''${...} to escape the Nix interpolation and pass it literally to Zsh
           WORDCHARS="''${WORDCHARS//\//}"
@@ -116,7 +116,8 @@
 
           # autocomplete delay and input
           zstyle ':autocomplete:*' min-delay 0.5
-          zstyle ':autocomplete:*' min-input 1
+          zstyle ':autocomplete:*' min-input 3
+          zstyle ':autocomplete:*' timeout 1.5
 
           # Cycle through listed completions, without changing what's listed in the menu
           #bindkey              '^I'         menu-complete

@@ -21,6 +21,7 @@
     #rustup
     coreutils
     ghostty-bin # Ghostty terminal emulator
+
     #fontforge
     #nixpkgs-fmt
     # Add Darwin-specific packages here if needed
