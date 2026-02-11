@@ -4,6 +4,7 @@
   # Set a temp password for use by minimal builds like installer and iso
   users.users.${config.hostSpec.username} = {
     isNormalUser = true;
+    #shell = pkgs.bash;
     uid = 3000;
     #FIXME(starter): if desired, you can change the password that is used by the ISO below.
 
@@ -15,5 +16,10 @@
   };
   users.groups.${config.hostSpec.username} = {
     gid = 3000;
+  };
+
+  programs.zsh.enable = true;
+  programs.starship = {
+    enable = true;
   };
 }
