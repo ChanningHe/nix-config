@@ -17,7 +17,7 @@ rebuild-post: check-sops
 # Run a flake check on the config and installer
 check ARGS="":
 	NIXPKGS_ALLOW_UNFREE=1 REPO_PATH=$(pwd) nix flake check --impure --keep-going --show-trace {{ARGS}}
-	cd nixos-installer && NIXPKGS_ALLOW_UNFREE=1 REPO_PATH=$(pwd) nix flake check --impure --keep-going --show-trace {{ARGS}}
+	cd nixos-anywhere && NIXPKGS_ALLOW_UNFREE=1 REPO_PATH=$(pwd) nix flake check --impure --keep-going --show-trace {{ARGS}}
 
 # Rebuild the system
 rebuild: rebuild-pre && rebuild-post
@@ -57,6 +57,10 @@ age-key:
 check-sops:
   scripts/check-sops.sh
 
+# Scaffold a new NixOS host (interactive)
+new-host *ARGS:
+  scripts/new-host.sh {{ARGS}}
+
 # Update nix-secrets flake
 update-nix-secrets:
   @[ -d ../nix-secrets ] && (cd ../nix-secrets && git fetch && (git rebase > /dev/null 2>&1 || true)) || true
@@ -92,15 +96,13 @@ build-host HOST:
 
 # Called by the rekey recipe
 sops-rekey:
-  cd ../nix-secrets && for file in $(ls sops/*.yaml); do \
+  cd ../nix-secrets && for file in $(ls secrets/*.yaml); do \
     sops updatekeys -y $file; \
   done
 
-# Update all keys in sops/*.yaml files in nix-secrets to match the creation rules keys
+# Update all keys in secrets/*.yaml files in nix-secrets to match the creation rules keys
 rekey: sops-rekey
-  cd ../nix-secrets && \
-    (pre-commit run --all-files || true) && \
-    git add -u && (git commit -nm "chore: rekey" || true) && git push
+  @echo "Rekey complete. Remember to commit and push nix-secrets."
 
 # Update an age key anchor or add a new one
 sops-update-age-key FIELD KEYNAME KEY:

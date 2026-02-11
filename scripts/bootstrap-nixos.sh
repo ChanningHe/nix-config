@@ -155,7 +155,7 @@ function nixos_anywhere() {
 	###
 	# nixos-anywhere installation
 	###
-	cd nixos-installer
+	cd nixos-anywhere
 	# when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
 	if no_or_yes "Manually set luks encryption passphrase? (Default: \"$luks_passphrase\")"; then
 		blue "Enter your luks encryption passphrase:"
@@ -259,7 +259,7 @@ if yes_or_no "Generate user age key?"; then
 	sops_setup_user_age_key "$target_user" "$target_hostname"
 	# We need to add the new file before we rekey later
 	cd "$nix_secrets_dir"
-	git add sops/"${target_hostname}".yaml
+	git add secrets/"${target_hostname}".yaml
 	cd - >/dev/null
 	updated_age_keys=1
 fi

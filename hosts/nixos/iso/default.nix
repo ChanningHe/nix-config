@@ -9,7 +9,7 @@
 {
   imports = lib.flatten [
     # FIXME(starter): comment/uncomment the following two lines depending on if you want a cli-only, minimal iso, or a graphical iso that installs gnome
-    # If you are planning to make use of `nix-config/nixos-installer`, you will not require a graphical iso.
+    # If you are planning to make use of `nix-config/nixos-anywhere`, you will not require a graphical iso.
     "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
     #"${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-graphical-gnome.nix"
     "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"

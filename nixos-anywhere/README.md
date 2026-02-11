@@ -26,7 +26,7 @@ For users new to Nix and NixOS it may be worth noting that because this script i
 
 ## Generating a custom NixOS ISO
 
-We recommend using a custom ISO similar to what is defined in `nix-config/hosts/nixos/iso`. The official minimal NixOS iso has historical omitted some basic tty utilities that are expected by the installer scripts. The config for the ISO used in nix-config are similarly light-weight to [`nixos-installer/flake.nix`](flake.nix).
+We recommend using a custom ISO similar to what is defined in `nix-config/hosts/nixos/iso`. The official minimal NixOS iso has historical omitted some basic tty utilities that are expected by the installer scripts. The config for the ISO used in nix-config are similarly light-weight to [`nixos-anywhere/flake.nix`](flake.nix).
 
 To generate the ISO, simply run `just iso` from the root of your `nix-config` directory. The resulting .iso file will be saved to `nix-config/result/iso/foo.iso`. A symlink to the file is also created at `nix-config/latest.iso`. The filename is time stamped for convenient reference when frequently trying out different ISOs in VMs. For example, `nixos-24.11.20250123.035f8c0-x86_64-linux.iso`.
 
@@ -42,7 +42,7 @@ If you are installing on a bare metal machine, write the .iso to a USB device. Y
    Be sure to specify the device name (e.g. sda, nvme0n1, vda, etc) you want to install to along with the desired `nix-config/hosts/common/disks` disko spec.
 
    If needed, you can find the device name on the target machine itself by booting it into the iso environment and running `lsblk` to see a list of the devices. Virtual Machines often using a device called `vda`.
-2. Add a `newConfig` entry for the target host in `nix-config/nixos-installer/flake.nix`, passing in the required arguments as noted in the file comments.
+2. Add a `newConfig` entry for the target host in `nix-config/nixos-anywhere/flake.nix`, passing in the required arguments as noted in the file comments.
 3. If you are planning to use the `backup` module on the target host, you _must_ temporarily disable it in the target host's config options until bootstrapping is complete. Failure to disable these two modules, will cause nix-config to look for the associated secrets in the new `[hostname].yaml` secrets file where they have not yet been added, causing sops-nix to fail to start during the build process. After rebuilding, we'll add the required keys to secrets and re-enable these modules.
     For example:
     ```nix
@@ -93,7 +93,7 @@ Prior to installing an existing host config onto a new machine you likely only n
 
 Your existing config should already have a `hardware-configuration.nix` and a functioning compliment of sops secrets and sops creation rules. Therefore, many of the steps presented by the script can be safely skipped. The applicable steps will be noted below.
 
-If you haven't already, add a `newConfig` entry for the target host in `nix-config/nixos-installer/flake.nix`, passing in the required arguments as noted in the file comments.
+If you haven't already, add a `newConfig` entry for the target host in `nix-config/nixos-anywhere/flake.nix`, passing in the required arguments as noted in the file comments.
 
 ## Installation Steps
 

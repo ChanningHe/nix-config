@@ -1,5 +1,4 @@
 {
-  inputs,
   lib,
   config,
   ...
@@ -34,11 +33,12 @@ in
       #
       "hosts/common/core"
 
+      #========== Boot Configs ==========
+      "hosts/common/optional/system/systemd-boot.nix"
       #
       # ========== Non-Primary Users to Create ==========
       #
       "hosts/common/optional/system/no-firewall.nix"
-      "hosts/common/optional/system/ip-forward.nix"
 
       #
       # ========== Optional Configs ==========
@@ -51,8 +51,7 @@ in
   #
 
   hostSpec = {
-    # !!![FIXME]!!!
-    hostName = "foo";
+    hostName = "Toxotidae";
     scaling = lib.mkForce "1";
     # loadUserAgeKey = true;
   };
@@ -61,8 +60,7 @@ in
   # ========== Host Network ==========
   #
   networking = {
-    # !!![FIXME]!!!
-    hostId = "xxxxx";
+    hostId = "b32450ab";
     networkmanager.enable = false;
     enableIPv6 = false;
     useDHCP = false;
@@ -77,8 +75,7 @@ in
     enable = true;
     networks = {
       "10-wired" = {
-        # !!![FIXME]!!!
-        matchConfig.Name = "xxxxx";
+        matchConfig.Name = "ens18";
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
@@ -94,8 +91,6 @@ in
       };
     };
   };
-
-
 
   boot.initrd = {
     systemd.enable = true;

@@ -10,7 +10,7 @@
     (map lib.custom.relativeToRoot [
       "modules/common/host-spec.nix"
       "hosts/common/core/ssh.nix"
-      "hosts/common/users"
+      "hosts/common/users/channinghe"
       "hosts/common/optional/minimal-user.nix"
     ])
   ];
@@ -22,16 +22,37 @@
     username = "channinghe";
   };
 
-  fileSystems."/boot".options = [ "umask=0077" ]; # Removes permissions and security warnings.
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.systemd-boot = {
-    enable = true;
-    # we use Git for version control, so we don't need to keep too many generations.
-    configurationLimit = lib.mkDefault 3;
-    # pick the highest resolution for systemd-boot's console.
-    consoleMode = lib.mkDefault "max";
-  };
+  # NOTE: boot.loader configuration is provided by nixos-anywhere/boot/*.nix modules,
+  # selected by the NIXOS_DISK_LAYOUT environment variable in flake.nix.
+  #
+  # Essential initrd modules so the installed system can boot even without
+  # hardware-configuration.nix (which is generated later in Phase 2).
+  # Covers QEMU/KVM (virtio + SATA), VMware, and common bare-metal controllers.
   boot.initrd = {
+    availableKernelModules = [
+      # Virtio (QEMU/KVM)
+      "virtio_pci"
+      "virtio_mmio"
+      "virtio_blk"
+      "virtio_scsi"
+      "virtio_net"
+      # SATA / AHCI
+      "ahci"
+      # SCSI
+      "sd_mod"
+      "sr_mod"
+      # NVMe
+      "nvme"
+      # USB host controllers (for USB-boot scenarios)
+      "xhci_pci"
+      "ehci_pci"
+      "uhci_hcd"
+    ];
+    kernelModules = [
+      "virtio_balloon"
+      "virtio_console"
+      "virtio_rng"
+    ];
     systemd.enable = true;
     systemd.emergencyAccess = true; # Don't need to enter password in emergency mode
   };
@@ -60,6 +81,17 @@
   networking = {
     networkmanager.enable = true;
   };
+
+  # Root needs SSH keys + password for post-install provisioning (Phase 1→2).
+  # nixos.nix normally handles this, but minimal-configuration.nix does not
+  # import it (to avoid sops dependency). Mirror the relevant root config here.
+  users.users.root = {
+    openssh.authorizedKeys.keys =
+      config.users.users.${config.hostSpec.username}.openssh.authorizedKeys.keys;
+    hashedPassword = config.users.users.${config.hostSpec.username}.hashedPassword;
+  };
+
+  security.sudo.wheelNeedsPassword = false;
 
   services = {
     qemuGuest.enable = true;
