@@ -81,45 +81,57 @@ function sops_update_age_key() {
 	fi
 }
 
-# Adds the user and host to the shared.yaml creation rules
+# Adds the host alias to the shared.yaml creation rules
 function sops_add_shared_creation_rules() {
-	u="\"$1_$2\"" # quoted user_host for yaml
-	h="\"$2\""    # quoted hostname for yaml
+	h="\"$2\"" # quoted hostname for yaml
 
-	shared_selector='.creation_rules[] | select(.path_regex == "shared\.yaml$")'
+	# FIX: match actual path_regex which includes "secrets/" prefix
+	shared_selector='.creation_rules[] | select(.path_regex | test("shared"))'
 	if [[ -n $(yq "$shared_selector" "${SOPS_FILE}") ]]; then
-		echo "BEFORE"
-		cat "${SOPS_FILE}"
 		if [[ -z $(yq "$shared_selector.key_groups[].age[] | select(alias == $h)" "${SOPS_FILE}") ]]; then
-			green "Adding $u and $h to shared.yaml rule"
-			# NOTE: Split on purpose to avoid weird file corruption
-			yq -i "($shared_selector).key_groups[].age += [$u, $h]" "$SOPS_FILE"
-			yq -i "($shared_selector).key_groups[].age[-2] alias = $u" "$SOPS_FILE"
+			green "Adding $h to shared.yaml rule"
+			yq -i "($shared_selector).key_groups[].age += [$h]" "$SOPS_FILE"
 			yq -i "($shared_selector).key_groups[].age[-1] alias = $h" "$SOPS_FILE"
+		else
+			green "Host $h already in shared.yaml rule"
 		fi
 	else
-		red "shared.yaml rule not found"
+		red "shared.yaml rule not found in ${SOPS_FILE}"
 	fi
 }
 
-# Adds the user and host to the host.yaml creation rules
+# Adds a new host.yaml creation rule with all existing user keys + host key.
+# Uses direct text generation instead of yq alias manipulation (which is unreliable).
+# args: user, hostname
 function sops_add_host_creation_rules() {
-	host="$2"                     # hostname for selector
-	h="\"$2\""                    # quoted hostname for yaml
-	u="\"$1_$2\""                 # quoted user_host for yaml
-	w="\"$(whoami)_$(hostname)\"" # quoted whoami_hostname for yaml
-	n="\"$(hostname)\""           # quoted hostname for yaml
+	local host="$2"
 
-	host_selector=".creation_rules[] | select(.path_regex | contains(\"${host}\.yaml\"))"
-	if [[ -z $(yq "$host_selector" "${SOPS_FILE}") ]]; then
-		green "Adding new host file creation rule"
-		yq -i ".creation_rules += {\"path_regex\": \"${host}\\.yaml$\", \"key_groups\": [{\"age\": [$u, $h]}]}" "$SOPS_FILE"
-		# Add aliases one by one
-		yq -i "($host_selector).key_groups[].age[0] alias = $u" "$SOPS_FILE"
-		yq -i "($host_selector).key_groups[].age[1] alias = $h" "$SOPS_FILE"
-		yq -i "($host_selector).key_groups[].age[2] alias = $w" "$SOPS_FILE"
-		yq -i "($host_selector).key_groups[].age[3] alias = $n" "$SOPS_FILE"
+	# Check if rule already exists (use grep for reliable matching)
+	if grep -q "secrets/${host}" "${SOPS_FILE}" 2>/dev/null; then
+		green "Host creation rule for ${host} already exists"
+		return
 	fi
+
+	green "Adding new host creation rule for ${host}"
+
+	# Collect all user anchor names from keys.users
+	local user_anchors
+	user_anchors=$(yq '.keys.users[] | anchor' "${SOPS_FILE}")
+
+	# Build YAML block matching exact format of existing entries
+	# Indentation: 2 for rule, 4 for key_groups, 6 for age list header, 10 for age entries
+	{
+		echo "  - path_regex: secrets/${host}\\.yaml\$"
+		echo "    key_groups:"
+		echo "      - age:"
+		while IFS= read -r anchor_name; do
+			[ -z "$anchor_name" ] && continue
+			echo "          - *${anchor_name}"
+		done <<<"$user_anchors"
+		echo "          - *${host}"
+	} >>"$SOPS_FILE"
+
+	green "Created rule: secrets/${host}.yaml"
 }
 
 # Adds the user and host to the shared.yaml and host.yaml creation rules
@@ -156,9 +168,10 @@ function sops_setup_user_age_key() {
 	target_user="$1"
 	target_hostname="$2"
 
-	secret_file="${nix_secrets_dir}/sops/${target_hostname}.yaml"
+	# FIX: use secrets/ directory to match creation_rules path_regex (not sops/)
+	secret_file="${nix_secrets_dir}/secrets/${target_hostname}.yaml"
 	config="${nix_secrets_dir}/.sops.yaml"
-	# If the secret file doesn't exist, it means we're generating a new user key as well
+	# If the secret file doesn't exist, create it with a new user age key
 	if [ ! -f "$secret_file" ]; then
 		green "Host secret file does not exist. Creating $secret_file"
 		sops_generate_user_age_key "${target_user}" "${target_hostname}"
@@ -167,7 +180,7 @@ function sops_setup_user_age_key() {
 		sops --config "$config" -e "$secret_file" >"$secret_file.enc"
 		mv "$secret_file.enc" "$secret_file"
 	fi
-	if ! sops --config "$config" -d --extract '["keys]["age"]' "$secret_file" >/dev/null 2>&1; then
+	if ! sops --config "$config" -d --extract '["keys"]["age"]' "$secret_file" >/dev/null 2>&1; then
 		if [ -z "$age_secret_key" ]; then
 			sops_generate_user_age_key "${target_user}" "${target_hostname}"
 		fi

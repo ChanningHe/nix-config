@@ -1,9 +1,12 @@
-let
-  # Disk device configuration - modify this section only when changing hardware
-  # WARNING: Both disks MUST be different devices for ZFS mirror to work!
-  primaryDisk = "/dev/disk/by-id/nvme-xxx";
-  secondaryDisk = "/dev/disk/by-id/nvme-xxx";
-in
+# ZFS mirror disk layout for dual-disk servers.
+# Both disks MUST be different devices for ZFS mirror to work.
+# Use /dev/disk/by-id/ paths for stable device identification.
+# `...` is needed because disko passes diskoFile
+{
+  primaryDisk ? "/dev/vda",
+  secondaryDisk ? "/dev/vdb",
+  ...
+}:
 {
   disko.devices = {
     disk = {
@@ -23,7 +26,11 @@ in
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot1";
-                mountOptions = [ "fmask=0077" "dmask=0077" "iocharset=iso8859-1" ];
+                mountOptions = [
+                  "fmask=0077"
+                  "dmask=0077"
+                  "iocharset=iso8859-1"
+                ];
               };
             };
             zfs = {
@@ -52,7 +59,11 @@ in
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot2";
-                mountOptions = [ "fmask=0077" "dmask=0077" "iocharset=iso8859-1" ];
+                mountOptions = [
+                  "fmask=0077"
+                  "dmask=0077"
+                  "iocharset=iso8859-1"
+                ];
               };
             };
             zfs = {

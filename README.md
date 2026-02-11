@@ -12,7 +12,7 @@
 
 ## Installation on Remote Targets
 
-For details on how to use the nixos-installer directory and `scripts/bootstrap-nixos.sh` script, please see my article and accompanying YouTube video [Remotely Installing NixOS and nix-config with Secrets](https://unmovedcentre.com/posts/remote-install-nixos-config/).
+For details on how to use the nixos-anywhere directory and `scripts/bootstrap-nixos.sh` script, please see my article and accompanying YouTube video [Remotely Installing NixOS and nix-config with Secrets](https://unmovedcentre.com/posts/remote-install-nixos-config/).
 
 ## References
 Fork from [EmergentMind/nix-config-starter](https://github.com/EmergentMind/nix-config-starter)

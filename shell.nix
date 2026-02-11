@@ -18,7 +18,7 @@
     NIX_CONFIG = "extra-experimental-features = nix-command flakes";
     BOOTSTRAP_USER = "channinghe";
     BOOTSTRAP_SSH_PORT = "22";
-    BOOTSTRAP_SSH_KEY = "~/.ssh/id_manu";
+    BOOTSTRAP_SSH_KEY = "~/.ssh/yk-976-main";
 
     inherit (checks.pre-commit-check) shellHook;
     buildInputs = checks.pre-commit-check.enabledPackages;
@@ -35,7 +35,8 @@
         pre-commit
         deadnix
         sops
-        #yq-go # jq for yaml, used for build scripts
+        jq # for JSON encoding multiline values in provision-nixos.sh
+        yq-go # yq for yaml, used by helpers.sh (sops_update_age_key, creation rules)
         #bats # for bash testing
         age # for bootstrap script
         ssh-to-age # for bootstrap script
