@@ -156,3 +156,6 @@ attic-push:
 # Push specific store paths to Attic cache
 attic-push-path PATHS:
     attic push homielab {{PATHS}}
+
+reset-repo:
+  git fetch origin && git reset --hard origin/master
