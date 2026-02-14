@@ -2,14 +2,13 @@
   pkgs,
   lib,
   config,
+  isDarwin,
   ...
 }:
 let
+  isLinux = !isDarwin;
   homeDirectory =
-    if pkgs.stdenv.isLinux then
-      "/home/${config.hostSpec.username}"
-    else
-      "/Users/${config.hostSpec.username}";
+    if isLinux then "/home/${config.hostSpec.username}" else "/Users/${config.hostSpec.username}";
 in
 {
   environment.systemPackages = builtins.attrValues {
@@ -20,12 +19,12 @@ in
       pam_u2f # for yubikey with sudo
       ;
   };
+}
+// lib.optionalAttrs isLinux {
+  services.pcscd.enable = true;
 
-  services.pcscd.enable = pkgs.stdenv.isLinux;
-
-  security.pam = lib.optionalAttrs pkgs.stdenv.isLinux {
+  security.pam = {
     rssh.enable = true;
-    services.sudo.rssh = true;
     sshAgentAuth.enable = true;
     u2f = {
       enable = true;
@@ -37,6 +36,7 @@ in
     services = {
       login.u2fAuth = true;
       sudo = {
+        rssh = true;
         u2fAuth = true;
         sshAgentAuth = true; # Use SSH_AUTH_SOCK for sudo
       };

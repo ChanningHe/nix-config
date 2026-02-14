@@ -21,6 +21,7 @@
     #rustup
     coreutils
     ghostty-bin # Ghostty terminal emulator
+    waka # CLI to get WakaTime stats
 
     #fontforge
     #nixpkgs-fmt
