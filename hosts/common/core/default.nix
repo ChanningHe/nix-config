@@ -76,6 +76,7 @@ in
     ssh-to-age
     dnsutils
     unzip
+    tmux
   ];
   # Force home-manager to use global packages
   home-manager.useGlobalPkgs = true;
