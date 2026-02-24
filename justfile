@@ -157,5 +157,23 @@ attic-push:
 attic-push-path PATHS:
     attic push homielab {{PATHS}}
 
+# ========= Standalone Home-Manager (non-NixOS Linux) =========
+
+# Build standalone home-manager config without switching (dry run)
+hm-build TARGET="channinghe@standalone-linux":
+  nix build .#homeConfigurations.{{TARGET}}.activationPackage --show-trace
+
+# Deploy standalone home-manager config on current machine
+hm-switch TARGET="channinghe@standalone-linux":
+  nix run home-manager/release-25.11 -- switch -b bk --flake .#{{TARGET}}
+
+# Deploy with verbose trace for debugging
+hm-switch-trace TARGET="channinghe@standalone-linux":
+  nix run home-manager/release-25.11 -- switch -b bk --flake .#{{TARGET}} --show-trace
+
+# Deploy standalone home-manager to a remote host via SSH
+hm-remote USER HOST TARGET="channinghe@standalone-linux" PATH="~/nix-src/nix-config":
+  ssh {{USER}}@{{HOST}} "cd {{PATH}} && nix run home-manager/release-25.11 -- switch -b bk --flake .#{{TARGET}}"
+
 reset-repo:
   git fetch origin && git reset --hard origin/master

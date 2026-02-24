@@ -63,6 +63,50 @@
       );
 
       #
+      # ========= Standalone Home-Manager Configurations =========
+      #
+      # For non-NixOS Linux hosts with only Nix installed
+      # Usage: home-manager switch --flake .#channinghe@standalone-linux
+      homeConfigurations =
+        let
+          mkStandaloneHome =
+            {
+              system ? "x86_64-linux",
+              username ? "channinghe",
+              hostName,
+            }:
+            inputs.home-manager.lib.homeManagerConfiguration {
+              pkgs = import nixpkgs {
+                inherit system;
+                overlays = [ self.overlays.default ];
+                config.allowUnfree = true;
+              };
+              inherit lib;
+              extraSpecialArgs = {
+                inherit inputs;
+                hostSpec = {
+                  inherit username hostName;
+                  handle = username;
+                  isDarwin = false;
+                  home = "/home/${username}";
+                  inherit (inputs.nix-secrets)
+                    domain
+                    email
+                    userFullName
+                    networking
+                    networkInfo
+                    serviceInfo
+                    ;
+                };
+              };
+              modules = [ ./home/${username}/${hostName}.nix ];
+            };
+        in
+        {
+          "channinghe@standalone-linux" = mkStandaloneHome { hostName = "standalone-linux"; };
+        };
+
+      #
       # ========= Packages =========
       #
       # Expose custom packages
