@@ -13,8 +13,8 @@
     #
     # ========== Host-specific Optional Configs ==========
     #
-    # common/optional/browsers
-    # common/optional/desktops
+    common/optional/browsers
+    common/optional/desktops
     # common/optional/comms
     # common/optional/media
 

@@ -150,6 +150,20 @@
     };
 
     #
+    # ========= Desktop Environment =========
+    #
+
+    # niri: scrollable-tiling Wayland compositor
+    # NOTE: Do NOT follow nixpkgs — niri-flake manages its own mesa overlay for GPU compatibility
+    niri.url = "github:sodiboo/niri-flake";
+
+    # Noctalia: minimal desktop shell (bar, launcher, notifications, lock screen)
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    #
     # ========= Applications =========
     #
 

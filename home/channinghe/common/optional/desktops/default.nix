@@ -1,13 +1,17 @@
 { pkgs, ... }:
 {
   imports = [
-    # Packages with custom configs go here
+    ########## Desktop Shell ##########
+    ./niri.nix
+    ./noctalia.nix
 
     ########## Utilities ##########
     ./gtk.nix
+    ./playerctl.nix
   ];
-  home.packages = [
-    pkgs.pavucontrol # gui for pulseaudio server and volume controls
-    pkgs.galculator # gtk based calculator
+  home.packages = with pkgs; [
+    pavucontrol # GUI audio mixer (pairs with PipeWire)
+    galculator # GTK calculator
+    nautilus # file manager
   ];
 }

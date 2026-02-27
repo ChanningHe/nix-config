@@ -43,6 +43,8 @@ in
       #
       # ========== Optional Configs ==========
       #
+      "hosts/common/optional/niri.nix"
+      "hosts/common/optional/audio.nix"
     ])
   ];
 
