@@ -17,7 +17,7 @@ nix build --impure .#nixosConfigurations.iso.config.system.build.isoImage
 Add new host Config File
 ```
 just new-host $newhostname
-#   ./scripts/new-host.sh $newhostname
+#   ./scripts/new-host.sh -n $newhostname
 ```
 
 **One Line Command**
