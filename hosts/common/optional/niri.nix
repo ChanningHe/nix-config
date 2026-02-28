@@ -7,6 +7,8 @@
   ];
 
   programs.niri.enable = true;
+  # Use nixpkgs niri (pre-built in NixOS cache) instead of flake's niri-stable
+  programs.niri.package = pkgs.niri;
 
   # Polkit: permission elevation dialogs (like macOS "enter password to allow")
   security.polkit.enable = true;
