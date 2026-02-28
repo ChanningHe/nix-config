@@ -13,6 +13,8 @@
 
   # GNOME Keyring: credential storage (like macOS Keychain)
   services.gnome.gnome-keyring.enable = true;
+  # Disable GCR SSH agent — conflicts with programs.ssh.startAgent from core/ssh.nix
+  services.gnome.gcr-ssh-agent.enable = false;
 
   # XDG Portal: app integration (file pickers, screenshots, screen sharing)
   xdg.portal = {

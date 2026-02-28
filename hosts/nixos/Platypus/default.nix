@@ -94,6 +94,14 @@ in
     };
   };
 
+  # ── NVIDIA (desktop discrete GPU, no PRIME/Optimus) ──
+  hardware.nvidia = {
+    open = false;
+    prime.offload.enable = false;
+    prime.sync.enable = false;
+    modesetting.enable = true;
+  };
+
   boot.initrd = {
     systemd.enable = true;
   };
