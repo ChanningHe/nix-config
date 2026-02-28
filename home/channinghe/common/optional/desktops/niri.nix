@@ -155,8 +155,8 @@ in
 
       # -- Screenshots --
       "Print".action = screenshot;
-      "Mod+Print".action = screenshot-screen;
-      "Mod+Shift+Print".action = screenshot-window;
+      "Mod+Print".action.screenshot-screen = { };
+      "Mod+Shift+Print".action.screenshot-window = { };
 
       # -- Overview (like macOS Mission Control) --
       "Mod+Tab".action = toggle-overview;
