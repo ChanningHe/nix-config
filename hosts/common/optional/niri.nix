@@ -1,5 +1,5 @@
 # System-level niri Wayland compositor and desktop infrastructure.
-# Provides: compositor, polkit, keyring, XDG portals, XWayland compat.
+# Provides: display manager, compositor, polkit, keyring, XDG portals, XWayland compat.
 { pkgs, inputs, ... }:
 {
   imports = [
@@ -9,6 +9,19 @@
   programs.niri.enable = true;
   # Use nixpkgs niri (pre-built in NixOS cache) instead of flake's niri-stable
   programs.niri.package = pkgs.niri;
+
+  # ── Display Manager (greetd) ─────────────────────────
+  # Without a display manager, the system boots to a bare TTY.
+  # greetd is a lightweight login manager that launches the niri session.
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions ${pkgs.niri}/share/wayland-sessions";
+        user = "greeter";
+      };
+    };
+  };
 
   # Polkit: permission elevation dialogs (like macOS "enter password to allow")
   security.polkit.enable = true;
