@@ -2,7 +2,6 @@
 # NOTE: programs.niri.settings is available here because nixosModules.niri
 # auto-imports homeModules.config for all home-manager users.
 {
-  config,
   pkgs,
   lib,
   ...
@@ -98,68 +97,70 @@ in
     ];
 
     # ── Keybinds ──────────────────────────────────────────
-    binds = with config.lib.niri.actions; {
+    # All actions use explicit `.action.name = args;` attribute syntax.
+    # No-arg actions pass `[]`, parameterized actions pass their value.
+    binds = {
       # -- Window Management --
-      "Mod+Q".action = close-window;
-      "Mod+F".action = maximize-column;
-      "Mod+Shift+F".action = fullscreen-window;
-      "Mod+C".action = center-column;
+      "Mod+Q".action.close-window = [ ];
+      "Mod+F".action.maximize-column = [ ];
+      "Mod+Shift+F".action.fullscreen-window = [ ];
+      "Mod+C".action.center-column = [ ];
 
       # Focus navigation (arrow keys)
-      "Mod+Left".action = focus-column-left;
-      "Mod+Right".action = focus-column-right;
-      "Mod+Up".action = focus-window-or-workspace-up;
-      "Mod+Down".action = focus-window-or-workspace-down;
+      "Mod+Left".action.focus-column-left = [ ];
+      "Mod+Right".action.focus-column-right = [ ];
+      "Mod+Up".action.focus-window-or-workspace-up = [ ];
+      "Mod+Down".action.focus-window-or-workspace-down = [ ];
 
       # Focus navigation (vim keys)
-      "Mod+H".action = focus-column-left;
-      "Mod+L".action = focus-column-right;
-      "Mod+K".action = focus-window-or-workspace-up;
-      "Mod+J".action = focus-window-or-workspace-down;
+      "Mod+H".action.focus-column-left = [ ];
+      "Mod+L".action.focus-column-right = [ ];
+      "Mod+K".action.focus-window-or-workspace-up = [ ];
+      "Mod+J".action.focus-window-or-workspace-down = [ ];
 
       # Move windows (arrow keys)
-      "Mod+Shift+Left".action = move-column-left;
-      "Mod+Shift+Right".action = move-column-right;
-      "Mod+Shift+Up".action = move-window-up-or-to-workspace-up;
-      "Mod+Shift+Down".action = move-window-down-or-to-workspace-down;
+      "Mod+Shift+Left".action.move-column-left = [ ];
+      "Mod+Shift+Right".action.move-column-right = [ ];
+      "Mod+Shift+Up".action.move-window-up-or-to-workspace-up = [ ];
+      "Mod+Shift+Down".action.move-window-down-or-to-workspace-down = [ ];
 
       # Move windows (vim keys)
-      "Mod+Shift+H".action = move-column-left;
-      "Mod+Shift+L".action = move-column-right;
-      "Mod+Shift+K".action = move-window-up-or-to-workspace-up;
-      "Mod+Shift+J".action = move-window-down-or-to-workspace-down;
+      "Mod+Shift+H".action.move-column-left = [ ];
+      "Mod+Shift+L".action.move-column-right = [ ];
+      "Mod+Shift+K".action.move-window-up-or-to-workspace-up = [ ];
+      "Mod+Shift+J".action.move-window-down-or-to-workspace-down = [ ];
 
       # Column width presets (1/3, 1/2, 2/3)
-      "Mod+R".action = switch-preset-column-width;
-      "Mod+Minus".action = set-column-width "-10%";
-      "Mod+Equal".action = set-column-width "+10%";
+      "Mod+R".action.switch-preset-column-width = [ ];
+      "Mod+Minus".action.set-column-width = "-10%";
+      "Mod+Equal".action.set-column-width = "+10%";
 
       # Workspaces (by index)
-      "Mod+1".action = focus-workspace 1;
-      "Mod+2".action = focus-workspace 2;
-      "Mod+3".action = focus-workspace 3;
-      "Mod+4".action = focus-workspace 4;
-      "Mod+5".action = focus-workspace 5;
-      "Mod+Shift+1".action = move-column-to-workspace 1;
-      "Mod+Shift+2".action = move-column-to-workspace 2;
-      "Mod+Shift+3".action = move-column-to-workspace 3;
-      "Mod+Shift+4".action = move-column-to-workspace 4;
-      "Mod+Shift+5".action = move-column-to-workspace 5;
+      "Mod+1".action.focus-workspace = 1;
+      "Mod+2".action.focus-workspace = 2;
+      "Mod+3".action.focus-workspace = 3;
+      "Mod+4".action.focus-workspace = 4;
+      "Mod+5".action.focus-workspace = 5;
+      "Mod+Shift+1".action.move-column-to-workspace = 1;
+      "Mod+Shift+2".action.move-column-to-workspace = 2;
+      "Mod+Shift+3".action.move-column-to-workspace = 3;
+      "Mod+Shift+4".action.move-column-to-workspace = 4;
+      "Mod+Shift+5".action.move-column-to-workspace = 5;
 
       # Consume / expel windows within columns
-      "Mod+Comma".action = consume-window-into-column;
-      "Mod+Period".action = expel-window-from-column;
+      "Mod+Comma".action.consume-window-into-column = [ ];
+      "Mod+Period".action.expel-window-from-column = [ ];
 
       # Tabbed columns
-      "Mod+W".action = toggle-column-tabbed-display;
+      "Mod+W".action.toggle-column-tabbed-display = [ ];
 
       # -- Screenshots --
-      "Print".action = screenshot;
+      "Print".action.screenshot = [ ];
       "Mod+Print".action.screenshot-screen = { };
       "Mod+Shift+Print".action.screenshot-window = { };
 
       # -- Overview (like macOS Mission Control) --
-      "Mod+Tab".action = toggle-overview;
+      "Mod+Tab".action.toggle-overview = [ ];
 
       # -- Applications --
       "Mod+T".action.spawn = [ "alacritty" ];
@@ -175,7 +176,7 @@ in
       "XF86AudioMute".action.spawn = noctalia "volume muteOutput";
 
       # -- Session --
-      "Mod+Shift+E".action = quit;
+      "Mod+Shift+E".action.quit = [ ];
     };
   };
 }
