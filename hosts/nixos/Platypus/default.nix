@@ -77,7 +77,7 @@ in
     enable = true;
     networks = {
       "10-wired" = {
-        matchConfig.Name = "eth0";
+        matchConfig.Name = "enp3s0";
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
@@ -98,6 +98,30 @@ in
     systemd.enable = true;
   };
 
+  boot.loader = {
+    efi = {
+      canTouchEfiVariables = true;
+      efiSysMountPoint = "/boot";
+    };
+    grub = {
+      enable = true;
+      devices = [ "nodev" ];
+      efiSupport = true;
+      # dual boot with Windows
+      useOSProber = true;
+      extraEntries = ''
+        menuentry "Windows" {
+          insmod part_gpt
+          insmod fat
+          insmod search_fs_uuid
+          insmod chain
+          search --fs-uuid --set=root 1659-E65B
+          chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+        }
+      '';
+    };
+  };
+
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion
-  system.stateVersion = "25.05";
+  system.stateVersion = "25.11";
 }
