@@ -70,6 +70,8 @@ in
     wget
     vivid
     #nxv # Nix pkg index CLI
+    # dev tools
+    devenv
     # lsp
     nil
     nixd
@@ -78,6 +80,7 @@ in
     gcc
     cargo
     #python3
+    kitty
   ];
 
   nix = {

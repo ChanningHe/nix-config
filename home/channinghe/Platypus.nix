@@ -22,7 +22,16 @@
     # common/optional/sops.nix
   ];
 
-  # SSH Clients Configuration
-  # Enable specific SSH hosts from nix-secrets
-  #sshClients.enabledHosts = [ "Host1" "Host2" ];
+  # ── Platypus Display Output ──────────────────────────
+  # Run `niri msg outputs` to find exact connector name and refresh rate.
+  # Replace "DP-1" with actual output (e.g. HDMI-A-1, DP-2, etc).
+  programs.niri.settings.outputs."HDMI-A-3" = {
+    mode = {
+      width = 3840;
+      height = 2160;
+      refresh = 144.0;
+    };
+    scale = 1.5;
+    variable-refresh-rate = "on-demand";
+  };
 }

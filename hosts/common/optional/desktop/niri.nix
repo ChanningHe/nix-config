@@ -10,18 +10,27 @@
   # Use nixpkgs niri (pre-built in NixOS cache) instead of flake's niri-stable
   programs.niri.package = pkgs.niri;
 
-  # ── Display Manager (greetd) ─────────────────────────
-  # Without a display manager, the system boots to a bare TTY.
-  # greetd is a lightweight login manager that launches the niri session.
+  # ── Display Manager (greetd + tuigreet) ───────────────
   services.greetd = {
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions ${pkgs.niri}/share/wayland-sessions";
+        command = builtins.concatStringsSep " " [
+          "${pkgs.greetd.tuigreet}/bin/tuigreet"
+          "--time"
+          "--time-format '%Y-%m-%d %H:%M'"
+          "--remember"
+          "--remember-session"
+          "--asterisks"
+          "--greeting 'Welcome to NixOS'"
+          "--sessions ${pkgs.niri}/share/wayland-sessions"
+        ];
         user = "greeter";
       };
     };
   };
+  # Suppress last-login messages cluttering the greeter TTY
+  security.pam.services.greetd.enableGnomeKeyring = true;
 
   # Polkit: permission elevation dialogs (like macOS "enter password to allow")
   security.polkit.enable = true;
@@ -51,7 +60,23 @@
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
   environment.systemPackages = with pkgs; [
-    xwayland-satellite # X11 app compatibility layer — niri integrates it automatically
+    xwayland-satellite # X11 app compatibility layer
     wl-clipboard # Wayland clipboard utilities (wl-copy / wl-paste)
+    polkit_gnome # Polkit authentication agent for privilege elevation dialogs
   ];
+
+  # Auto-start polkit agent — standalone compositors don't launch one
+  systemd.user.services.polkit-gnome-agent = {
+    description = "GNOME Polkit Authentication Agent";
+    wantedBy = [ "graphical-session.target" ];
+    wants = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+      Restart = "on-failure";
+      RestartSec = 1;
+      TimeoutStopSec = 10;
+    };
+  };
 }

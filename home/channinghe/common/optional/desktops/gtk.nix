@@ -15,4 +15,11 @@
       package = pkgs.adw-gtk3;
     };
   };
+
+  home.pointerCursor = {
+    gtk.enable = true;
+    name = "Adwaita";
+    package = pkgs.adwaita-icon-theme;
+    size = 24;
+  };
 }

@@ -1,11 +1,16 @@
 {
   inputs,
   lib,
+  pkgs,
   config,
   ...
 }:
 let
   hostNetwork = config.hostSpec.networkInfo.hosts.${config.hostSpec.hostName};
+  grubTheme = pkgs.sleek-grub-theme.override {
+    withStyle = "dark";
+    withBanner = "NixOS :: Platypus";
+  };
 in
 {
   imports = lib.flatten [
@@ -43,7 +48,7 @@ in
       #
       # ========== Optional Configs ==========
       #
-      "hosts/common/optional/niri.nix"
+      "hosts/common/optional/desktop"
       "hosts/common/optional/audio.nix"
     ])
   ];
@@ -115,8 +120,13 @@ in
       enable = true;
       devices = [ "nodev" ];
       efiSupport = true;
-      # dual boot with Windows
       useOSProber = true;
+
+      # 4K display: large font for readability
+      fontSize = 36;
+      gfxmodeEfi = "3840x2160,auto";
+      theme = grubTheme;
+
       extraEntries = ''
         menuentry "Windows" {
           insmod part_gpt
