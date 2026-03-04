@@ -15,5 +15,11 @@
     pavucontrol # GUI audio mixer (pairs with PipeWire)
     galculator # GTK calculator
     nautilus # file manager
+
+    zed-editor
+    qq
+    wechat
+    rustdesk-flutter
+    localsend
   ];
 }

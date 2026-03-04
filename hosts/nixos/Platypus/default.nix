@@ -44,7 +44,8 @@ in
       #
       "hosts/common/optional/system/no-firewall.nix"
       "hosts/common/optional/system/ip-forward.nix"
-
+      "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/docker.nix"
       #
       # ========== Optional Configs ==========
       #
@@ -124,11 +125,11 @@ in
 
       # 4K display: large font for readability
       fontSize = 36;
-      gfxmodeEfi = "3840x2160,auto";
+      gfxmodeEfi = "1920x1080,auto";
       theme = grubTheme;
 
       extraEntries = ''
-        menuentry "Windows" {
+        menuentry "Windows11" {
           insmod part_gpt
           insmod fat
           insmod search_fs_uuid

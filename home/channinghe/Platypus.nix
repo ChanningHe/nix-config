@@ -16,7 +16,7 @@
     common/optional/browsers
     common/optional/desktops
     # common/optional/comms
-    # common/optional/media
+    common/optional/media
 
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix
