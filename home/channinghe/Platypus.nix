@@ -34,4 +34,6 @@
     scale = 1.5;
     variable-refresh-rate = "on-demand";
   };
+
+  sshClients.enableAll = true;
 }

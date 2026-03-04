@@ -16,10 +16,13 @@
     galculator # GTK calculator
     nautilus # file manager
 
+    yubioath-flutter
+
     zed-editor
     qq
     wechat
     rustdesk-flutter
     localsend
+
   ];
 }

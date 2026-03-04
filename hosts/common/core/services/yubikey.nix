@@ -22,6 +22,7 @@ in
 }
 // lib.optionalAttrs isLinux {
   services.pcscd.enable = true;
+  services.udev.packages = [ pkgs.yubikey-personalization ];
 
   security.pam = {
     rssh.enable = true;
