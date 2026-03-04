@@ -23,6 +23,7 @@
     wechat
     rustdesk-flutter
     localsend
-
+    _1password-cli
+    _1password-gui
   ];
 }

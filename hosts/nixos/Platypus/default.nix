@@ -50,6 +50,7 @@ in
       # ========== Optional Configs ==========
       #
       "hosts/common/optional/desktop"
+      "hosts/common/optional/steam.nix"
       "hosts/common/optional/audio.nix"
     ])
   ];
