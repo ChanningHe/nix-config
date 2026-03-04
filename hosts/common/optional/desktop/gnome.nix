@@ -4,10 +4,11 @@
 { pkgs, ... }:
 {
   services.xserver.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.desktopManager.gnome.enable = true;
 
-  # We use greetd, not GDM
-  services.xserver.displayManager.gdm.enable = false;
+  # GDM: native GNOME display manager, discovers both GNOME and niri sessions
+  services.displayManager.gdm.enable = true;
+  services.displayManager.gdm.wayland = true;
 
   # XDG portal routing for GNOME sessions
   xdg.portal.config.gnome = {

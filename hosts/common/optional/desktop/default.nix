@@ -9,28 +9,6 @@
     ./i18n.nix
   ];
 
-  # ── Display Manager (greetd + tuigreet) ───────────────
-  # Generic session discovery: picks up ALL installed wayland/x11 sessions
-  services.greetd = {
-    enable = true;
-    settings = {
-      default_session = {
-        command = builtins.concatStringsSep " " [
-          "${pkgs.greetd.tuigreet}/bin/tuigreet"
-          "--time"
-          "--time-format '%Y-%m-%d %H:%M'"
-          "--remember"
-          "--remember-session"
-          "--asterisks"
-          "--greeting 'Welcome to NixOS'"
-          "--sessions /run/current-system/sw/share/wayland-sessions:/run/current-system/sw/share/xsessions"
-        ];
-        user = "greeter";
-      };
-    };
-  };
-  security.pam.services.greetd.enableGnomeKeyring = true;
-
   # ── Shared Security & Credential Services ─────────────
   security.polkit.enable = true;
   services.gnome.gnome-keyring.enable = true;

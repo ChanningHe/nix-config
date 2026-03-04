@@ -72,6 +72,7 @@ in
     #nxv # Nix pkg index CLI
     # dev tools
     devenv
+    bun
     # lsp
     nil
     nixd
