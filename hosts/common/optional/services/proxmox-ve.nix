@@ -3,7 +3,6 @@
 {
   config,
   lib,
-  pkgs,
   inputs,
   ...
 }:
@@ -12,10 +11,12 @@ let
   hostProxmox = config.hostSpec.serviceInfo.${hostName}.proxmox-ve or { };
 in
 {
-  # Import the proxmox-nixos module
   imports = [
     inputs.proxmox-nixos.nixosModules.proxmox-ve
   ];
+
+  # proxmox-nixos packages are not in nixpkgs; inject overlay locally
+  nixpkgs.overlays = [ inputs.proxmox-nixos.overlays.x86_64-linux ];
 
   config = {
     # Configure from hostSpec if available

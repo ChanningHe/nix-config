@@ -20,6 +20,9 @@ in
     inputs.nxv.nixosModules.default
   ];
 
+  # nxv packages are not in nixpkgs; inject overlay locally
+  nixpkgs.overlays = [ inputs.nxv.overlays.default ];
+
   config = lib.mkIf nxvEnabled {
     services.nxv = {
       enable = true;
