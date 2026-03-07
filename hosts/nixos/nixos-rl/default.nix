@@ -1,6 +1,7 @@
 {
   lib,
   pkgs,
+  inputs,
   config,
   modulesPath,
   ...
@@ -128,11 +129,12 @@ in
   # Pin runc to 1.2.6 until Proxmox host is updated to PVE 8.4.16+ (lxc-pve 6.0.5-2).
   # Upstream: https://github.com/opencontainers/runc/issues/4972
   # Permanent fix: add `lxc.apparmor.profile: unconfined` to /etc/pve/lxc/<CTID>.conf
-  # WORKAROUND: docker_28 bundles runc 1.3.x (CVE-2025-52881 fix) which breaks
-  # Docker in unprivileged Proxmox LXC due to AppArmor path mismatch.
-  # Use docker_25 which ships runc v1.2.5 (pre-CVE, available in binary cache).
+  # WORKAROUND: current nixpkgs docker_28 = 28.5.2 + runc 1.3.3 (CVE-2025-52881 fix)
+  # which breaks Docker in unprivileged Proxmox LXC (AppArmor path mismatch on detached procfs).
+  # Pin to nixpkgs commit d560188c where docker_28 = 28.5.1 + runc 1.3.0 (pre-CVE).
   # Remove once Proxmox host is updated to PVE 8.4.16+ (lxc-pve 6.0.5-2).
-  virtualisation.docker.package = pkgs.docker_25;
+  virtualisation.docker.package =
+    inputs.nixpkgs-docker-compat.legacyPackages.${pkgs.stdenv.hostPlatform.system}.docker_28;
 
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion
   system.stateVersion = "25.05";
