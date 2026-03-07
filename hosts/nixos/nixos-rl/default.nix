@@ -122,6 +122,22 @@ in
   #nix.settings.sandbox = false;
   #security.apparmor.enable = false;
 
+  # FIXME(workaround): runc 1.2.7+ (CVE-2025-52881 fix) breaks Docker inside
+  # unprivileged Proxmox LXC due to AppArmor path mismatch on detached procfs.
+  # Pin runc to 1.2.6 until Proxmox host is updated to PVE 8.4.16+ (lxc-pve 6.0.5-2).
+  # Upstream: https://github.com/opencontainers/runc/issues/4972
+  # Permanent fix: add `lxc.apparmor.profile: unconfined` to /etc/pve/lxc/<CTID>.conf
+  nixpkgs.overlays = [
+    (_: prev: {
+      # Docker bundles its own runc (docker-runc), built with pinned runcRev/runcHash
+      # inside the docker package — overriding standalone `runc` has no effect.
+      docker = prev.docker.override {
+        runcRev = "v1.2.6";
+        runcHash = "sha256-XMN+YKdQOQeOLLwvdrC6Si2iAIyyHD5RgZbrOHrQE/g=";
+      };
+    })
+  ];
+
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion
   system.stateVersion = "25.05";
 }
