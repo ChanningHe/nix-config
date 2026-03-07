@@ -7,15 +7,10 @@
   lib,
   inputs,
   config,
-  pkgs,
   ...
 }:
 let
   sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
-  userGroup =
-    if pkgs.stdenv.isDarwin then "staff" else config.users.users.${config.hostSpec.username}.group;
-  #sopsFolder = builtins.toString inputs.nix-secrets;
-  #secretsFile = "${sopsFolder}/shared.yaml";
 in
 {
   #the import for inputs.sops-nix.nixosModules.sops is handled in hosts/common/core/default.nix so that it can be dynamically input according to the platform
@@ -83,18 +78,6 @@ in
         };
       }
     )
-    # Shared secrets from shared.yaml (if it exists)
-    # Skip on Darwin during initial setup when no age keys are configured
-    #(lib.mkIf (builtins.pathExists "${sopsFolder}/shared.yaml" && !config.hostSpec.isDarwin) {
-    (lib.mkIf (builtins.pathExists "${sopsFolder}/shared.yaml") {
-      # Attic binary cache token
-      "attic/token" = {
-        sopsFile = "${sopsFolder}/shared.yaml";
-        mode = "0400";
-        owner = config.hostSpec.username;
-        group = userGroup;
-      };
-    })
   ];
   # The containing folders are created as root and if this is the first ~/.config/ entry,
   # the ownership is busted and home-manager can't target because it can't write into .config...
