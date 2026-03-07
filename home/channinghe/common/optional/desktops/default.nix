@@ -15,6 +15,7 @@
     pavucontrol # GUI audio mixer (pairs with PipeWire)
     galculator # GTK calculator
     nautilus # file manager
+    kitty
 
     yubioath-flutter
 

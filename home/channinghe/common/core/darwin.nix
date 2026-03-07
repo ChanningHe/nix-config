@@ -25,6 +25,7 @@
 
     #fontforge
     #nixpkgs-fmt
+    kitty
     # Add Darwin-specific packages here if needed
   ];
 }

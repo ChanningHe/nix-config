@@ -81,7 +81,6 @@ in
     gcc
     cargo
     #python3
-    kitty
   ];
 
   nix = {
