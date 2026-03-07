@@ -18,171 +18,131 @@ let
   hostKomodo = config.hostSpec.serviceInfo.${hostName}.komodo or { };
   sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
   sopsFile = "${sopsFolder}/${hostName}.yaml";
-  # Use lib.pathExists instead of builtins.pathExists to avoid evaluation issues
+  # hasSopsFile stays here: also used in the cfg.enable block below
   hasSopsFile = lib.pathExists sopsFile;
-
-  # Detect which komodo secrets exist in the sops file
-  # YAML key names are plaintext, so we can check for their presence
-  sopsContent = if hasSopsFile then builtins.readFile sopsFile else "";
-  # Match each part of the key path separately (YAML uses nested indentation, not "a/b:" format)
-  hasSecretKey =
-    key:
-    let
-      parts = lib.splitString "/" key;
-    in
-    lib.all (part: builtins.match ".*${part}:.*" sopsContent != null) parts;
-
-  # Check for different authentication methods
-  hasPasskeys = hasSecretKey "komodo/passkeys";
-  hasPrivateKey = hasSecretKey "komodo/private_key";
-  hasCorePublicKeys = hasSecretKey "komodo/core_public_keys";
-  hasOnboardingKey = hasSecretKey "komodo/onboarding_key";
-
-  # SOPS age key for decrypting secrets in git repos
-  hasSopsAgeKey = hasSecretKey "komodo/sops_age_key";
-
-  # SSL certificates
-  hasSslKey = hasSecretKey "komodo/ssl_key";
-  hasSslCert = hasSecretKey "komodo/ssl_cert";
 in
 {
-  # Import the pure NixOS module
   imports = [
     (lib.custom.relativeToRoot "modules/hosts/nixos/komodo")
   ];
 
   config = lib.mkMerge [
     # Import settings from hostSpec.serviceInfo if komodo config exists
-    # Direct mapping - use v2 format in hostSpec.serviceInfo
     (lib.mkIf (hostKomodo != { }) {
       services.komodo-periphery = {
-        # Force package to unstable version
         package = lib.mkDefault pkgs.unstable.komodo;
       }
-      # Map all other fields from hostKomodo with mkDefault
       // (builtins.mapAttrs (_: lib.mkDefault) (builtins.removeAttrs hostKomodo [ "package" ]));
     })
 
     # sops-nix integration (only if service is enabled and sops file exists)
-    (lib.mkIf (cfg.enable && hasSopsFile) {
-      # Define sops secrets - only for keys that exist in the sops file
-      sops.secrets =
-        # SSL certificates - only if SSL is enabled and keys exist
-        lib.optionalAttrs (cfg.inbound.ssl.enable && hasSslKey) {
-          "komodo/ssl_key" = {
-            sopsFile = sopsFile;
+    # sopsContent and hasXxx are inside this mkIf body so they are lazy:
+    # builtins.readFile and string checks only run when actually needed.
+    (lib.mkIf (cfg.enable && hasSopsFile) (
+      let
+        sopsContent = builtins.readFile sopsFile;
+        # lib.hasInfix replaces builtins.match ".*x.*" — no regex compilation/backtracking
+        hasKey = key: lib.all (part: lib.hasInfix "${part}:" sopsContent) (lib.splitString "/" key);
+
+        hasPasskeys = hasKey "komodo/passkeys";
+        hasPrivateKey = hasKey "komodo/private_key";
+        hasCorePublicKeys = hasKey "komodo/core_public_keys";
+        hasOnboardingKey = hasKey "komodo/onboarding_key";
+        hasSopsAgeKey = hasKey "komodo/sops_age_key";
+        hasSslKey = hasKey "komodo/ssl_key";
+        hasSslCert = hasKey "komodo/ssl_cert";
+
+        # Common secret attrs; avoids repeating owner/group/mode 7 times
+        mkSecret =
+          extra:
+          {
+            inherit sopsFile;
             owner = cfg.user;
             group = cfg.group;
             mode = "0400";
-            path = "${cfg.rootDirectory}/ssl/key.pem";
-          };
-        }
-        // lib.optionalAttrs (cfg.inbound.ssl.enable && hasSslCert) {
-          "komodo/ssl_cert" = {
-            sopsFile = sopsFile;
-            owner = cfg.user;
-            group = cfg.group;
-            mode = "0400";
-            path = "${cfg.rootDirectory}/ssl/cert.pem";
-          };
-        }
-        # v1 authentication - Passkeys (legacy)
-        // lib.optionalAttrs hasPasskeys {
-          "komodo/passkeys" = {
-            sopsFile = sopsFile;
-            owner = cfg.user;
-            group = cfg.group;
-            mode = "0400";
-          };
-        }
-        # v2 authentication - Private key
-        // lib.optionalAttrs hasPrivateKey {
-          "komodo/private_key" = {
-            sopsFile = sopsFile;
-            owner = cfg.user;
-            group = cfg.group;
-            mode = "0400";
-          };
-        }
-        # v2 authentication - Core public keys
-        // lib.optionalAttrs hasCorePublicKeys {
-          "komodo/core_public_keys" = {
-            sopsFile = sopsFile;
-            owner = cfg.user;
-            group = cfg.group;
-            mode = "0400";
-          };
-        }
-        # v2 outbound - Onboarding key
-        // lib.optionalAttrs hasOnboardingKey {
-          "komodo/onboarding_key" = {
-            sopsFile = sopsFile;
-            owner = cfg.user;
-            group = cfg.group;
-            mode = "0400";
-          };
-        }
-        # SOPS age key for decrypting secrets in git repos
-        // lib.optionalAttrs hasSopsAgeKey {
-          "komodo/sops_age_key" = {
-            sopsFile = sopsFile;
-            owner = cfg.user;
-            group = cfg.group;
-            mode = "0400";
-          };
-        };
+          }
+          // extra;
+      in
+      {
+        # builtins.listToAttrs builds the attrset in one pass instead of 7x // copies
+        sops.secrets = builtins.listToAttrs (
+          lib.optionals (cfg.inbound.ssl.enable && hasSslKey) [
+            {
+              name = "komodo/ssl_key";
+              value = mkSecret { path = "${cfg.rootDirectory}/ssl/key.pem"; };
+            }
+          ]
+          ++ lib.optionals (cfg.inbound.ssl.enable && hasSslCert) [
+            {
+              name = "komodo/ssl_cert";
+              value = mkSecret { path = "${cfg.rootDirectory}/ssl/cert.pem"; };
+            }
+          ]
+          ++ lib.optionals hasPasskeys [
+            {
+              name = "komodo/passkeys";
+              value = mkSecret { };
+            }
+          ]
+          ++ lib.optionals hasPrivateKey [
+            {
+              name = "komodo/private_key";
+              value = mkSecret { };
+            }
+          ]
+          ++ lib.optionals hasCorePublicKeys [
+            {
+              name = "komodo/core_public_keys";
+              value = mkSecret { };
+            }
+          ]
+          ++ lib.optionals hasOnboardingKey [
+            {
+              name = "komodo/onboarding_key";
+              value = mkSecret { };
+            }
+          ]
+          ++ lib.optionals hasSopsAgeKey [
+            {
+              name = "komodo/sops_age_key";
+              value = mkSecret { };
+            }
+          ]
+        );
 
-      # Configure Komodo Periphery to use sops secrets
-      services.komodo-periphery = lib.mkMerge [
-        # SSL configuration (v2: inbound.ssl)
-        (lib.mkIf (cfg.inbound.ssl.enable && hasSslKey && hasSslCert) {
-          inbound.ssl = {
-            keyFile = lib.mkForce config.sops.secrets."komodo/ssl_key".path;
-            certFile = lib.mkForce config.sops.secrets."komodo/ssl_cert".path;
-          };
-        })
+        services.komodo-periphery = lib.mkMerge [
+          (lib.mkIf (cfg.inbound.ssl.enable && hasSslKey && hasSslCert) {
+            inbound.ssl = {
+              keyFile = lib.mkForce config.sops.secrets."komodo/ssl_key".path;
+              certFile = lib.mkForce config.sops.secrets."komodo/ssl_cert".path;
+            };
+          })
+          (lib.mkIf hasPasskeys {
+            passkeyFiles = config.sops.secrets."komodo/passkeys".path;
+          })
+          (lib.mkIf hasPrivateKey {
+            auth.privateKey = "file:${config.sops.secrets."komodo/private_key".path}";
+          })
+          (lib.mkIf hasCorePublicKeys {
+            auth.corePublicKeys = [ "file:${config.sops.secrets."komodo/core_public_keys".path}" ];
+          })
+          (lib.mkIf hasOnboardingKey {
+            outbound.onboardingKeyFile = config.sops.secrets."komodo/onboarding_key".path;
+          })
+          (lib.mkIf hasSopsAgeKey {
+            environment = lib.mkDefault {
+              SOPS_AGE_KEY_FILE = config.sops.secrets."komodo/sops_age_key".path;
+            };
+          })
+        ];
+      }
+    ))
 
-        # v1 authentication - Passkeys
-        (lib.mkIf hasPasskeys {
-          passkeyFiles = config.sops.secrets."komodo/passkeys".path;
-        })
-
-        # v2 authentication - Private key
-        (lib.mkIf hasPrivateKey {
-          auth.privateKey = "file:${config.sops.secrets."komodo/private_key".path}";
-        })
-
-        # v2 authentication - Core public keys
-        (lib.mkIf hasCorePublicKeys {
-          auth.corePublicKeys = [ "file:${config.sops.secrets."komodo/core_public_keys".path}" ];
-        })
-
-        # v2 outbound - Onboarding key
-        (lib.mkIf hasOnboardingKey {
-          outbound.onboardingKeyFile = config.sops.secrets."komodo/onboarding_key".path;
-        })
-
-        # SOPS age key for decrypting secrets in git repos
-        (lib.mkIf hasSopsAgeKey {
-          environment = lib.mkDefault {
-            SOPS_AGE_KEY_FILE = config.sops.secrets."komodo/sops_age_key".path;
-          };
-        })
-      ];
-      # Optional: If using GitHub token, add it here
-      # services.komodo-periphery.environment = {
-      #   GITHUB_TOKEN = config.sops.secrets."komodo/github_token".path;
-      # };
-    })
-
-    # Additional configuration when service is enabled
     (lib.mkIf cfg.enable {
-      # Ensure user is in docker group (the module already handles this for default user)
       users.users.${cfg.user} = lib.mkIf (cfg.user != "root" && cfg.user != "komodo-periphery") {
         extraGroups = [ "docker" ];
       };
 
-      # Enable Docker (the module already handles this by default)
       virtualisation.docker = {
         enable = lib.mkDefault true;
         autoPrune = {
@@ -191,12 +151,9 @@ in
         };
       };
 
-      # Wait for sops-nix service if using any sops secrets
       systemd.services.komodo-periphery = {
         after = lib.mkIf hasSopsFile [ "sops-nix.service" ];
         wants = lib.mkIf hasSopsFile [ "sops-nix.service" ];
-
-        # Add required tools to PATH
         path = with pkgs; [
           git
           age
@@ -206,10 +163,6 @@ in
           openssh
         ];
       };
-
-      # Optionally open firewall port
-      # Uncomment if you need external access to Periphery
-      # networking.firewall.allowedTCPPorts = [ cfg.port ];
     })
   ];
 }
