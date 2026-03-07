@@ -117,6 +117,11 @@ in
   #   systemd.enable = true;
   # };
 
+  # Disable sandboxing for running nixos in containers
+  # https://nixos.wiki/wiki/Proxmox_Linux_Container
+  #nix.settings.sandbox = false;
+  #security.apparmor.enable = false;
+
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion
   system.stateVersion = "25.05";
 }
