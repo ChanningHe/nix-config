@@ -20,7 +20,7 @@
   home.packages = with pkgs; [
     #rustup
     coreutils
-    ghostty-bin # Ghostty terminal emulator
+    #ghostty-bin # Ghostty terminal emulator
     waka # CLI to get WakaTime stats
 
     #fontforge
