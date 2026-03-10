@@ -1,6 +1,20 @@
 # ChanningHe's Nix-Config
 
-## WIP!
+Personal NixOS + Darwin configuration managing a mix of home servers, VMs, and a MacBook. Built on top of [EmergentMind/nix-config-starter](https://github.com/EmergentMind/nix-config-starter), adapted for my own setup over time.
+
+Secrets are managed with sops-nix and kept in a separate private repo. Most machines run NixOS; the MacBook uses nix-darwin.
+
+## Hosts
+
+| Host | Form Factor | CPU | Memory | Other | Role |
+|------|-------------|-----|--------|-------|------|
+| `nixos-rl` | LXC Container | AMD EPYC 7C13 | 128 GB | — | Primary services |
+| `Platypus` | Desktop | Intel Core i9-12700K | 32 GB | RTX 3070 | Gaming / Workstation |
+| `Poecilia` | Mini PC | AMD Ryzen 9 7840HS | 32 GB | — | HA services |
+| `Pseudomugil` | Server | AMD EPYC 7D12 | 64 GB | — | Remote testing |
+| `Toxotidae` | KVM VM | AMD EPYC 7C13 | 128 GB | — | Build / CI testing |
+| `Macrouridae` | NAS | Intel Atom C3558 | 4 GB | — | Cold backup |
+| `ChanningdeMacBook-Pro` | Laptop | Apple M4 Pro | 48 GB | — | Primary workstation |
 
 ## System Architecture Overview
 ![](./docs/images/SystemOverviewV1.2.png)
@@ -9,10 +23,6 @@
 ## Configuration Inheritance Hierarchy
 ![](./docs/images/ConfigurationInheritanceV1.2.png)
 *Generated with [mermaid-to-excalidraw](https://github.com/excalidraw/mermaid-to-excalidraw)*
-
-## Installation on Remote Targets
-
-For details on how to use the nixos-anywhere directory and `scripts/bootstrap-nixos.sh` script, please see my article and accompanying YouTube video [Remotely Installing NixOS and nix-config with Secrets](https://unmovedcentre.com/posts/remote-install-nixos-config/).
 
 ## References
 Fork from [EmergentMind/nix-config-starter](https://github.com/EmergentMind/nix-config-starter)
