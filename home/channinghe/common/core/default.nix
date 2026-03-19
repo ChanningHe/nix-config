@@ -27,6 +27,7 @@ in
     ./zed.nix
     ./zsh.nix
     ./neovim.nix
+    ./yazi.nix
   ];
 
   inherit hostSpec;
