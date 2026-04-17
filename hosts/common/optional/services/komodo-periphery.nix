@@ -20,6 +20,17 @@ let
   sopsFile = "${sopsFolder}/${hostName}.yaml";
   # hasSopsFile stays here: also used in the cfg.enable block below
   hasSopsFile = lib.pathExists sopsFile;
+
+  # Bridge serviceInfo.binaryPath (string) -> NixOS package derivation.
+  # When binaryPath is set, create a thin wrapper that symlinks the external binary.
+  komodoPackage =
+    if hostKomodo ? binaryPath && hostKomodo.binaryPath != null then
+      pkgs.runCommandLocal "komodo-periphery-custom" { } ''
+        mkdir -p $out/bin
+        ln -s ${lib.escapeShellArg hostKomodo.binaryPath} $out/bin/periphery
+      ''
+    else
+      pkgs.unstable.komodo;
 in
 {
   imports = [
@@ -30,9 +41,14 @@ in
     # Import settings from hostSpec.serviceInfo if komodo config exists
     (lib.mkIf (hostKomodo != { }) {
       services.komodo-periphery = {
-        package = lib.mkDefault pkgs.unstable.komodo;
+        package = lib.mkDefault komodoPackage;
       }
-      // (builtins.mapAttrs (_: lib.mkDefault) (builtins.removeAttrs hostKomodo [ "package" ]));
+      // (builtins.mapAttrs (_: lib.mkDefault) (
+        builtins.removeAttrs hostKomodo [
+          "package"
+          "binaryPath"
+        ]
+      ));
     })
 
     # sops-nix integration (only if service is enabled and sops file exists)
