@@ -69,15 +69,35 @@ in
       nfs.enable = lib.mkDefault (clientConfig.nfs.enable or false);
       samba.enable = lib.mkDefault (clientConfig.samba.enable or false);
 
+      # [WORKAROUND: systemd 258 + NFS fd store activation freeze]
+      # Refs:
+      #   https://github.com/NixOS/nixpkgs/issues/375376
+      #   https://github.com/systemd/systemd/issues/39354
+      #   https://discourse.nixos.org/t/failed-to-restart-sysinit-reactivation-target/58634/10
+      #
+      # systemd re-exec (and sysinit-reactivation during nixos-rebuild switch)
+      # holds NFS mount fd's in its fd store; systemd 258's generator sandbox
+      # fork path fails with EPROTO when those fd's exist, freezing PID 1.
+      # Making NFS mounts autofs-managed ensures no live NFS fd crosses
+      # activation: unused mounts auto-unmount after idle-timeout, and the
+      # .automount unit only holds a local autofs fd (not an NFS socket).
+      #
+      # Per-host override:
+      #   lib.mkForce [...] to drop this workaround entirely
+      #   [ ... ] to append extras (listOf merges via concatLists)
+      #
+      # Remove once upstream systemd or nixpkgs ships a fix clearing
+      # network-fs fd's from fd store before generator sandbox fork.
+      nfs.extraOptions = [
+        "x-systemd.automount"
+        "noauto"
+        "x-systemd.idle-timeout=60"
+        "x-systemd.mount-timeout=10"
+        "_netdev"
+      ];
+
       # Common client mount options (applies to all mounts)
       # These will be added to options specified in nix-secrets
-
-      # Example NFS mount options:
-      # nfs.extraOptions = [
-      #   "soft"        # Fail gracefully if server is down
-      #   "timeo=30"    # Timeout after 3 seconds
-      #   "retrans=3"   # Retry 3 times before failing
-      # ];
 
       # Example Samba mount options:
       # samba.extraOptions = [
