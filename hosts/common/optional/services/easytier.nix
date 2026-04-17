@@ -48,31 +48,58 @@ in
       "net.ipv6.conf.all.forwarding" = lib.mkDefault 1;
     };
 
-    # NAT rules for EasyTier tunnel
-    systemd.services.easytier-nat = lib.mkIf natEnabled {
-      description = "NAT rules for EasyTier";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-      };
-      path = [
-        pkgs.iproute2
-        pkgs.coreutils
-        pkgs.iptables
-      ];
-      script = ''
-        # Detect default route interface dynamically
-        NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " ")
-        iptables -A FORWARD -i "$NETDEV" -o ${tunInterface} -j ACCEPT
-        iptables -t nat -A POSTROUTING -o ${tunInterface} -j MASQUERADE
-      '';
-      preStop = ''
-        NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " ")
-        iptables -D FORWARD -i "$NETDEV" -o ${tunInterface} -j ACCEPT 2>/dev/null || true
-        iptables -t nat -D POSTROUTING -o ${tunInterface} -j MASQUERADE 2>/dev/null || true
-      '';
-    };
+    systemd.services = lib.mkMerge [
+      # [WORKAROUND: systemd 258 + NFS activation freeze - line B]
+      # Refs:
+      #   https://discourse.nixos.org/t/failed-to-restart-sysinit-reactivation-target/58634/10
+      #   https://github.com/NixOS/nixpkgs/issues/375376
+      #
+      # By default easytier unit uses stopIfChanged = true, which makes
+      # activation do `systemctl stop` then `systemctl start`. During the gap
+      # any NFS path routed over the tunnel hangs (held syscalls never return),
+      # which can freeze sysinit-reactivation.target.
+      #
+      # Forcing single-step restart (like upstream tailscale does) keeps the
+      # tunnel socket briefly alive across the transition. Combined with NFS
+      # autofs in network-storage.nix, this closes the activation-time window.
+      #
+      # Safe for easytier: the binary is resilient to immediate re-exec and
+      # restartTriggers upstream already pins restarts to config file changes.
+      (lib.mapAttrs' (
+        instanceName: _:
+        lib.nameValuePair "easytier-${instanceName}" {
+          stopIfChanged = false;
+        }
+      ) easytierInstances)
+
+      # NAT rules for EasyTier tunnel
+      (lib.mkIf natEnabled {
+        easytier-nat = {
+          description = "NAT rules for EasyTier";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "network.target" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          path = [
+            pkgs.iproute2
+            pkgs.coreutils
+            pkgs.iptables
+          ];
+          script = ''
+            # Detect default route interface dynamically
+            NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " ")
+            iptables -A FORWARD -i "$NETDEV" -o ${tunInterface} -j ACCEPT
+            iptables -t nat -A POSTROUTING -o ${tunInterface} -j MASQUERADE
+          '';
+          preStop = ''
+            NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " ")
+            iptables -D FORWARD -i "$NETDEV" -o ${tunInterface} -j ACCEPT 2>/dev/null || true
+            iptables -t nat -D POSTROUTING -o ${tunInterface} -j MASQUERADE 2>/dev/null || true
+          '';
+        };
+      })
+    ];
   };
 }
