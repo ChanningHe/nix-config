@@ -32,10 +32,12 @@ lib.optionalAttrs isLinux {
       defaults = {
         inherit (mail)
           auth
+          port
           tls
           tls_starttls
-          port
           ;
+        syslog = "LOG_MAIL";
+        timeout = 30;
       };
 
       accounts.default = {
