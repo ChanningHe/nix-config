@@ -48,6 +48,7 @@ in
       "hosts/common/optional/services/tailscale.nix"
       "hosts/common/optional/services/komodo-periphery.nix"
       "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/zfs-zed-mail.nix"
       "hosts/common/optional/network-storage.nix"
       #"hosts/common/optional/services/proxmox-ve.nix"
       "hosts/common/optional/services/vscode-server.nix"

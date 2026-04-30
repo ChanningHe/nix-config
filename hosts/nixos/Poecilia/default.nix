@@ -45,6 +45,7 @@ in
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/zfs-zed-mail.nix"
       "hosts/common/optional/services/znapzend.nix"
       #"hosts/common/optional/services/nxv.nix"
       "hosts/common/optional/network-storage.nix"

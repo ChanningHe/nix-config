@@ -44,6 +44,7 @@ in
       "hosts/common/optional/system/zfs-mirror-boot.nix"
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/zfs-zed-mail.nix"
       #"hosts/common/optional/services/znapzend.nix"
       #"hosts/common/optional/network-storage.nix"
     ])
