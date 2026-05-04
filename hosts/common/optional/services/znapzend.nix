@@ -1,39 +1,33 @@
+#   Bridges hostSpec.serviceInfo.<host>.znapzend to:
+#   - upstream services.znapzend.*       via znapzendInfo.config
+#   - znapzendSsh module (modules/hosts/nixos/znapzend) via znapzendInfo.ssh
 {
   config,
   lib,
+  inputs,
   ...
 }:
 let
   hostName = config.hostSpec.hostName;
-  znapzendInfo = config.hostSpec.serviceInfo.${hostName}.znapzend or { };
-  isEnabled = znapzendInfo.enable or false;
+  znapzendInfo = config.hostSpec.serviceInfo.${hostName}.znapzend;
+  sshTargets = znapzendInfo.ssh.targets or { };
+  sopsFile = "${builtins.toString inputs.nix-secrets}/secrets/${hostName}.yaml";
 in
 {
-  config = lib.mkIf isEnabled {
-    services.znapzend = {
-      enable = true;
+  imports = [
+    (lib.custom.relativeToRoot "modules/hosts/nixos/znapzend")
+  ];
 
-      # Global settings with sensible defaults
-      pure = znapzendInfo.pure or false;
-      autoCreation = znapzendInfo.autoCreation or false;
-      noDestroy = znapzendInfo.noDestroy or false;
-      logLevel = znapzendInfo.logLevel or "info";
-      logTo = znapzendInfo.logTo or "syslog::daemon";
-      mailErrorSummaryTo = znapzendInfo.mailErrorSummaryTo or "";
+  services.znapzend = znapzendInfo.config // {
+    enable = true;
+  };
 
-      # Feature flags
-      features = {
-        compressed = znapzendInfo.features.compressed or false;
-        sendRaw = znapzendInfo.features.sendRaw or false;
-        skipIntermediates = znapzendInfo.features.skipIntermediates or false;
-        lowmemRecurse = znapzendInfo.features.lowmemRecurse or false;
-        oracleMode = znapzendInfo.features.oracleMode or false;
-        recvu = znapzendInfo.features.recvu or false;
-        zfsGetType = znapzendInfo.features.zfsGetType or false;
-      };
-
-      # Per-dataset backup configurations
-      zetup = znapzendInfo.zetup or { };
-    };
+  znapzendSsh = lib.mkIf (sshTargets != { }) {
+    enable = true;
+    targets = sshTargets;
+    identity = {
+      inherit sopsFile;
+    }
+    // (znapzendInfo.ssh.identity or { });
   };
 }
