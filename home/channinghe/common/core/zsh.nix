@@ -170,6 +170,16 @@
             "/"     .vi-history-search-backward \
             "?"     .vi-history-search-forward
           # ==== marlonrichert/zsh-autocomplete configuration ====
+
+          # Generate Conventional Commits message from staged changes
+          gencommit() {
+            local prompt="Run git diff --staged to inspect the staged changes, then"
+            prompt+=" generate a one-line commit message in Conventional Commits format."
+            prompt+=" Output only the message itself—no explanation, no markdown, no quotes."
+            prompt+=" Type: feat/fix/refactor/chore/docs/style/test/build/ci/perf."
+            prompt+=" Include a scope. Lowercase English, no trailing period, max 72 chars."
+            claude -p "$prompt" --max-turns 3
+          }
         ''
         + lib.optionalString pkgs.stdenv.isDarwin ''
           # Source Nix daemon if available (macOS only)
