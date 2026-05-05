@@ -31,6 +31,7 @@
       ls = "ls --color=auto";
       ".." = "cd ..";
       "..." = "cd ../..";
+      "2dd" = "cd $DOCKER_DATA";
       "2dot" = "cd $HOME/.config/dotfiles";
     };
 
