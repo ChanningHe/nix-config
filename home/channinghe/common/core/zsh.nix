@@ -173,7 +173,7 @@
           # ==== marlonrichert/zsh-autocomplete configuration ====
 
           # Generate Conventional Commits message from staged changes
-          gencommit() {
+          gcm() {
             local prompt="Run git diff --staged to inspect the staged changes, then"
             prompt+=" generate a one-line commit message in Conventional Commits format."
             prompt+=" Output only the message itself—no explanation, no markdown, no quotes."
