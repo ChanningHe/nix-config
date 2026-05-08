@@ -12,6 +12,8 @@
         name = "Channing He";
         email = "channinghey@gmail.com";
       };
+      core.excludesFile = "~/.config/git/ignore";
+      init.defaultBranch = "main";
     };
     ignores = [
       ".csvignore"
