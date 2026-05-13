@@ -21,15 +21,15 @@ lib.optionalAttrs isLinux {
       message = "zfs-zed-mail.nix requires hostSpec.serviceInfo.mail.enable = true.";
     }
     {
-      assertion = zfs.recipients != [ ];
-      message = "zfs-zed-mail.nix requires hostSpec.serviceInfo.mail.zfs.recipients.";
+      assertion = mail.recipients != [ ];
+      message = "zfs-zed-mail.nix requires hostSpec.serviceInfo.mail.recipients.";
     }
   ];
 
   services.zfs.zed = {
     enableMail = true;
     settings = {
-      ZED_EMAIL_ADDR = zfs.recipients;
+      ZED_EMAIL_ADDR = mail.recipients;
       ZED_NOTIFY_VERBOSE = zfs.notifyVerbose;
       ZED_NOTIFY_INTERVAL_SECS = zfs.notifyIntervalSecs;
     };
