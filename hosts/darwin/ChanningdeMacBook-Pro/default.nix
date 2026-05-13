@@ -38,7 +38,7 @@
       #
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/darwin/darwin-smb.nix"
-      "hosts/common/optional/darwin/dock-killer.nix"
+      #"hosts/common/optional/darwin/dock-killer.nix"
       "hosts/common/optional/darwin/root-ssh-mapping.nix"
       #"hosts/common/optional/darwin/rosetta-builder.nix"
     ])
