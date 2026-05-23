@@ -32,19 +32,41 @@
     # Start or connect to existing agent (fast path)
     _ssh_agent_start() {
       # Check if socket exists and agent is responsive
+      # ssh-add -l exit codes: 0=has keys, 1=no keys but alive, 2=agent dead
       if [ -S "$SSH_AUTH_SOCK" ]; then
-        # Quick check: can we list keys? (agent is alive)
-        if $NIX_SSH_ADD -l >/dev/null 2>&1; then
+        $NIX_SSH_ADD -l >/dev/null 2>&1
+        local rc=$?
+        if [ $rc -ne 2 ]; then
           return 0
         fi
       fi
 
-      # Clean up stale socket
-      [ -e "$SSH_AUTH_SOCK" ] && rm -f "$SSH_AUTH_SOCK"
+      # Atomic lock to prevent concurrent agent starts
+      local lockdir="$HOME/.ssh/.ssh-agent.lock"
+      if ! mkdir "$lockdir" 2>/dev/null; then
+        local i=0
+        while [ $i -lt 10 ] && [ ! -S "$SSH_AUTH_SOCK" ]; do
+          sleep 0.1
+          i=$((i + 1))
+        done
+        rmdir "$lockdir" 2>/dev/null
+        return 0
+      fi
 
-      # Start new agent with fixed socket path
+      # Double-check after acquiring lock
+      if [ -S "$SSH_AUTH_SOCK" ]; then
+        $NIX_SSH_ADD -l >/dev/null 2>&1
+        if [ $? -ne 2 ]; then
+          rmdir "$lockdir" 2>/dev/null
+          return 0
+        fi
+      fi
+
+      # Clean up stale socket and start new agent
+      [ -e "$SSH_AUTH_SOCK" ] && rm -f "$SSH_AUTH_SOCK"
       $NIX_SSH_AGENT -a "$SSH_AUTH_SOCK" -s >/dev/null
       chmod 600 "$SSH_AUTH_SOCK"
+      rmdir "$lockdir" 2>/dev/null
     }
 
     # Load SSH keys lazily (only when first needed)
