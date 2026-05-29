@@ -33,6 +33,8 @@
       "..." = "cd ../..";
       "2dd" = "cd $DOCKER_DATA";
       "2dot" = "cd $HOME/.config/dotfiles";
+
+      "claude-auto" = "claude --permission-mode auto";
     };
 
     # Initialization content with proper priority ordering
