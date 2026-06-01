@@ -60,6 +60,7 @@ in
     # p7zip # compression & encryption
     # unzip # zip extraction
     # unrar # rar extraction
+    brush # shell implemented in Rust
     sops
     age
     ssh-to-age
