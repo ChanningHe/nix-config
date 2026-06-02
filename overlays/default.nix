@@ -13,14 +13,15 @@ let
       directory = ../pkgs/common;
     });
 
-  # This overlay currently contributes nothing. Two traps if you ever add Linux-only
-  # package modifications here:
-  #   1. Do NOT use `lib.mkIf` — an overlay must return a plain attrset. `mkIf` returns
-  #      a module node `{ _type = "if"; ... }` that poisons pkgs (collapses to {} during
-  #      module property-discharge, e.g. breaking NixOS manual / options.json eval).
-  #   2. Do NOT branch on `final.stdenv` — eagerly forcing stdenv through the overlay's
-  #      own fixpoint causes infinite recursion. Use `prev.stdenv.hostPlatform.isLinux`.
-  linuxModifications = _final: _prev: { };
+  # Linux-only package overrides (EmergentMind/nix-config pattern). Uncomment an entry
+  # to pull that package from the unstable channel on Linux.
+  linuxModifications =
+    final: prev:
+    prev.lib.optionalAttrs prev.stdenv.isLinux {
+      # neovim = final.unstable.neovim;
+      # neovide = final.unstable.neovide;
+      # vimPlugins = final.unstable.vimPlugins;
+    };
 
   modifications = final: prev: {
     # example = prev.example.overrideAttrs (oldAttrs: let ... in {
