@@ -75,6 +75,11 @@ let
       cfg.configFile;
 in
 {
+  # nixpkgs 26.05 introduced an upstream `services.komodo-periphery` module that
+  # collides with this one (duplicate option declaration). Disable upstream; this
+  # custom module is the authoritative definition for nix-config.
+  disabledModules = [ "services/admin/komodo-periphery.nix" ];
+
   imports = with lib; [
     (mkRenamedOptionModule
       [ "services" "komodo-periphery" "port" ]
