@@ -13,7 +13,13 @@ let
       directory = ../pkgs/common;
     });
 
-  linuxModifications = final: prev: prev.lib.mkIf final.stdenv.isLinux { };
+  # NOTE: an overlay must return a plain attrset of packages. `lib.mkIf` returns a
+  # module-system node `{ _type = "if"; condition; content; }`, which poisons pkgs:
+  # any code that runs module property-discharge over pkgs collapses the whole set to
+  # `content` ({}), making packages like `nixos-test-driver` vanish and breaking eval
+  # (e.g. NixOS manual / options.json generation). Use `optionalAttrs` for a conditional
+  # package set instead.
+  linuxModifications = final: prev: prev.lib.optionalAttrs final.stdenv.isLinux { };
 
   modifications = final: prev: {
     # example = prev.example.overrideAttrs (oldAttrs: let ... in {
