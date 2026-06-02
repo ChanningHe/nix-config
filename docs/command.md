@@ -76,7 +76,7 @@ $(brew --prefix)/bin/ssh-add ~/.ssh/ssh-key
 
 Download nix-darwin and rebuild the system
 ```bash
-sudo nix run nix-darwin/nix-darwin-25.11#darwin-rebuild --extra-experimental-features "nix-command flakes" -- switch --flake .#$(scutil --get LocalHostName)
+sudo nix run nix-darwin/nix-darwin-26.05#darwin-rebuild --extra-experimental-features "nix-command flakes" -- switch --flake .#$(scutil --get LocalHostName)
 ```
 
 Rebuild the system with darwin-rebuild
