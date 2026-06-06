@@ -41,6 +41,8 @@ in
     ];
     sessionVariables = {
       SHELL = "zsh";
+      # Allow ad-hoc `nix shell/build/run` to build unfree packages (needs --impure)
+      NIXPKGS_ALLOW_UNFREE = 1;
       # Locale settings
       LANG = "en_US.UTF-8";
       LC_MESSAGES = "en_US.UTF-8";
