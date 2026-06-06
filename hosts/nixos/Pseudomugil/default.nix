@@ -147,7 +147,7 @@ in
     };
     networks = {
       "10-wired" = {
-        matchConfig.Name = "enp197s0f1np1";
+        matchConfig.Name = "enp196s0f1np1";
         networkConfig = {
           VLAN = [
             "vlan-mgmt"
