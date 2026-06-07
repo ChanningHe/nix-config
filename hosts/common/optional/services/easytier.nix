@@ -15,6 +15,9 @@ let
   # LAN to EasyTier NAT config
   natEnabled = (hostEasytier.lan2etNat or { }).enable or false;
   tunInterface = (hostEasytier.lan2etNat or { }).tunInterface or "tun-et";
+
+  # systemd units for the easytier instances, so NAT can order after them.
+  instanceUnits = lib.mapAttrsToList (n: _: "easytier-${n}.service") easytierInstances;
 in
 {
   config = lib.mkIf (easytierInstances != { }) {
@@ -77,7 +80,13 @@ in
         easytier-nat = {
           description = "NAT rules for EasyTier";
           wantedBy = [ "multi-user.target" ];
-          after = [ "network.target" ];
+          # network.target only means networking *started*, not that a default
+          # route exists. Running this early, NETDEV resolves empty and the
+          # FORWARD rule is added with a bogus interface, so NAT silently fails
+          # until a manual restart. Wait for the network to be online (and the
+          # tunnel instances to have started) so NETDEV is correct.
+          wants = [ "network-online.target" ];
+          after = [ "network-online.target" ] ++ instanceUnits;
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
@@ -85,16 +94,28 @@ in
           path = [
             pkgs.iproute2
             pkgs.coreutils
+            pkgs.gnugrep
             pkgs.iptables
           ];
           script = ''
-            # Detect default route interface dynamically
-            NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " ")
+            # Resolve the egress interface, waiting for the default route to
+            # appear (grep -oP handles both "via GW dev X" and "dev X" forms,
+            # unlike a fixed cut field).
+            NETDEV=""
+            for _ in $(seq 30); do
+              NETDEV=$(ip -o route get 8.8.8.8 2>/dev/null | grep -oP 'dev \K\S+' || true)
+              [ -n "$NETDEV" ] && break
+              sleep 1
+            done
+            if [ -z "$NETDEV" ]; then
+              echo "easytier-nat: no default route; cannot set up NAT" >&2
+              exit 1
+            fi
             iptables -A FORWARD -i "$NETDEV" -o ${tunInterface} -j ACCEPT
             iptables -t nat -A POSTROUTING -o ${tunInterface} -j MASQUERADE
           '';
           preStop = ''
-            NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " ")
+            NETDEV=$(ip -o route get 8.8.8.8 2>/dev/null | grep -oP 'dev \K\S+' || true)
             iptables -D FORWARD -i "$NETDEV" -o ${tunInterface} -j ACCEPT 2>/dev/null || true
             iptables -t nat -D POSTROUTING -o ${tunInterface} -j MASQUERADE 2>/dev/null || true
           '';
