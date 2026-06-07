@@ -37,6 +37,7 @@ in
       #
       # ========== Non-Primary Users to Create ==========
       #
+      "hosts/common/users/rl-man"
 
       #
       # ========== Optional Configs ==========
@@ -52,6 +53,7 @@ in
       "hosts/common/optional/network-storage.nix"
       #"hosts/common/optional/services/proxmox-ve.nix"
       "hosts/common/optional/services/vscode-server.nix"
+      "hosts/common/optional/services/podman.nix"
     ])
   ];
 

@@ -3,7 +3,7 @@
 # - Import of the pure NixOS module
 # - sops-nix integration for secrets
 # - hostSpec.serviceInfo configuration reading
-# - Docker auto-enablement
+# - Container runtime wiring (docker, or rootless podman via cfg.dockerHost)
 # - Any other nix-config specific logic
 {
   config,
@@ -14,6 +14,11 @@
 }:
 let
   cfg = config.services.komodo-periphery;
+  # On a podman host, komodo runs rootless as cfg.user (e.g. rl-man) and talks
+  # to that user's socket; the path is derived from the user's static uid.
+  usePodman = config.virtualisation.podman.enable;
+  komodoUid = config.users.users.${cfg.user}.uid;
+  komodoUidStr = if komodoUid == null then "INVALID" else toString komodoUid;
   hostName = config.hostSpec.hostName;
   hostKomodo = config.hostSpec.serviceInfo.${hostName}.komodo or { };
   sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
@@ -155,11 +160,25 @@ in
     ))
 
     (lib.mkIf cfg.enable {
-      users.users.${cfg.user} = lib.mkIf (cfg.user != "root" && cfg.user != "komodo-periphery") {
+      # On podman, komodo must run as the rootless user that owns the socket.
+      assertions = lib.optional usePodman {
+        assertion = komodoUid != null;
+        message = "komodo-periphery on podman must run as a normal user with a static uid (set services.komodo-periphery.user to e.g. rl-man); user '${cfg.user}' has none.";
+      };
+
+      # Setting dockerHost flips the base module out of docker mode (drops the
+      # docker daemon/group/service deps) and injects DOCKER_HOST. komodo owns
+      # the socket as cfg.user, so no extra group is needed.
+      services.komodo-periphery.dockerHost =
+        lib.mkIf usePodman "unix:///run/user/${komodoUidStr}/podman/podman.sock";
+
+      # Only the docker daemon needs a group membership; podman is socket-owned.
+      users.users.${cfg.user} = lib.mkIf (!usePodman && cfg.user != "root" && cfg.user != "komodo-periphery") {
         extraGroups = [ "docker" ];
       };
 
-      virtualisation.docker = {
+      # Only manage the docker daemon when this host is not on podman.
+      virtualisation.docker = lib.mkIf (!usePodman) {
         enable = lib.mkDefault true;
         autoPrune = {
           enable = lib.mkDefault true;
@@ -168,16 +187,37 @@ in
       };
 
       systemd.services.komodo-periphery = {
-        after = lib.mkIf hasSopsFile [ "sops-nix.service" ];
-        wants = lib.mkIf hasSopsFile [ "sops-nix.service" ];
-        path = with pkgs; [
-          git
-          age
-          sops
-          docker
-          bash
-          openssh
-        ];
+        # Do NOT order against user@<uid>.service: a system unit referencing a
+        # user-manager template instance trips a switch-to-configuration
+        # infinite loop. komodo retries (Restart=on-failure) until the socket is up.
+        after = lib.optional hasSopsFile "sops-nix.service";
+        wants = lib.optional hasSopsFile "sops-nix.service";
+
+        # Rootless as rl-man needs its real home (podman storage, terminal
+        # shells) and /run/user/<uid> (the socket); ProtectHome=true hides both.
+        serviceConfig.ProtectHome = lib.mkIf usePodman (lib.mkForce false);
+
+        # Everything komodo shells out to (dockerCompat `docker`, podman,
+        # podman-compose, git/age/sops, bash/ssh, setuid newuidmap) lives in the
+        # system profile + wrappers, so point PATH there instead of re-listing.
+        # An explicit PATH is required because NixOS's default service PATH
+        # otherwise overrides the module's ExecSearchPath. wrappers first so the
+        # setuid newuidmap wins over the plain copy in the profile.
+        path =
+          if usePodman then
+            [
+              "/run/wrappers"
+              "/run/current-system/sw"
+            ]
+          else
+            (with pkgs; [
+              git
+              age
+              sops
+              bash
+              openssh
+              docker
+            ]);
       };
     })
   ];
