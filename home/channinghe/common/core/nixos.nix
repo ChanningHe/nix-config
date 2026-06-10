@@ -14,6 +14,13 @@
     traceroute
   ];
 
+  # For Zed Remote Server
+  home.file.".zed_server" = {
+    source = "${pkgs.zed-editor.remote_server}/bin";
+    # keeps the folder writable, but symlinks the binaries into it
+    recursive = true;
+  };
+
   services.ssh-agent.enable = true;
   # Nicely reload system units when changing configs
   systemd.user.startServices = "sd-switch";

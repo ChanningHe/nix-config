@@ -24,7 +24,6 @@ in
     ./git.nix
     #./kitty.nix
     ./ssh.nix
-    ./zed.nix
     ./zsh.nix
     ./neovim.nix
     ./yazi.nix
