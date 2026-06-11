@@ -148,6 +148,13 @@
       url = "github:cpick/nix-rosetta-builder";
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
+    # Native Linux builder for Apple Silicon (Virtualization.framework,
+    # external-builders): ephemeral VM per build, no SSH/store copying.
+    # NOTE: intentionally NOT following nixpkgs-darwin — the guest kernel
+    # and swift toolchain are tested against this flake's own lock.
+    nix-vz-builder = {
+      url = "github:ChanningHe/nix-vz-builder";
+    };
 
     #
     # ========= Desktop Environment =========
