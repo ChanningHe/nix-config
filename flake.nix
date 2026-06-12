@@ -180,6 +180,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Fast Zsh syntax highlighter (Rust daemon, replaces zsh-syntax-highlighting)
+    zsh-patina = {
+      url = "github:michel-kraemer/zsh-patina";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     #
     # ========= Utilities =========
     #

@@ -71,7 +71,7 @@ in
     nh
     btop
     wget
-    vivid
+    #vivid
     nxv # Nix pkg index CLI
     # dev tools
     devenv

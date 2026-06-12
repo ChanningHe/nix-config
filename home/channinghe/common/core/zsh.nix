@@ -1,9 +1,27 @@
-# Clean Zsh configuration with Antidote + Powerlevel10k
+# Zsh configuration: native compsys + carapace + autosuggestions + atuin + zoxide + zsh-patina
+#
+# Stack overview (replaces marlonrichert/zsh-autocomplete, which ran the full
+# compsys pipeline on every keystroke and caused lag/freezes):
+#   - Tab completion ....... native compsys menu (menu select) + carapace
+#   - As-you-type hints .... zsh-autosuggestions (inline ghost text from history)
+#   - History search ....... atuin (Ctrl+R TUI)
+#   - Directory jumping .... zoxide (frecency-ranked `cd`)
+#   - Syntax highlighting .. zsh-patina (Rust daemon, via flake input)
+#   (fzf-tab / fzf shell integration currently disabled; kept as comments below)
+#
+# home-manager .zshrc ordering (lib.mkOrder):
+#   550 antidote (p10k) -> 570 compinit -> 650 carapace + completion zstyles (ours)
+#   -> 700 autosuggestions -> 851 zoxide -> 1000 initContent/atuin
+#   -> 1400 patina (ours) -> mkAfter p10k config
 {
   lib,
   pkgs,
+  inputs,
   ...
 }:
+let
+  zsh-patina = inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default;
+in
 {
   dotfiles = {
     enable = true;
@@ -14,11 +32,20 @@
     # ];
   };
 
+  home.packages = [
+    zsh-patina
+    # fzf binary WITHOUT shell integration: zoxide's interactive mode
+    pkgs.fzf
+  ];
+
   programs.zsh = {
     enable = true;
 
-    # "marlonrichert/zsh-autocomplete" requires this to be disabled
-    enableCompletion = false;
+    # Run compinit once here (order 570); system-level enableGlobalCompInit stays false
+    enableCompletion = true;
+
+    # Fish-like inline suggestions from history, accept with Right arrow (order 700)
+    autosuggestion.enable = true;
 
     # Shell aliases
     shellAliases = {
@@ -48,18 +75,37 @@
         fi
       '')
 
-      # Load P10k config AFTER plugins are loaded
-      (lib.mkAfter ''
-        # Load Powerlevel10k config (managed by home-manager from repo)
-        [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+      # Completion setup: must load after compinit (570) and before autosuggestions (700)
+      # NOTE: fzf-tab temporarily commented out to try native compsys menu + carapace
+      (lib.mkOrder 650 ''
+        # Colorized ls; LS_COLORS must be set before the list-colors zstyle below
+        export CLICOLOR=1
+        #export LS_COLORS=$(vivid generate nord)
+
+        # source ${pkgs.zsh-fzf-tab}/share/fzf-tab/fzf-tab.plugin.zsh
+
+        # ==== carapace: multi-shell completion engine ====
+        source <(${pkgs.carapace}/bin/carapace _carapace zsh)
+
+        # ==== Completion behavior ====
+        zstyle ':completion:*' completer _expand _complete _ignored
+        # Case-insensitive matching, plus partial-word on . _ - separators
+        zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*'
+        # Native menu selection: Tab opens the menu, arrows/Tab navigate
+        zstyle ':completion:*' menu select
+        zstyle ':completion:*:descriptions' format '[%d]'
+        zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
+
+        # ==== fzf-tab UI (disabled along with fzf-tab) ====
+        # zstyle ':completion:*' menu no
+        # zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color=always $realpath'
+        # zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color=always $realpath'
+        # zstyle ':fzf-tab:*' switch-group '<' '>'
       '')
 
       # Other initialization (normal priority, runs after plugins)
       (
         ''
-          # Colorized ls commands
-          export CLICOLOR=1
-          export LS_COLORS=$(vivid generate nord)
           # Remove / and . from WORDCHARS to make path navigation easier (Ctrl+W stops at /)
           # Note: We use ''${...} to escape the Nix interpolation and pass it literally to Zsh
           WORDCHARS="''${WORDCHARS//\//}"
@@ -70,6 +116,17 @@
           zle -N edit-command-line
           bindkey '^xe' edit-command-line
 
+          # Option+Up/Down: prefix-filtered history search — type `git commit`,
+          # press Option+Up to cycle only entries starting with "git commit".
+          # Plain Up/Down keep the default history stepping.
+          autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+          zle -N up-line-or-beginning-search
+          zle -N down-line-or-beginning-search
+          bindkey '^[[1;3A' up-line-or-beginning-search # kitty/ghostty/xterm style
+          bindkey '^[[1;3B' down-line-or-beginning-search
+          bindkey '^[^[[A' up-line-or-beginning-search # Terminal.app/iTerm ESC-prefix style
+          bindkey '^[^[[B' down-line-or-beginning-search
+
           # Magic Space
           bindkey ' ' magic-space
           # Undo
@@ -77,102 +134,8 @@
           # Redo
           bindkey '^x^_' redo
 
-          # ==== ZSH Syntax Highlighting Styles ====
-          # Commands (retro green)
-          ZSH_HIGHLIGHT_STYLES[command]='fg=112'        # External commands
-          ZSH_HIGHLIGHT_STYLES[builtin]='fg=112'        # Builtin commands
-          ZSH_HIGHLIGHT_STYLES[function]='fg=112'       # Functions
-          ZSH_HIGHLIGHT_STYLES[alias]='fg=112'          # Aliases
-          ZSH_HIGHLIGHT_STYLES[precommand]='fg=114'     # Precommands (sudo, time, etc.)
-
-          # Subcommands and first argument (lighter green for distinction)
-          ZSH_HIGHLIGHT_STYLES[arg0]='fg=f8f8f2'           # Subcommands like 'push', 'develop'
-          ZSH_HIGHLIGHT_STYLES[default]='fg=f8f8f2'
-
-          # Arguments and parameters (muted color)
-          ZSH_HIGHLIGHT_STYLES[argument]='fg=109'
-          ZSH_HIGHLIGHT_STYLES[parameter]='fg=109'
-          ZSH_HIGHLIGHT_STYLES[parameter-expansion]='fg=109'
-
-          # Options (same as arguments)
-          ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=109'
-          ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=109'
-          ZSH_HIGHLIGHT_STYLES[option]='fg=109'
-
-          # Paths (subtle blue-gray)
-          ZSH_HIGHLIGHT_STYLES[path]='fg=145'
-          ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=145,underline'
-
-          # Errors
-          ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=124,bold'
-
           # Highlight current selection with distinct background color
           zle_highlight=(suffix:fg=092,bold)
-          # ==== marlonrichert/zsh-autocomplete configuration ====
-          # Fix issue with marlonrichert/zsh-autocomplete
-          #bindkey "''${key[Up]}" up-line-or-search
-          zstyle -e ':autocomplete:*:*' list-lines 'reply=( $(( LINES / 3 )) )'
-          zstyle ':completion:*' completer _expand _complete _complete:-loose _complete:-fuzzy _ignored
-
-          # Override for history search only
-          zstyle ':autocomplete:history-incremental-search-backward:*' list-lines 8
-
-          # autocomplete delay and input
-          zstyle ':autocomplete:*' min-delay 0.5
-          zstyle ':autocomplete:*' min-input 3
-          zstyle ':autocomplete:*' timeout 1.5
-
-          # Cycle through listed completions, without changing what's listed in the menu
-          #bindkey              '^I'         menu-complete
-          #bindkey "$terminfo[kcbt]" reverse-menu-complete
-          # Enter the menu instead of inserting a completion
-          # bindkey              '^I' menu-select
-          # bindkey "$terminfo[kcbt]" reverse-menu-select
-
-          # completion widget first insert the longest sequence of characters
-          zstyle ':autocomplete:*complete*:*' insert-unambiguous yes
-
-          # Tab: menu-select mode (arrow key navigation)
-          #bindkey '^I' menu-complete
-          bindkey '^I' menu-select
-
-          # Shift+Tab: menu-complete (cycle through completions, works with insert-unambiguous)
-          #bindkey "$terminfo[kcbt]" menu-select
-          bindkey "$terminfo[kcbt]" menu-complete
-
-          # In menuselect mode, Tab/Shift+Tab move selection
-          bindkey -M menuselect '^I' menu-complete
-          bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
-
-          # Right arrow: accept current selection and continue to next level completion
-          #bindkey -M menuselect '^[[C' accept-and-menu-complete
-          #bindkey -M menuselect '^[OC' accept-and-menu-complete
-
-          # Restore Zsh-default history shortcuts
-          bindkey -M emacs \
-            "^[p"   .history-search-backward \
-            "^[n"   .history-search-forward \
-            "^P"    .up-line-or-history \
-            "^[OA"  .up-line-or-history \
-            "^[[A"  .up-line-or-history \
-            "^N"    .down-line-or-history \
-            "^[OB"  .down-line-or-history \
-            "^[[B"  .down-line-or-history \
-            "^R"    .history-incremental-search-backward \
-            "^S"    .history-incremental-search-forward
-
-          bindkey -a \
-            "^P"    .up-history \
-            "^N"    .down-history \
-            "k"     .up-line-or-history \
-            "^[OA"  .up-line-or-history \
-            "^[[A"  .up-line-or-history \
-            "j"     .down-line-or-history \
-            "^[OB"  .down-line-or-history \
-            "^[[B"  .down-line-or-history \
-            "/"     .vi-history-search-backward \
-            "?"     .vi-history-search-forward
-          # ==== marlonrichert/zsh-autocomplete configuration ====
 
           # Generate Conventional Commits message from staged changes
           gcm() {
@@ -190,21 +153,27 @@
             source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
         ''
       )
+
+      # zsh-patina: upstream requires activation at the very end of .zshrc,
+      # after all widgets/bindkeys are set up (only p10k config sourcing follows)
+      (lib.mkOrder 1400 ''
+        eval "$(zsh-patina activate)"
+      '')
+
+      # Load P10k config AFTER plugins are loaded
+      (lib.mkAfter ''
+        # Load Powerlevel10k config (managed by home-manager from repo)
+        [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+      '')
     ];
 
-    # Antidote plugin manager (modern, fast, simple)
+    # Antidote plugin manager: only the prompt theme remains; everything else
+    # is handled by home-manager modules / nixpkgs packages above
     antidote = {
       enable = true;
       plugins = [
         # Powerlevel10k theme (fast and beautiful)
         "romkatv/powerlevel10k"
-
-        # Essential plugins
-        #"zsh-users/zsh-autosuggestions" # Fish-like autosuggestions
-        "zsh-users/zsh-syntax-highlighting" # Syntax highlighting
-        #"zsh-users/zsh-completions" # Additional completions
-        # Important: in nix-config/hosts/common/users/channinghe/default.nix: disable completion and global comp init
-        "marlonrichert/zsh-autocomplete"
       ];
     };
 
@@ -216,6 +185,38 @@
       ignoreDups = true;
       ignoreSpace = true;
       share = true;
+    };
+  };
+
+  # fzf shell integration (Ctrl+T / Alt+C / ** completion);
+  # keep the bare binary on PATH because `zi` (interactive zoxide) needs it
+  # programs.fzf.enable = true;
+
+  # Smart cd: frecency-ranked jumping, `cd foo` matches deep dirs, `cdi` interactive
+  programs.zoxide = {
+    enable = true;
+    options = [
+      "--cmd"
+      "cd"
+    ];
+  };
+
+  # carapace package; zsh integration is sourced manually in the completion
+  # block above (right after compinit, per upstream docs) instead of here
+  programs.carapace = {
+    enable = true;
+    enableZshIntegration = false;
+  };
+
+  # History: Ctrl+R opens atuin TUI (loads after fzf, so it owns Ctrl+R).
+  # Up arrow stays native zsh history. Fully local, no sync.
+  programs.atuin = {
+    enable = true;
+    flags = [ "--disable-up-arrow" ];
+    settings = {
+      auto_sync = false;
+      update_check = false;
+      search_mode = "fuzzy";
     };
   };
 }
