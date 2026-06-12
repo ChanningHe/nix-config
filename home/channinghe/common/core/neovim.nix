@@ -3,17 +3,12 @@
   ...
 }:
 {
-  programs.neovim = {
-    enable = true;
-    #defaultEditor = true;
-    vimAlias = true;
-    viAlias = true;
-    # Adopt the 26.05 defaults: lua-based config needs no ruby/python providers
-    withRuby = false;
-    withPython3 = false;
-  };
-
+  # NOTE: programs.neovim is intentionally NOT used. Current home-manager
+  # always generates ~/.config/nvim/init.lua (provider host-prog settings),
+  # which clobbers the externally managed LazyVim config. The nvim config
+  # is owned entirely by ~/.config/nvim; nix only provides the packages.
   home.packages = with pkgs; [
+    neovim
     tree-sitter
     fd
     fzf
@@ -22,9 +17,8 @@
     nodejs # Required for many LSP servers
   ];
 
-  # dotfiles = {
-  #   components = [
-  #     "nvim"
-  #   ];
-  # };
+  home.shellAliases = {
+    vim = "nvim";
+    vi = "nvim";
+  };
 }
