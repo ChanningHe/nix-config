@@ -135,23 +135,11 @@ sops-add-creation-rules USER HOST:
     just sops-add-host-creation-rules {{USER}} {{HOST}} && \
     just sops-add-shared-creation-rules {{USER}} {{HOST}}
 
-# Push current system closure to Attic cache
+# Push the entire local Nix store to Attic cache
 attic-push:
     #!/usr/bin/env bash
-    # Determine the system profile path based on OS
-    if [[ "$(uname)" == "Darwin" ]]; then
-        PROFILE_PATH="/nix/var/nix/profiles/system"
-    else
-        PROFILE_PATH="/run/current-system"
-    fi
-
-    if [[ -L "$PROFILE_PATH" ]]; then
-        echo "Pushing current system closure to homielab cache..."
-        attic push homielab $(readlink -f "$PROFILE_PATH")
-    else
-        echo "Error: System profile not found at $PROFILE_PATH"
-        exit 1
-    fi
+    echo "Pushing all local store paths to homielab cache..."
+    nix path-info --all | grep -v '\.drv$' | xargs attic push homielab
 
 # Push specific store paths to Attic cache
 attic-push-path PATHS:

@@ -17,6 +17,9 @@ let
   # Extract hostname from endpoint (e.g., "attic.hlpj.cc/homielab" -> "attic.hlpj.cc")
   endpointHost = lib.head (lib.splitString "/" endpoint);
 
+  # Cache name is the trailing path component of the endpoint
+  cacheName = atticInfo.cache or (lib.last (lib.splitString "/" endpoint));
+
   userGroup = if isDarwin then "staff" else config.users.users.${config.hostSpec.username}.group;
 
   netrcPath = "${config.hostSpec.home}/.config/attic/netrc";
@@ -81,6 +84,22 @@ in
       '';
     }
     // lib.optionalAttrs (!isDarwin) {
+      # Auto-push every locally built store path to the cache
+      systemd.services.attic-watch-store = {
+        description = "Push new store paths to Attic cache ${cacheName}";
+        wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
+        # attic resolves config.toml/netrc relative to $HOME
+        environment.HOME = config.hostSpec.home;
+        serviceConfig = {
+          ExecStart = "${pkgs.unstable.attic-client}/bin/attic watch-store ${cacheName}";
+          User = config.hostSpec.username;
+          Restart = "on-failure";
+          RestartSec = 30;
+        };
+      };
+
       systemd.tmpfiles.rules = [
         "d ${config.hostSpec.home}/.config 0755 ${config.hostSpec.username} ${userGroup} -"
         "d ${configDir} 0755 ${config.hostSpec.username} ${userGroup} -"
