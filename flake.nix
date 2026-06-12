@@ -174,10 +174,16 @@
     # ========= Applications =========
     #
 
+    # Linux-only systems list for flake-utils based inputs, so they stop
+    # evaluating nixpkgs for (deprecated) x86_64-darwin
+    systems-linux.url = "github:nix-systems/default-linux";
+
     # VS Code Server for remote development
     vscode-server = {
       url = "github:nix-community/nixos-vscode-server";
       inputs.nixpkgs.follows = "nixpkgs";
+      # Packages are Linux-only (inotify-tools); skip darwin evaluation
+      inputs.flake-utils.inputs.systems.follows = "systems-linux";
     };
 
     # Fast Zsh syntax highlighter (Rust daemon, replaces zsh-syntax-highlighting)
