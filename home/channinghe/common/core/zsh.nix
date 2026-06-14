@@ -12,6 +12,7 @@
 # home-manager .zshrc ordering (lib.mkOrder):
 #   550 antidote (p10k) -> 570 compinit -> 650 carapace + completion zstyles (ours)
 #   -> 700 autosuggestions -> 851 zoxide -> 1000 initContent/atuin
+#   -> 1200 atuin autosuggest strategy override (ours)
 #   -> 1400 patina (ours) -> mkAfter p10k config
 {
   lib,
@@ -153,6 +154,28 @@ in
             source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
         ''
       )
+
+      # Override atuin's built-in autosuggest strategy with directory-aware filtering.
+      # Must run AFTER `atuin init zsh` (order 1000) so we override its function.
+      # The upstream strategy uses no filter, so its suggestions equal plain history;
+      # this version prioritizes commands previously run in the current directory and
+      # falls back to global history when there's no per-directory match.
+      # Workaround for atuin#1769 (filter_mode in config.toml is not honored by the
+      # built-in autosuggest strategy).
+      (lib.mkOrder 1200 ''
+        _zsh_autosuggest_strategy_atuin() {
+          suggestion=$(
+            ATUIN_QUERY="$1" atuin search \
+              --cmd-only --limit 1 \
+              --search-mode prefix \
+              --filter-mode directory \
+              2>/dev/null
+          )
+          if [[ -z "$suggestion" ]]; then
+            suggestion=$(ATUIN_QUERY="$1" atuin search --cmd-only --limit 1 --search-mode prefix 2>/dev/null)
+          fi
+        }
+      '')
 
       # zsh-patina: upstream requires activation at the very end of .zshrc,
       # after all widgets/bindkeys are set up (only p10k config sourcing follows)
