@@ -43,7 +43,7 @@ persist_dir=""
 disk_layout="ext4"
 disk=""
 disk2=""
-nix_src_path="src/nix/"
+nix_src_path="nix-src/"
 git_root=$(git rev-parse --show-toplevel)
 nix_secrets_dir=${NIX_SECRETS_DIR:-"${git_root}"/../nix-secrets}
 
@@ -54,6 +54,7 @@ generate_user_age_key=1
 run_rekey=1
 target_installer=0
 dry_run=0
+builder=""
 
 # Generated hardware config tracking
 generated_hardware_config=0
@@ -87,6 +88,14 @@ function help_and_exit() {
 	echo "  --disk <device>                      Primary disk device path"
 	echo "                                       ZFS: use /dev/disk/by-id/..."
 	echo "  --disk2 <device>                     Secondary disk (zfs-mirror only)"
+	echo
+	echo "BUILD (Phase 1):"
+	echo "  --builder <mode>                     Override Phase 1 build strategy (default: system config)"
+	echo '                                         no-remote   = local build with --option builders ""'
+	echo "                                                       (skip remote ssh builders)"
+	echo '                                         no-external = local build with --option external-builders "[]"'
+	echo "                                                       (skip nix-vz-builder etc.)"
+	echo "                                         on-target   = skip local build; nixos-anywhere --build-on remote"
 	echo
 	echo "CONNECTION (Phase 1/2):"
 	echo "  -d, --destination <ip|domain>        Target IP or domain"
@@ -161,6 +170,10 @@ while [[ $# -gt 0 ]]; do
 		shift
 		disk2=$1
 		;;
+	--builder)
+		shift
+		builder=$1
+		;;
 	-p | --phases)
 		shift
 		phases=$1
@@ -231,6 +244,15 @@ case "$disk_layout" in
 ext4 | btrfs | zfs | zfs-mirror) ;;
 *)
 	red "ERROR: Invalid --disk-layout '$disk_layout'. Must be one of: ext4, btrfs, zfs, zfs-mirror"
+	exit 1
+	;;
+esac
+
+# Validate builder strategy
+case "$builder" in
+"" | no-remote | no-external | on-target) ;;
+*)
+	red "ERROR: Invalid --builder '$builder'. Must be one of: no-remote, no-external, on-target"
 	exit 1
 	;;
 esac
@@ -504,6 +526,48 @@ function migrate_extract_ssh_key() {
 function install_system() {
 	green "===== Phase 1: Installing NixOS on ${target_hostname} at ${target_destination} ====="
 
+	# Pre-flight: stale hardware-configuration.nix breaks the build silently — flake.nix
+	# auto-imports it whenever the file exists, and wrong disk UUIDs / kernel modules
+	# from a previous machine fail at evaluation or first boot. Force a decision now.
+	local hw_config="${git_root}/hosts/nixos/${target_hostname}/hardware-configuration.nix"
+	if [ -f "$hw_config" ]; then
+		echo
+		yellow "Found existing hardware-configuration.nix:"
+		yellow "  hosts/nixos/${target_hostname}/hardware-configuration.nix"
+		yellow "It will be auto-imported by the flake. If it does not match the target hardware,"
+		yellow "the build or first boot will fail."
+		echo
+		echo "  [k]eep   — use as-is (only if you know it matches the target)"
+		echo "  [b]ackup — move to hardware-configuration.nix.bak; Phase 2 regenerates from target (recommended)"
+		echo "  [a]bort  — exit"
+		while true; do
+			echo -en "\x1B[34m[?] Action [k/b/a]: \x1B[0m"
+			local hw_action=""
+			read -r hw_action
+			case "$hw_action" in
+			k | K)
+				green "Keeping existing hardware-configuration.nix"
+				break
+				;;
+			b | B)
+				if [ "$dry_run" -eq 1 ]; then
+					yellow "[DRY-RUN] Would move ${hw_config} → ${hw_config}.bak"
+				else
+					mv "$hw_config" "${hw_config}.bak"
+					green "Moved to: hosts/nixos/${target_hostname}/hardware-configuration.nix.bak"
+				fi
+				break
+				;;
+			a | A)
+				red "Aborted by user."
+				exit 1
+				;;
+			*) yellow "Please answer k / b / a" ;;
+			esac
+		done
+		echo
+	fi
+
 	local secret_file="${nix_secrets_dir}/secrets/${target_hostname}.yaml"
 	local config="${nix_secrets_dir}/.sops.yaml"
 
@@ -537,34 +601,72 @@ function install_system() {
 	# NOTE: hardware-configuration.nix is optional at this stage.
 	# If it exists, it will be included; if not, the minimal config is sufficient.
 	# It will be generated after reboot when the target is running NixOS.
-	green "Building NixOS system for ${target_hostname} (layout: ${disk_layout}, disk: ${disk})"
+	green "Preparing NixOS build for ${target_hostname} (layout: ${disk_layout}, disk: ${disk}, builder: ${builder:-default})"
 	export NIXOS_HOSTNAME="$target_hostname"
 	export NIXOS_DISK_LAYOUT="$disk_layout"
 	export NIXOS_DISK="$disk"
 	export NIXOS_DISK2="$disk2"
 
+	# Translate --builder mode into extra nix options for the local nix build
+	# (used by no-remote / no-external) and into the nixos-anywhere args
+	# (used by on-target).
+	local -a nix_build_opts=()
+	case "$builder" in
+	no-remote)
+		# `builders` is a whitespace-separated list; empty string = no remote ssh builders.
+		nix_build_opts+=(--option builders "")
+		;;
+	no-external)
+		# `external-builders` is a JSON array; the empty value must be "[]",
+		# not "" (which fails JSON parse and silently falls back to nix.conf).
+		nix_build_opts+=(--option external-builders "[]")
+		;;
+	esac
+
 	if [ "$dry_run" -eq 1 ]; then
-		yellow "[DRY-RUN] Would run: nix build --impure ./nixos-anywhere#...diskoScript"
-		yellow "[DRY-RUN] Would run: nix build --impure ./nixos-anywhere#...toplevel"
-		yellow "[DRY-RUN] Would run: nixos-anywhere --store-paths ... root@${target_destination}"
+		if [ "$builder" = "on-target" ]; then
+			yellow "[DRY-RUN] Would run: nixos-anywhere --flake ./nixos-anywhere#${target_hostname} --build-on remote root@${target_destination}"
+		else
+			yellow "[DRY-RUN] Would run: nix build ${nix_build_opts[*]} --impure ./nixos-anywhere#...diskoScript"
+			yellow "[DRY-RUN] Would run: nix build ${nix_build_opts[*]} --impure ./nixos-anywhere#...toplevel"
+			yellow "[DRY-RUN] Would run: nixos-anywhere --store-paths ... root@${target_destination}"
+		fi
 	else
-		local disko_script nixos_system
-		disko_script=$(nix build --impure --no-link --print-out-paths \
-			"${git_root}/nixos-anywhere#nixosConfigurations.${target_hostname}.config.system.build.diskoScript")
-		nixos_system=$(nix build --impure --no-link --print-out-paths \
-			"${git_root}/nixos-anywhere#nixosConfigurations.${target_hostname}.config.system.build.toplevel")
-
-		green "disko-script: ${disko_script}"
-		green "nixos-system: ${nixos_system}"
-
 		# Common nixos-anywhere arguments
 		# If user provided -k, pass it via -i; otherwise let nixos-anywhere
 		# handle its own temp key generation (requires root@ to be accessible).
 		local -a na_args=(
-			--store-paths "$disko_script" "$nixos_system"
 			--extra-files "$secure_temp"
 			--ssh-port "$ssh_port"
 		)
+
+		if [ "$builder" = "on-target" ]; then
+			green "Skipping local nix build — target ${target_destination} will evaluate+realise the system"
+			yellow "NOTE: nixos-anywhere#${target_hostname} reads NIXOS_HOSTNAME/NIXOS_DISK_LAYOUT/NIXOS_DISK via builtins.getEnv."
+			yellow "      With --build-on remote, the remote nix invocation must also see these env vars,"
+			yellow "      otherwise the flake will evaluate to an empty nixosConfigurations set."
+			na_args+=(
+				--flake "${git_root}/nixos-anywhere#${target_hostname}"
+				--build-on remote
+			)
+		else
+			if [ "${#nix_build_opts[@]}" -gt 0 ]; then
+				green "Building NixOS system locally (${nix_build_opts[*]})"
+			else
+				green "Building NixOS system locally"
+			fi
+			local disko_script nixos_system
+			disko_script=$(nix build ${nix_build_opts[@]+"${nix_build_opts[@]}"} --impure --no-link --print-out-paths \
+				"${git_root}/nixos-anywhere#nixosConfigurations.${target_hostname}.config.system.build.diskoScript")
+			nixos_system=$(nix build ${nix_build_opts[@]+"${nix_build_opts[@]}"} --impure --no-link --print-out-paths \
+				"${git_root}/nixos-anywhere#nixosConfigurations.${target_hostname}.config.system.build.toplevel")
+
+			green "disko-script: ${disko_script}"
+			green "nixos-system: ${nixos_system}"
+
+			na_args+=(--store-paths "$disko_script" "$nixos_system")
+		fi
+
 		if [ -n "$ssh_key" ]; then
 			na_args+=(-i "$ssh_key")
 		fi
@@ -634,7 +736,9 @@ function install_system() {
 
 	# Post-install: wait for the installed system to come online after reboot.
 	# nixos-anywhere's reboot phase has already initiated the reboot.
-	# The SSH host key will change (installed system uses our sops-injected key).
+	# IP may change (new MAC → fresh DHCP lease) and the SSH host key will change
+	# (installed system uses our sops-injected key), so mirror the kexec loop:
+	# prompt for the post-reboot IP, then probe SSH.
 	green "Waiting for ${target_hostname} to boot into the installed system..."
 
 	# Close stale ControlMaster sockets (old connection is dead after reboot)
@@ -643,13 +747,41 @@ function install_system() {
 	# Clear stale known_hosts (installer/old key is no longer valid)
 	sed -i.bak "/${target_hostname}/d; /${target_destination}/d" ~/.ssh/known_hosts 2>/dev/null || true
 
+	echo
+	yellow "Target is rebooting into the installed NixOS system."
 	local boot_ok=0
-	for _ in $(seq 1 60); do
-		if ssh-keyscan -p "$ssh_port" "$target_destination" 2>/dev/null | grep -q ssh; then
-			boot_ok=1
+	while true; do
+		echo -en "\x1B[34m[?] Target IP [${target_destination}]: \x1B[0m"
+		local new_ip=""
+		read -r new_ip
+		if [ -n "$new_ip" ] && [ "$new_ip" != "$target_destination" ]; then
+			green "Updating target IP: ${target_destination} → ${new_ip}"
+			target_destination="$new_ip"
+			setup_ssh_commands
+			sed -i.bak "/${target_destination}/d" ~/.ssh/known_hosts 2>/dev/null || true
+		fi
+
+		yellow "Waiting for ${target_destination}:${ssh_port} to become reachable (up to 3 min)..."
+		boot_ok=0
+		for _ in $(seq 1 60); do
+			if ssh-keyscan -p "$ssh_port" "$target_destination" 2>/dev/null | grep -q ssh; then
+				boot_ok=1
+				break
+			fi
+			sleep 3
+		done
+
+		if [ "$boot_ok" -eq 1 ]; then
+			green "SSH is up on ${target_destination}:${ssh_port}"
 			break
 		fi
-		sleep 3
+
+		yellow "Cannot reach ${target_destination}:${ssh_port} after 3 min."
+		yellow "Possible causes: wrong IP, system still booting, or network/firewall issue."
+		if ! yes_or_no "Try again with a different (or same) IP?"; then
+			yellow "Skipping verification; proceeding to Phase 2 anyway."
+			break
+		fi
 	done
 
 	if [ "$boot_ok" -eq 1 ]; then
@@ -666,12 +798,6 @@ function install_system() {
 		else
 			yellow "WARNING: Remote hostname '${remote_hostname}' does not match expected '${target_hostname}'."
 			yellow "The system may still be booting or the hostname config differs."
-		fi
-	else
-		yellow "WARNING: ${target_destination}:${ssh_port} is not reachable after 3 min."
-		yellow "The system may need more time to boot, or there may be a network issue."
-		if ! yes_or_no "Continue to Phase 2 anyway?"; then
-			exit 1
 		fi
 	fi
 
@@ -828,6 +954,7 @@ blue "  User:          ${target_user}"
 blue "  SSH port:      ${ssh_port}"
 blue "  SSH key:       ${ssh_key:-agent}"
 blue "  Impermanence:  ${persist_dir:-disabled}"
+blue "  Builder:       ${builder:-default}"
 blue "  Phases:        ${phases}$([ "$migrate_mode" -eq 1 ] && echo ' (migrate)')$([ "$target_installer" -eq 1 ] && echo ' (installer mode)')"
 echo
 

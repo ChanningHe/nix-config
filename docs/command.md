@@ -37,12 +37,12 @@ Create new host Sops-Secrets File && SHH-Host-Key && Netwrok config
 
 Enter Kexec NixOS and rebuild to installer system.
 ```
-./scripts/provision-nixos.sh --phases 1 -n $newhostname --disk-layout [ext4/zfs/btrfs] --disk /dev/sda [--disk2 /dev/disk/by-id/xxx] -k [sshPrivateKey]
+./scripts/provision-nixos.sh --phases 1 -n $newhostname --disk-layout [ext4/zfs/btrfs] --disk /dev/sda [--disk2 /dev/disk/by-id/xxx] -k [sshPrivateKey] -d $newhostip
 ```
 
 Copy nix-config and rebuild to new host system.
 ```
-./scripts/provision-nixos.sh --phases 2 -n $newhostname --disk-layout [ext4/zfs/btrfs] --disk /dev/sda [--disk2 /dev/disk/by-id/xxx] -k [sshPrivateKey]
+./scripts/provision-nixos.sh --phases 2 -n $newhostname --disk-layout [ext4/zfs/btrfs] --disk /dev/sda [--disk2 /dev/disk/by-id/xxx] -k [sshPrivateKey] -d $newhostip
 ```
 
 
