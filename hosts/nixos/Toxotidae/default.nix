@@ -44,6 +44,7 @@ in
       # ========== Optional Configs ==========
       #
       "hosts/common/optional/system/qemu-guest.nix"
+      "hosts/common/optional/network-storage.nix"
       "hosts/common/optional/tap.nix"
     ])
   ];
