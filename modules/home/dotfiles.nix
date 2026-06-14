@@ -4,10 +4,6 @@
 # The actual dotfile mappings are defined in dotfiles/dotfiles.toml
 # This keeps the Nix module simple and the config in one place (SSoT)
 #
-# Two-stage setup:
-#   1. home.activation: tries clone/update during nixos-rebuild switch
-#   2. systemd oneshot: retries on first login if activation failed (e.g. no SSH key yet)
-#
 # Usage:
 #   dotfiles.enable = true;
 #   dotfiles.components = [ "nvim" "p10k" ];  # or omit for all
@@ -27,7 +23,7 @@ let
       "${pkgs.git}/bin/git";
 
   defaultDir = "${config.home.homeDirectory}/.config/dotfiles";
-  defaultRepoUrl = "git@github.com:ChanningHe/dotfiles.git";
+  defaultRepoUrl = "https://github.com/ChanningHe/dotfiles.git";
 
   installArgs =
     if cfg.installAll then
@@ -37,41 +33,44 @@ let
     else
       "";
 
-  sshBin = "${pkgs.openssh}/bin/ssh";
-
-  # Shared shell logic used by both activation and systemd service
   dotfilesScript = pkgs.writeShellScript "dotfiles-setup" ''
     set -euo pipefail
     DOTFILES_DIR="${cfg.directory}"
     REPO_URL="${cfg.repoUrl}"
     BRANCH="${cfg.branch}"
 
-    # Verify SSH connectivity to GitHub before attempting clone
-    ssh_check() {
-      ${sshBin} -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new \
-        -T git@github.com 2>&1 | grep -qi "successfully authenticated"
-    }
-
-    if ! ssh_check; then
-      echo "dotfiles: SSH to github.com not available (no key loaded?). Skipping."
-      exit 1
-    fi
-
-    # Clone or update
-    if [ ! -d "$DOTFILES_DIR/.git" ]; then
+    clone_fresh() {
       echo "dotfiles: Cloning $REPO_URL ..."
+      rm -rf "$DOTFILES_DIR"
       mkdir -p "$(dirname "$DOTFILES_DIR")"
       ${gitBin} clone --branch "$BRANCH" "$REPO_URL" "$DOTFILES_DIR"
+    }
+
+    if [ ! -d "$DOTFILES_DIR/.git" ]; then
+      clone_fresh
     else
-      echo "dotfiles: Updating (pull --ff-only) ..."
-      if ${gitBin} -C "$DOTFILES_DIR" diff --quiet && ${gitBin} -C "$DOTFILES_DIR" diff --cached --quiet; then
-        ${gitBin} -C "$DOTFILES_DIR" pull --ff-only || echo "dotfiles: pull failed (non-fast-forward), skipping."
-      else
-        echo "dotfiles: Uncommitted changes, skipping pull."
-      fi
+      # Anything `git status` can't read = broken checkout.
+      worktree_status=$(${gitBin} -C "$DOTFILES_DIR" status --porcelain 2>/dev/null || echo BROKEN)
+      case "$worktree_status" in
+        BROKEN)
+          echo "dotfiles: Broken checkout at $DOTFILES_DIR, re-cloning ..."
+          clone_fresh
+          ;;
+        "")
+          echo "dotfiles: Updating (pull --ff-only) ..."
+          if ! ${gitBin} -C "$DOTFILES_DIR" pull --ff-only; then
+            # Clean worktree + pull failed = upstream rewrote history,
+            # branch was renamed, or remote URL changed. Recover by re-cloning.
+            echo "dotfiles: pull failed on clean worktree, re-cloning ..."
+            clone_fresh
+          fi
+          ;;
+        *)
+          echo "dotfiles: Local changes present, skipping pull."
+          ;;
+      esac
     fi
 
-    # Run getdots.sh
     INSTALL_SCRIPT="$DOTFILES_DIR/getdots.sh"
     if [ -x "$INSTALL_SCRIPT" ]; then
       echo "dotfiles: Running getdots.sh ${installArgs} ..."
@@ -88,8 +87,11 @@ in
     repoUrl = lib.mkOption {
       type = lib.types.str;
       default = defaultRepoUrl;
-      description = "Git repository URL for dotfiles";
-      example = "git@github.com:username/dotfiles.git";
+      description = ''
+        Git repository URL for dotfiles. Defaults to HTTPS so fresh hosts
+        without SSH keys can still clone a public repo.
+      '';
+      example = "https://github.com/username/dotfiles.git";
     };
 
     directory = lib.mkOption {
@@ -131,30 +133,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Stage 1: try during nixos-rebuild switch (works when SSH is already available)
     home.activation.setupDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run ${dotfilesScript} || echo "dotfiles: activation skipped, will retry on login via systemd."
+      run ${dotfilesScript} || echo "dotfiles: setup failed (see log above)."
     '';
-
-    # Stage 2: retry on first user login (SSH agent + keys should be available)
-    systemd.user.services.dotfiles-setup = {
-      Unit = {
-        Description = "Clone/update dotfiles repository";
-        After = [ "ssh-agent.service" ];
-        ConditionPathIsDirectory = "!${cfg.directory}/.git";
-      };
-      Service = {
-        Type = "oneshot";
-        ExecStart = "${dotfilesScript}";
-        Restart = "on-failure";
-        RestartSec = "10s";
-        RestartMaxDelaySec = "60s";
-        # Inherit SSH_AUTH_SOCK from user session
-        Environment = "SSH_AUTH_SOCK=%t/ssh-agent";
-      };
-      Install = {
-        WantedBy = [ "default.target" ];
-      };
-    };
   };
 }
