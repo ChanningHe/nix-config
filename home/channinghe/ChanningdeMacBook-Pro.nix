@@ -71,7 +71,7 @@
         ];
       }
       {
-        hostName = "nixos-rl";
+        hostName = "Toxotidae";
         systems = [ "x86_64-linux" ];
         sshUser = "channinghe";
         sshKey = "/Users/channinghe/.ssh/hl-intrl";
