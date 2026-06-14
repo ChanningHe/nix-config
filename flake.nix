@@ -196,7 +196,7 @@
     # ========= Utilities =========
     #
     nxv = {
-      url = "github:jamesbrink/nxv";
+      url = "github:utensils/nxv";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     disko = {

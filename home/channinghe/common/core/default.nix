@@ -72,7 +72,6 @@ in
     btop
     wget
     #vivid
-    nxv # Nix pkg index CLI
     # dev tools
     devenv
     bun
