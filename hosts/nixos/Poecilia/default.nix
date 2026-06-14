@@ -83,7 +83,8 @@ in
     enable = true;
     networks = {
       "10-wired" = {
-        matchConfig.Name = "enp3s0";
+        #matchConfig.Name = "enp3s0";
+        matchConfig.MACAddress = "c8:ff:bf:01:c1:c4";
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"

@@ -149,7 +149,8 @@ in
     };
     networks = {
       "10-wired" = {
-        matchConfig.Name = "enp196s0f1np1";
+        #matchConfig.Name = "enp196s0f1np1";
+        matchConfig.MACAddress = "b8:ce:f6:29:46:5d";
         networkConfig = {
           VLAN = [
             "vlan-mgmt"
@@ -205,8 +206,9 @@ in
   };
 
   #SB
-  systemd.network.networks."10-enp193s0" = {
-    matchConfig.Name = "enp193s0";
+  systemd.network.networks."10-softbank" = {
+    #matchConfig.Name = "enp193s0";
+    matchConfig.MACAddress = "00:e0:97:2a:1b:45";
     networkConfig = {
       DHCP = "ipv4";
       IPv6AcceptRA = true;
