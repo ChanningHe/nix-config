@@ -87,7 +87,7 @@ in
             #"${hostNetwork.gateway6}"
           ];
           DHCP = "no";
-          IPv6AcceptRA = false;
+          IPv6AcceptRA = true;
         };
       };
     };
