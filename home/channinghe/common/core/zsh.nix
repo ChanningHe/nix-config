@@ -83,6 +83,12 @@ in
         export CLICOLOR=1
         #export LS_COLORS=$(vivid generate nord)
 
+        # Silence zoxide's "not the last precmd hook" warning. In our stack
+        # atuin (order 1000) and p10k (mkAfter) legitimately register precmd
+        # hooks after zoxide (order 851), and none of them mutate $PWD inside
+        # precmd, so the warning is cosmetic.
+        export _ZO_DOCTOR=0
+
         # source ${pkgs.zsh-fzf-tab}/share/fzf-tab/fzf-tab.plugin.zsh
 
         # ==== carapace: multi-shell completion engine ====
