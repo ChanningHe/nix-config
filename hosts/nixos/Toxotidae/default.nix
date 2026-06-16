@@ -46,7 +46,7 @@ in
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/system/qemu-guest.nix"
       "hosts/common/optional/network-storage.nix"
-      "hosts/common/optional/tap.nix"
+      "hosts/common/optional/tape.nix"
     ])
   ];
 
