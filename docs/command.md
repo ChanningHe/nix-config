@@ -11,46 +11,7 @@ nix build --impure .#nixosConfigurations.iso.config.system.build.isoImage
 
 # Add New Hosts
 
-## Script
-
-### NixOS
-Add new host Config File
-```
-just new-host $newhostname
-#   ./scripts/provision-nixos.sh -n $newhostname --phases 0
-```
-
-**One Line Command**
-
-```
-./scripts/provision-nixos.sh -n $newhostname --disk-layout [ext4/zfs/btrfs] --disk /dev/sda [--disk2 /dev/disk/by-id/xxx] -k [sshPrivateKey]
-```
-
----
-
-**Setup by Setup**
-
-Add new host Config File
-```
-just new-host $newhostname
-#   ./scripts/provision-nixos.sh -n $newhostname --phases 0
-```
-
-Create new host Sops-Secrets File && SHH-Host-Key && Netwrok config
-```
-./scripts/provision-nixos.sh --phases 1 -n $newhostname
-```
-
-Enter Kexec NixOS and rebuild to installer system.
-```
-./scripts/provision-nixos.sh --phases 2 -n $newhostname --disk-layout [ext4/zfs/btrfs] --disk /dev/sda [--disk2 /dev/disk/by-id/xxx] -k [sshPrivateKey] -d $newhostip
-```
-
-Copy nix-config and rebuild to new host system.
-```
-./scripts/provision-nixos.sh --phases 3 -n $newhostname --disk-layout [ext4/zfs/btrfs] --disk /dev/sda [--disk2 /dev/disk/by-id/xxx] -k [sshPrivateKey] -d $newhostip
-```
-
+See [add-new-host.md](add-new-host.md).
 
 ## Manual
 
