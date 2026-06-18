@@ -67,8 +67,9 @@ in
 
       nix.settings = {
         substituters = lib.mkBefore [ "https://${endpoint}" ];
+        # Attic signs with the cache name, not the endpoint host.
         trusted-public-keys = lib.mkBefore [
-          "${endpointHost}:m9rTuwjBlORefVuHByPil1ymtrcqtJIQPh9AmXv93cU="
+          "${cacheName}:m9rTuwjBlORefVuHByPil1ymtrcqtJIQPh9AmXv93cU="
         ];
         netrc-file = netrcPath;
       };
