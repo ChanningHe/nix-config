@@ -36,12 +36,14 @@ in
       #
       # ========== Non-Primary Users to Create ==========
       #
-      "hosts/common/optional/system/no-firewall.nix"
-      "hosts/common/optional/system/ip-forward.nix"
-      "hosts/common/optional/services/attic.nix"
+
       #
       # ========== Optional Configs ==========
       #
+      "hosts/common/optional/system/systemd-boot.nix"
+      "hosts/common/optional/system/no-firewall.nix"
+      "hosts/common/optional/system/ip-forward.nix"
+      "hosts/common/optional/services/attic.nix"
     ])
   ];
 
