@@ -57,9 +57,9 @@ age-key:
 check-sops:
   scripts/check-sops.sh
 
-# Scaffold a new NixOS host (interactive)
-new-host *ARGS:
-  scripts/new-host.sh {{ARGS}}
+# Scaffold a new NixOS host config (provision phase 0, interactive)
+new-host hostname:
+  scripts/provision-nixos.sh -n {{hostname}} --phases 0
 
 # Update nix-secrets flake
 update-nix-secrets:

@@ -10,9 +10,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
 ###############################################################################
 
 # Required tools per phase:
-#   Phase 0: ssh-keygen, ssh-to-age, sops, yq, jq
-#   Phase 1: nix, nixos-anywhere (via nix run), ssh, scp, rsync
-#   Phase 2: rsync, ssh
+#   Phase 0: sed, awk (scaffold host config from templates)
+#   Phase 1: ssh-keygen, ssh-to-age, sops, yq, jq
+#   Phase 2: nix, nixos-anywhere (via nix run), ssh, scp, rsync
+#   Phase 3: rsync, ssh
 REQUIRED_TOOLS=(git ssh-keygen ssh-to-age sops yq jq nix rsync)
 
 function check_dependencies() {
@@ -48,7 +49,7 @@ git_root=$(git rev-parse --show-toplevel)
 nix_secrets_dir=${NIX_SECRETS_DIR:-"${git_root}"/../nix-secrets}
 
 # Phase control
-phases="0,1,2" # default: all phases
+phases="0,1,2,3" # default: all phases
 migrate_mode=0
 generate_user_age_key=1
 run_rekey=1
@@ -68,7 +69,7 @@ opt_ssh_key=""
 
 function help_and_exit() {
 	echo
-	echo "Provision a new NixOS host: prepare secrets, install via nixos-anywhere, deploy full config."
+	echo "Provision a new NixOS host: scaffold config, prepare secrets, install via nixos-anywhere, deploy full config."
 	echo
 	echo "USAGE: $0 -n <hostname> [OPTIONS]"
 	echo
@@ -76,28 +77,29 @@ function help_and_exit() {
 	echo "  -n, --hostname <name>               Target hostname (must match nix-config host entry)"
 	echo
 	echo "PHASES:"
-	echo "  -p, --phases <list>                  Comma-separated phases to run (default: 0,1,2)"
-	echo "                                         0 = Prepare secrets (generate SSH key, update sops)"
-	echo "                                         1 = Install system (nixos-anywhere)"
-	echo "                                         2 = Deploy full config (rsync + rebuild)"
-	echo "  --migrate                            Phase 0 variant: restore SSH key from sops, not generate"
+	echo "  -p, --phases <list>                  Comma-separated phases to run (default: 0,1,2,3)"
+	echo "                                         0 = Scaffold config (host/default.nix, home, network.nix)"
+	echo "                                         1 = Prepare secrets (generate SSH key, update sops)"
+	echo "                                         2 = Install system (nixos-anywhere)"
+	echo "                                         3 = Deploy full config (rsync + rebuild)"
+	echo "  --migrate                            Phase 1 variant: restore SSH key from sops, not generate"
 	echo
-	echo "DISK (Phase 1):"
+	echo "DISK (Phase 2):"
 	echo "  --disk-layout <ext4|btrfs|zfs|zfs-mirror>"
 	echo "                                       Disk layout type (default: ext4)"
 	echo "  --disk <device>                      Primary disk device path"
 	echo "                                       ZFS: use /dev/disk/by-id/..."
 	echo "  --disk2 <device>                     Secondary disk (zfs-mirror only)"
 	echo
-	echo "BUILD (Phase 1):"
-	echo "  --builder <mode>                     Override Phase 1 build strategy (default: system config)"
+	echo "BUILD (Phase 2):"
+	echo "  --builder <mode>                     Override Phase 2 build strategy (default: system config)"
 	echo '                                         no-remote   = local build with --option builders ""'
 	echo "                                                       (skip remote ssh builders)"
 	echo '                                         no-external = local build with --option external-builders "[]"'
 	echo "                                                       (skip nix-vz-builder etc.)"
 	echo "                                         on-target   = skip local build; nixos-anywhere --build-on remote"
 	echo
-	echo "CONNECTION (Phase 1/2):"
+	echo "CONNECTION (Phase 2/3):"
 	echo "  -d, --destination <ip|domain>        Target IP or domain"
 	echo "  -k, --ssh-key <path>                 SSH private key (default: SSH agent)"
 	echo '  -u, --user <username>                Target user (default: BOOTSTRAP_USER or whoami)'
@@ -105,8 +107,8 @@ function help_and_exit() {
 	echo
 	echo "OPTIONS:"
 	echo "  --target-installer                   Target is already in a NixOS installer (ISO/kexec'd), skip kexec"
-	echo "  --no-user-age-key                    Skip user age key in Phase 0"
-	echo "  --no-rekey                           Skip rekey in Phase 0"
+	echo "  --no-user-age-key                    Skip user age key in Phase 1"
+	echo "  --no-rekey                           Skip rekey in Phase 1"
 	echo "  --impermanence                       Target uses /persist"
 	echo "  --dry-run                            Show what would be done"
 	echo "  --debug                              Enable set -x"
@@ -120,11 +122,14 @@ function help_and_exit() {
 	echo "  # Full: ext4 cloud VM"
 	echo "  $0 -n mycloud -d 203.0.113.10 --disk /dev/vda"
 	echo
-	echo "  # Prepare secrets only"
+	echo "  # Scaffold new host config only (interactive network prompts)"
 	echo "  $0 -n newhost -p 0"
 	echo
-	echo "  # Install + deploy (secrets already done)"
-	echo "  $0 -n newhost -d 192.168.1.100 -p 1,2 --disk /dev/sda"
+	echo "  # Prepare secrets only"
+	echo "  $0 -n newhost -p 1"
+	echo
+	echo "  # Install + deploy (scaffold + secrets already done)"
+	echo "  $0 -n newhost -d 192.168.1.100 -p 2,3 --disk /dev/sda"
 	echo
 	echo "  # Migrate: reinstall with existing SSH key"
 	echo "  $0 -n Pseudomugil -d 192.168.1.60 --migrate --disk-layout zfs-mirror \\"
@@ -218,24 +223,28 @@ if [ -z "$target_hostname" ]; then
 fi
 
 # Parse --phases into individual flags
+run_scaffold=0
 run_prepare=0
 run_install=0
 run_deploy=0
 IFS=',' read -ra phase_list <<<"$phases"
 for p in "${phase_list[@]}"; do
 	case "$p" in
-	0) run_prepare=1 ;;
-	1) run_install=1 ;;
-	2) run_deploy=1 ;;
+	0) run_scaffold=1 ;;
+	1) run_prepare=1 ;;
+	2) run_install=1 ;;
+	3) run_deploy=1 ;;
 	*)
-		red "ERROR: Invalid phase '$p'. Must be 0, 1, or 2"
+		red "ERROR: Invalid phase '$p'. Must be 0, 1, 2, or 3"
 		exit 1
 		;;
 	esac
 done
 
-# --migrate implies phase 0 is replaced by migrate logic
+# --migrate reinstalls an existing host: skip scaffold, and phase 1 restores
+# the SSH key from sops instead of generating one (migrate_extract_ssh_key).
 if [ "$migrate_mode" -eq 1 ]; then
+	run_scaffold=0
 	run_prepare=0
 fi
 
@@ -263,15 +272,15 @@ if [ "$disk_layout" = "zfs-mirror" ] && [ -n "$disk" ] && [ -z "$disk2" ]; then
 	exit 1
 fi
 
-# Phase 1/2 require destination
+# Phase 2/3 require destination
 if { [ "$run_install" -eq 1 ] || [ "$run_deploy" -eq 1 ]; } && [ -z "$target_destination" ]; then
-	red "ERROR: -d/--destination is required for phase 1/2"
+	red "ERROR: -d/--destination is required for phase 2/3"
 	exit 1
 fi
 
-# Phase 1 requires disk
+# Phase 2 requires disk
 if [ "$run_install" -eq 1 ] && [ -z "$disk" ]; then
-	red "ERROR: --disk is required for phase 1"
+	red "ERROR: --disk is required for phase 2"
 	exit 1
 fi
 
@@ -360,11 +369,137 @@ function make_secure_temp() {
 }
 
 ###############################################################################
-# Phase 0: Prepare Secrets
+# Phase 0: Scaffold Host Config
+###############################################################################
+
+# Create hosts/nixos/<host>/default.nix, home/channinghe/<host>.nix and a
+# network.nix entry from templates. Network details are prompted interactively.
+# Skips (does not abort) if the host dir already exists, so re-runs are safe.
+function scaffold_host() {
+	local host_template="${git_root}/hosts/host-template.nix.placeholder"
+	local home_template="${git_root}/home/channinghe/home-template.nix.placeholder"
+	local network_nix="${nix_secrets_dir}/nix/network.nix"
+	local host_dir="${git_root}/hosts/nixos/${target_hostname}"
+	local home_file="${git_root}/home/channinghe/${target_hostname}.nix"
+
+	if [ -d "$host_dir" ]; then
+		yellow "Host config already exists: hosts/nixos/${target_hostname} — skipping scaffold."
+		return 0
+	fi
+
+	if [ ! -f "$host_template" ]; then
+		red "Host template not found: ${host_template}"
+		exit 1
+	fi
+	if [ ! -f "$home_template" ]; then
+		red "Home template not found: ${home_template}"
+		exit 1
+	fi
+
+	# Interactive network prompts (no equivalent provision flags).
+	local ip4 gateway4 dns interface host_id custom_id
+	echo -en "\x1B[34m[?] IPv4 address (e.g. 10.1.10.100): \x1B[0m"
+	read -r ip4
+	[ -z "$ip4" ] && {
+		red "IPv4 address is required."
+		exit 1
+	}
+
+	echo -en "\x1B[34m[?] IPv4 gateway (e.g. 10.1.10.1): \x1B[0m"
+	read -r gateway4
+	[ -z "$gateway4" ] && {
+		red "IPv4 gateway is required."
+		exit 1
+	}
+
+	echo -en "\x1B[34m[?] DNS server (default: 10.1.10.2): \x1B[0m"
+	read -r dns
+	dns="${dns:-10.1.10.2}"
+
+	echo -en "\x1B[34m[?] Network interface name (e.g. enp3s0): \x1B[0m"
+	read -r interface
+	[ -z "$interface" ] && {
+		red "Network interface is required."
+		exit 1
+	}
+
+	host_id=$(head -c4 /dev/urandom | od -A none -t x4 | xargs)
+	blue "Generated hostId: ${host_id}"
+	echo -en "\x1B[34m[?] Press Enter to accept, or type a custom hostId: \x1B[0m"
+	read -r custom_id
+	[ -n "$custom_id" ] && host_id="$custom_id"
+
+	echo
+	blue "====== Scaffold Summary ======"
+	echo "  Hostname:   ${target_hostname}"
+	echo "  IPv4:       ${ip4}"
+	echo "  Gateway:    ${gateway4}"
+	echo "  DNS:        ${dns}"
+	echo "  Interface:  ${interface}"
+	echo "  Host ID:    ${host_id}"
+	echo "  Will create:"
+	echo "    hosts/nixos/${target_hostname}/default.nix"
+	echo "    home/channinghe/${target_hostname}.nix"
+	echo "    network.nix entry in ${network_nix}"
+	echo
+
+	if [ "$dry_run" -eq 1 ]; then
+		yellow "[DRY-RUN] Would scaffold the files listed above."
+		return 0
+	fi
+
+	if ! yes_or_no "Proceed with scaffold?"; then
+		yellow "Scaffold aborted."
+		exit 0
+	fi
+
+	# 1. Host config from template (substitute FIXME placeholders).
+	green "Creating host config..."
+	mkdir -p "$host_dir"
+	sed \
+		-e "s/hostName = \"foo\"/hostName = \"${target_hostname}\"/" \
+		-e "s/hostId = \"xxxxx\"/hostId = \"${host_id}\"/" \
+		-e "s/matchConfig\.Name = \"xxxxx\"/matchConfig.Name = \"${interface}\"/" \
+		-e '/# \!\!\!\[FIXME\]\!\!\!/d' \
+		"$host_template" >"${host_dir}/default.nix"
+	green "Created hosts/nixos/${target_hostname}/default.nix"
+
+	# 2. Home-manager config from template.
+	cp "$home_template" "$home_file"
+	green "Created home/channinghe/${target_hostname}.nix"
+
+	# 3. Inject network entry into nix-secrets/nix/network.nix.
+	if [ ! -f "$network_nix" ]; then
+		red "nix-secrets network.nix not found: ${network_nix}"
+		yellow "Skipping network injection. Add the entry manually."
+	elif grep -q "^[[:space:]]*${target_hostname} = {" "$network_nix"; then
+		yellow "Host '${target_hostname}' already in network.nix, skipping injection."
+	else
+		local tmp_file
+		tmp_file=$(mktemp)
+		NH_HOSTNAME="$target_hostname" NH_IP4="$ip4" NH_GATEWAY4="$gateway4" NH_DNS="$dns" \
+			awk '/# Other hosts/ {
+				printf "      %s = {\n", ENVIRON["NH_HOSTNAME"]
+				printf "        ip4 = \"%s\";\n", ENVIRON["NH_IP4"]
+				printf "        gateway4 = \"%s\";\n", ENVIRON["NH_GATEWAY4"]
+				printf "        dns = [ \"%s\" ];\n", ENVIRON["NH_DNS"]
+				printf "      };\n"
+			}
+			{ print }' \
+			"$network_nix" >"$tmp_file"
+		mv "$tmp_file" "$network_nix"
+		green "Added network entry to ${network_nix}"
+	fi
+
+	green "Host scaffold complete for ${target_hostname}."
+}
+
+###############################################################################
+# Phase 1: Prepare Secrets
 ###############################################################################
 
 function prepare_secrets() {
-	green "===== Phase 0: Preparing secrets for ${target_hostname} ====="
+	green "===== Phase 1: Preparing secrets for ${target_hostname} ====="
 
 	local secure_temp
 	secure_temp=$(make_secure_temp)
@@ -458,7 +593,7 @@ function prepare_secrets() {
 
 	# 7. Copy user password from shared.yaml to host secrets.
 	# NixOS user config (nixos.nix) reads passwords/<username> from the host's
-	# secrets file. Without this, the user has no login password after Phase 2.
+	# secrets file. Without this, the user has no login password after Phase 3.
 	green "Copying user password from shared.yaml to ${target_hostname} secrets"
 	if [ "$dry_run" -eq 1 ]; then
 		yellow "[DRY-RUN] Would copy passwords/${target_user} from shared.yaml"
@@ -490,11 +625,11 @@ function prepare_secrets() {
 		fi
 	fi
 
-	green "Phase 0 complete."
+	green "Phase 1 complete."
 }
 
 ###############################################################################
-# Phase 0-M: Migrate mode — extract existing SSH key from sops
+# Phase 1-M: Migrate mode — extract existing SSH key from sops
 ###############################################################################
 
 function migrate_extract_ssh_key() {
@@ -520,11 +655,11 @@ function migrate_extract_ssh_key() {
 }
 
 ###############################################################################
-# Phase 1: Install System
+# Phase 2: Install System
 ###############################################################################
 
 function install_system() {
-	green "===== Phase 1: Installing NixOS on ${target_hostname} at ${target_destination} ====="
+	green "===== Phase 2: Installing NixOS on ${target_hostname} at ${target_destination} ====="
 
 	# Pre-flight: stale hardware-configuration.nix breaks the build silently — flake.nix
 	# auto-imports it whenever the file exists, and wrong disk UUIDs / kernel modules
@@ -538,7 +673,7 @@ function install_system() {
 		yellow "the build or first boot will fail."
 		echo
 		echo "  [k]eep   — use as-is (only if you know it matches the target)"
-		echo "  [b]ackup — move to hardware-configuration.nix.bak; Phase 2 regenerates from target (recommended)"
+		echo "  [b]ackup — move to hardware-configuration.nix.bak; Phase 3 regenerates from target (recommended)"
 		echo "  [a]bort  — exit"
 		while true; do
 			echo -en "\x1B[34m[?] Action [k/b/a]: \x1B[0m"
@@ -685,7 +820,7 @@ function install_system() {
 			# running VPS, etc.). Must kexec into NixOS installer first.
 			# Split into two invocations: kexec may change the IP
 			# (new MAC → new DHCP lease).
-			green "Phase 1a: kexec into NixOS installer on ${target_destination}"
+			green "Phase 2a: kexec into NixOS installer on ${target_destination}"
 			SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- \
 				"${na_args[@]}" \
 				--phases kexec \
@@ -726,7 +861,7 @@ function install_system() {
 
 			# Run disko + install + reboot. The reboot phase properly unmounts
 			# filesystems, exports ZFS pools, then reboots into the installed system.
-			green "Phase 1b: disko + install + reboot on ${target_destination}"
+			green "Phase 2b: disko + install + reboot on ${target_destination}"
 			SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- \
 				"${na_args[@]}" \
 				--phases "disko,install,reboot" \
@@ -779,7 +914,7 @@ function install_system() {
 		yellow "Cannot reach ${target_destination}:${ssh_port} after 3 min."
 		yellow "Possible causes: wrong IP, system still booting, or network/firewall issue."
 		if ! yes_or_no "Try again with a different (or same) IP?"; then
-			yellow "Skipping verification; proceeding to Phase 2 anyway."
+			yellow "Skipping verification; proceeding to Phase 3 anyway."
 			break
 		fi
 	done
@@ -801,15 +936,15 @@ function install_system() {
 		fi
 	fi
 
-	green "Phase 1 complete."
+	green "Phase 2 complete."
 }
 
 ###############################################################################
-# Phase 2: Deploy Full Config
+# Phase 3: Deploy Full Config
 ###############################################################################
 
 function deploy_config() {
-	green "===== Phase 2: Deploying full config to ${target_hostname} ====="
+	green "===== Phase 3: Deploying full config to ${target_hostname} ====="
 
 	# 1. Wait for target to be reachable via SSH
 	green "Waiting for ${target_destination}:${ssh_port} to become reachable..."
@@ -849,6 +984,9 @@ function deploy_config() {
 			if [ "$dry_run" -eq 1 ]; then
 				yellow "[DRY-RUN] Would generate hardware-configuration.nix on target"
 			else
+				# Ensure the host dir exists; the redirect below would otherwise
+				# fail before nixos-generate-config even runs.
+				mkdir -p "$(dirname "$hw_config")"
 				$ssh_root_cmd "nixos-generate-config --show-hardware-config" \
 					>"$hw_config" 2>/dev/null || {
 					red "Failed to generate hardware-configuration.nix"
@@ -929,7 +1067,7 @@ function deploy_config() {
 		green "Remember to commit it to nix-config after provisioning is done."
 	fi
 
-	green "Phase 2 complete."
+	green "Phase 3 complete."
 }
 
 ###############################################################################
@@ -958,22 +1096,27 @@ blue "  Builder:       ${builder:-default}"
 blue "  Phases:        ${phases}$([ "$migrate_mode" -eq 1 ] && echo ' (migrate)')$([ "$target_installer" -eq 1 ] && echo ' (installer mode)')"
 echo
 
-# Phase 0: Prepare secrets
+# Phase 0: Scaffold host config
+if [ "$run_scaffold" -eq 1 ]; then
+	scaffold_host
+fi
+
+# Phase 1: Prepare secrets
 if [ "$run_prepare" -eq 1 ]; then
 	prepare_secrets
 fi
 
-# Phase 0-M: Migrate mode — verify SSH key exists in sops
+# Phase 1-M: Migrate mode — verify SSH key exists in sops
 if [ "$migrate_mode" -eq 1 ]; then
 	migrate_extract_ssh_key
 fi
 
-# Phase 1: Install system
+# Phase 2: Install system
 if [ "$run_install" -eq 1 ]; then
 	install_system
 fi
 
-# Phase 2: Deploy full config
+# Phase 3: Deploy full config
 if [ "$run_deploy" -eq 1 ]; then
 	deploy_config
 fi
