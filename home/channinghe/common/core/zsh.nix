@@ -149,8 +149,8 @@ in
             local prompt="Run git diff --staged to inspect the staged changes, then"
             prompt+=" generate a one-line commit message in Conventional Commits format."
             prompt+=" Output only the message itself—no explanation, no markdown, no quotes."
-            prompt+=" Type: feat/fix/refactor/chore/docs/style/test/build/ci/perf/add/update."
-            prompt+=" Include a scope. Lowercase English, no trailing period, max 72 chars."
+            prompt+=" Type: feat/fix/refactor/chore/docs/style/test/build/ci/perf."
+            prompt+=" Include a scope. Lowercase English, no trailing period, max 50 chars."
             claude -p "$prompt" --max-turns 3
           }
         ''
