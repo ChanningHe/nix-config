@@ -2,7 +2,6 @@
 {
   config,
   lib,
-  pkgs,
   inputs,
   ...
 }:
@@ -37,7 +36,7 @@ in
       GlobalKnownHostsFile /etc/ssh/ssh_known_hosts
       StrictHostKeyChecking accept-new
       ControlMaster auto
-      ControlPath ${primaryUserHome}/.ssh/sockets/S.%r@%h:%p
+      ControlPath ${primaryUserHome}/.ssh/sockets/root-S.%r@%h:%p
       ControlPersist 20m
       ServerAliveInterval 60
       ServerAliveCountMax 3
@@ -47,39 +46,39 @@ in
     ${rootHostBlocks}
   '';
 
-  # `test-root-ssh`: diagnose root's agent/known_hosts access.
-  environment.systemPackages = [
-    (pkgs.writeShellScriptBin "test-root-ssh" ''
-      echo "Testing root SSH configuration for builders..."
-      echo "Primary user: ${primaryUser}"
-      echo "Agent socket: ${primaryUserHome}/.ssh/ssh-agent.sock"
-      echo ""
+  # # `test-root-ssh`: diagnose root's agent/known_hosts access.
+  # environment.systemPackages = [
+  #   (pkgs.writeShellScriptBin "test-root-ssh" ''
+  #     echo "Testing root SSH configuration for builders..."
+  #     echo "Primary user: ${primaryUser}"
+  #     echo "Agent socket: ${primaryUserHome}/.ssh/ssh-agent.sock"
+  #     echo ""
 
-      if [ ! -S "${primaryUserHome}/.ssh/ssh-agent.sock" ]; then
-        echo "❌ Agent socket not found. Is ${primaryUser} logged in with ssh-agent running?"
-        exit 1
-      fi
+  #     if [ ! -S "${primaryUserHome}/.ssh/ssh-agent.sock" ]; then
+  #       echo "❌ Agent socket not found. Is ${primaryUser} logged in with ssh-agent running?"
+  #       exit 1
+  #     fi
 
-      echo "Agent socket exists"
+  #     echo "Agent socket exists"
 
-      # Test agent access as root
-      if sudo SSH_AUTH_SOCK="${primaryUserHome}/.ssh/ssh-agent.sock" ${pkgs.openssh}/bin/ssh-add -l >/dev/null 2>&1; then
-        echo "Root can access agent"
-        sudo SSH_AUTH_SOCK="${primaryUserHome}/.ssh/ssh-agent.sock" ${pkgs.openssh}/bin/ssh-add -l
-      else
-        echo "❌ Root cannot access agent (permission issue?)"
-        ls -la "${primaryUserHome}/.ssh/ssh-agent.sock"
-        exit 1
-      fi
+  #     # Test agent access as root
+  #     if sudo SSH_AUTH_SOCK="${primaryUserHome}/.ssh/ssh-agent.sock" ${pkgs.openssh}/bin/ssh-add -l >/dev/null 2>&1; then
+  #       echo "Root can access agent"
+  #       sudo SSH_AUTH_SOCK="${primaryUserHome}/.ssh/ssh-agent.sock" ${pkgs.openssh}/bin/ssh-add -l
+  #     else
+  #       echo "❌ Root cannot access agent (permission issue?)"
+  #       ls -la "${primaryUserHome}/.ssh/ssh-agent.sock"
+  #       exit 1
+  #     fi
 
-      echo ""
-      echo "Known hosts: ${primaryUserHome}/.ssh/known_hosts"
-      if [ -f "${primaryUserHome}/.ssh/known_hosts" ]; then
-        echo "Known hosts exists"
-        ls -la "${primaryUserHome}/.ssh/known_hosts"
-      else
-        echo "!! Known hosts not found"
-      fi
-    '')
-  ];
+  #     echo ""
+  #     echo "Known hosts: ${primaryUserHome}/.ssh/known_hosts"
+  #     if [ -f "${primaryUserHome}/.ssh/known_hosts" ]; then
+  #       echo "Known hosts exists"
+  #       ls -la "${primaryUserHome}/.ssh/known_hosts"
+  #     else
+  #       echo "!! Known hosts not found"
+  #     fi
+  #   '')
+  # ];
 }
