@@ -55,7 +55,7 @@ generate_user_age_key=1
 run_rekey=1
 target_installer=0
 dry_run=0
-builder=""
+builder="no-external"
 
 # Generated hardware config tracking
 generated_hardware_config=0
