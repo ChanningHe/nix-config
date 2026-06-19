@@ -49,8 +49,8 @@ in
       "hosts/common/optional/system/rdma/nfs-client.nix"
       "hosts/common/optional/system/rdma/vf-promisc.nix"
       "hosts/common/optional/system/rdma/roce.nix"
-      #"hosts/common/optional/services/komodo-periphery.nix"
-      #"hosts/common/optional/services/podman.nix"
+      "hosts/common/optional/services/komodo-periphery.nix"
+      "hosts/common/optional/services/podman.nix"
     ])
   ];
 
