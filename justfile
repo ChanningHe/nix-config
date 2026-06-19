@@ -61,6 +61,14 @@ check-sops:
 new-host hostname:
   scripts/provision-nixos.sh -n {{hostname}} --phases 0
 
+# Provision a NixOS host end to end (idempotent, resumable). See scripts/spawn.sh
+spawn hostname *ARGS:
+  scripts/spawn.sh {{hostname}} {{ARGS}}
+
+# Deploy (update) an existing NixOS host via deploy-rs, with auto-rollback
+deploy hostname *ARGS:
+  nix run .#deploy -- .#{{hostname}} {{ARGS}}
+
 # Update nix-secrets flake
 update-nix-secrets:
   @[ -d ../nix-secrets ] && (cd ../nix-secrets && git fetch && (git rebase > /dev/null 2>&1 || true)) || true

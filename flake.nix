@@ -63,6 +63,14 @@
       );
 
       #
+      # ========= deploy-rs nodes =========
+      #
+      deploy = import ./deploy.nix {
+        inherit inputs lib;
+        nixosConfigurations = self.nixosConfigurations;
+      };
+
+      #
       # ========= Packages =========
       #
       # Expose custom packages
@@ -85,6 +93,18 @@
           directory = ./pkgs/common;
         }
       );
+
+      #
+      # ========= Apps =========
+      #
+      apps = forAllSystems (system: {
+        # `nix run .#deploy` — deploy-rs CLI pinned to the locked input, so it
+        # matches the activation built by deploy.nix.
+        deploy = {
+          type = "app";
+          program = "${inputs.deploy-rs.packages.${system}.default}/bin/deploy";
+        };
+      });
 
       #
       # ========= Formatting =========
@@ -201,6 +221,13 @@
     };
     disko = {
       url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # Declarative hardware detection — replaces hardware-configuration.nix.
+    nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
+    # Remote deployment with automatic rollback (provision phase: deploy).
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # Secrets management. See ./docs/secretsmgmt.md
