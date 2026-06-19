@@ -28,7 +28,7 @@
   #   ethtool   - ring/offload/counter inspection
   environment.systemPackages = with pkgs; [
     rdma-core
-    perftest
+    #perftest
     ethtool
   ];
 

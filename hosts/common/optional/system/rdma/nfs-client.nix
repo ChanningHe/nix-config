@@ -13,7 +13,9 @@
     # Max concurrent outstanding RDMA RPC requests. Default is 128; 256 is the
     # kernel ceiling (RPCRDMA_MAX_SLOT_TABLE). More in-flight RPCs = higher
     # throughput on parallel / random workloads. Set before any NFS mount.
-    "sunrpc.rdma_slot_table_entries" = 256;
+    #"sunrpc.rdma_slot_table_entries" = 256;
+    # VF:
+    "sunrpc.rdma_slot_table_entries" = 128;
   };
 
   # Recommended client mount options (set where the mount is defined, e.g. a
