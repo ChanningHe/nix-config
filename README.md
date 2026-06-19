@@ -8,13 +8,14 @@ Secrets are managed with sops-nix and kept in a separate private repo. Most mach
 
 | Host | Form Factor | CPU | Memory | Other | Role |
 |------|-------------|-----|--------|-------|------|
-| `nixos-rl` | LXC Container | AMD EPYC 7C13 | 128 GB | — | Primary services |
+| `Annulatus` | KVM VM | AMD EPYC 7C13 | 64 GB | — | Primary services |
 | `Platypus` | Desktop | Intel Core i9-12700K | 32 GB | RTX 3070 | Gaming / Workstation |
-| `Poecilia` | Mini PC | AMD Ryzen 9 7840HS | 32 GB | — | HA services |
+| `Poecilia` | Mini PC | AMD Ryzen 9 8745HS | 32 GB | — | HA services |
 | `Pseudomugil` | Server | AMD EPYC 7D12 | 64 GB | — | Remote testing |
 | `Toxotidae` | KVM VM | AMD EPYC 7C13 | 128 GB | — | Build / CI testing |
 | `Macrouridae` | NAS | Intel Atom C3558 | 4 GB | — | Cold backup |
 | `ChanningdeMacBook-Pro` | Laptop | Apple M4 Pro | 48 GB | — | Primary workstation |
+| `nixos-rl` | LXC Container | AMD EPYC 7C13 | 128 GB | — | Primary services (To be deprecated) |
 
 ## System Architecture Overview
 ![](./docs/images/SystemOverviewV1.2.png)
