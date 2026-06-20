@@ -45,6 +45,7 @@ in
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/network-storage.nix"
+      "hosts/common/optional/nvmeof-client.nix"
       # rdma config
       "hosts/common/optional/system/rdma/nfs-client.nix"
       "hosts/common/optional/system/rdma/vf-promisc.nix"
