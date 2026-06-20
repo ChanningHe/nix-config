@@ -169,13 +169,14 @@ in
       # Setting dockerHost flips the base module out of docker mode (drops the
       # docker daemon/group/service deps) and injects DOCKER_HOST. komodo owns
       # the socket as cfg.user, so no extra group is needed.
-      services.komodo-periphery.dockerHost =
-        lib.mkIf usePodman "unix:///run/user/${komodoUidStr}/podman/podman.sock";
+      services.komodo-periphery.dockerHost = lib.mkIf usePodman "unix:///run/user/${komodoUidStr}/podman/podman.sock";
 
       # Only the docker daemon needs a group membership; podman is socket-owned.
-      users.users.${cfg.user} = lib.mkIf (!usePodman && cfg.user != "root" && cfg.user != "komodo-periphery") {
-        extraGroups = [ "docker" ];
-      };
+      users.users.${cfg.user} =
+        lib.mkIf (!usePodman && cfg.user != "root" && cfg.user != "komodo-periphery")
+          {
+            extraGroups = [ "docker" ];
+          };
 
       # Only manage the docker daemon when this host is not on podman.
       virtualisation.docker = lib.mkIf (!usePodman) {
@@ -217,6 +218,7 @@ in
               bash
               openssh
               docker
+              openssl
             ]);
       };
     })
