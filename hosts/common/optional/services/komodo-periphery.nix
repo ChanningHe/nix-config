@@ -198,28 +198,23 @@ in
         # shells) and /run/user/<uid> (the socket); ProtectHome=true hides both.
         serviceConfig.ProtectHome = lib.mkIf usePodman (lib.mkForce false);
 
-        # Everything komodo shells out to (dockerCompat `docker`, podman,
-        # podman-compose, git/age/sops, bash/ssh, setuid newuidmap) lives in the
-        # system profile + wrappers, so point PATH there instead of re-listing.
-        # An explicit PATH is required because NixOS's default service PATH
-        # otherwise overrides the module's ExecSearchPath. wrappers first so the
-        # setuid newuidmap wins over the plain copy in the profile.
+        # periphery spawns child processes (openssl for SSL cert gen, git, the
+        # container CLI, etc.) via $PATH — NOT ExecSearchPath, which only resolves
+        # the ExecStart= command name.
         path =
-          if usePodman then
-            [
-              "/run/wrappers"
-              "/run/current-system/sw"
-            ]
-          else
-            (with pkgs; [
-              git
-              age
-              sops
-              bash
-              openssh
-              docker
-              openssl
-            ]);
+          (with pkgs; [
+            git
+            age
+            sops
+            openssh
+            openssl
+            docker-compose
+          ])
+          #++ lib.optional (!usePodman) pkgs.docker
+          ++ [
+            "/run/wrappers"
+            "/run/current-system/sw"
+          ];
       };
     })
   ];
