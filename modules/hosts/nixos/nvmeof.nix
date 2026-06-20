@@ -1,10 +1,5 @@
-# NVMe-over-Fabrics (NVMe-oF) CLIENT / initiator module for NixOS.
-#
-# Reads its configuration from nix-secrets (nvmeofInfo.${hostname}) and:
-#   1. loads the right kernel transport modules (nvme_rdma / nvme_tcp)
-#   2. pins a stable host NQN + host ID under /etc/nvme
-#   3. runs one oneshot `nvme connect` per boot, tolerant of a down target
-#   4. generates fileSystems entries wired to wait for the connect service
+# NVMe-oF client/initiator module. Reads nvmeofInfo.${hostname} from nix-secrets,
+# connects the targets at boot, and generates the fileSystems mounts.
 {
   config,
   lib,
@@ -25,16 +20,8 @@ let
 
   transportOf = t: t.transport or defaultTransport;
 
-  # Resolve a target to a STABLE block-device path for mounting. Never reference
-  # /dev/nvmeXnY directly: enumeration order is not stable across reboots. Order
-  # of preference (most robust first):
-  #   label         -> /dev/disk/by-label/<x>   (fs label you set at mkfs; survives
-  #                                               target re-export, recommended)
-  #   fsUuid        -> /dev/disk/by-uuid/<x>     (fs UUID from mkfs)
-  #   namespaceUuid -> /dev/disk/by-id/nvme-uuid.<x>  (UUID the kernel derives from
-  #                                                    the namespace, see `nvme list`)
-  #   serial        -> /dev/disk/by-id/nvme-<x>  (target model+serial)
-  #   device        -> raw path, used verbatim (escape hatch)
+  # Stable block-device path for mounting (never /dev/nvmeXnY -- order not stable).
+  # Preference: label > fsUuid > namespaceUuid > serial > raw device.
   deviceOf =
     t:
     if (t.label or null) != null then
@@ -50,7 +37,6 @@ let
     else
       throw "nvmeofStorage: target '${t.nqn}' has a mountPoint but no way to find its device (set label/fsUuid/namespaceUuid/serial/device).";
 
-  # Kernel transport modules actually used, plus the common fabrics core.
   transports = lib.unique (map transportOf targets);
   transportModules = [
     "nvme_fabrics"
@@ -58,10 +44,7 @@ let
   ++ lib.optional (lib.elem "rdma" transports) "nvme_rdma"
   ++ lib.optional (lib.elem "tcp" transports) "nvme_tcp";
 
-  # `nvme connect` invocation for one target. Long flags for readability.
-  # `|| true`: re-running for an already-connected subsystem (rebuild switch,
-  # service restart) returns non-zero -- not a failure. Real success is decided
-  # by the device symlink appearing below.
+  # `|| true`: reconnecting an already-connected subsystem is not a failure.
   connectOne = t: ''
     echo "nvme-oF: connecting ${t.nqn} via ${transportOf t} @ ${t.traddr}:${t.trsvcid or "4420"}"
     ${pkgs.nvme-cli}/bin/nvme connect \
@@ -82,15 +65,11 @@ let
     set -u
     ${lib.concatMapStringsSep "\n" connectOne targets}
 
-    # Let udev finish publishing the new block devices + by-id/by-label symlinks
-    # before the dependent .mount units try to resolve their device. Identifier-
-    # agnostic, so it works whether you mount by label, uuid, or serial.
+    # Wait for udev to publish device symlinks before the .mount units resolve.
     ${pkgs.systemd}/bin/udevadm settle --timeout=20 || true
   '';
 
-  # Only targets that ask to be mounted get a fileSystems entry. A target with
-  # no mountPoint is connected (raw block device) but left for the host to use
-  # directly (e.g. as a ZFS vdev).
+  # Targets without a mountPoint are connected but left as raw block devices.
   mountTargets = lib.filter (t: (t.mountPoint or null) != null) targets;
 in
 {
@@ -131,9 +110,7 @@ in
 
       environment.systemPackages = [ pkgs.nvme-cli ];
 
-      # Stable initiator identity. The target's ACL keys off the host NQN, so it
-      # must be deterministic and survive reboots -- never let nvme-cli generate
-      # a random one at runtime.
+      # Stable initiator identity -- the target ACL keys off the host NQN.
       environment.etc."nvme/hostnqn".text = "${hostConfig.hostNqn}\n";
       environment.etc."nvme/hostid".text = "${hostConfig.hostId}\n";
 
@@ -146,8 +123,6 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           ExecStart = connectScript;
-          # Disconnect cleanly on stop so a rebuild switch / shutdown doesn't
-          # leave dangling controllers.
           ExecStop = "${pkgs.nvme-cli}/bin/nvme disconnect-all";
         };
       };
