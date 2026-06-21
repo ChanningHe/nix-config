@@ -151,7 +151,12 @@ in
     networks = {
       "10-wired" = {
         #matchConfig.Name = "enp196s0f1np1";
+        # Type=ether is REQUIRED: vlan-mgmt/vlan10 inherit this same MAC, so a
+        # bare MACAddress match also grabs them (10-wired sorts first), steals
+        # them from their own *.network and leaves the bridges memberless ->
+        # no-carrier -> systemd-networkd-wait-online times out.
         matchConfig.MACAddress = "b8:ce:f6:29:46:5d";
+        matchConfig.Type = "ether";
         networkConfig = {
           VLAN = [
             "vlan-mgmt"

@@ -87,7 +87,7 @@ in
       "10-wired" = {
         matchConfig =
           if (hostNetwork.mac or null) != null then
-            { MACAddress = hostNetwork.mac; }
+            { MACAddress = hostNetwork.mac; Type = "ether"; }
           else
             { Name = hostNetwork.interface or "eth0"; };
         networkConfig = {

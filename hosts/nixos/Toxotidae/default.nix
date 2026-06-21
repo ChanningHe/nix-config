@@ -82,6 +82,7 @@ in
       "10-wired" = {
         #matchConfig.Name = "ens18";
         matchConfig.MACAddress = " bc:24:11:4a:16:05";
+        matchConfig.Type = "ether";
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
