@@ -51,6 +51,7 @@ in
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/services/zfs-zed-mail.nix"
       "hosts/common/optional/network-storage.nix"
+      "hosts/common/optional/system/nvidia-vgpu.nix"
       #"hosts/common/optional/services/proxmox-ve.nix"
       "hosts/common/optional/services/vscode-server.nix"
       "hosts/common/optional/services/podman.nix"
