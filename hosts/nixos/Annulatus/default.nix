@@ -43,6 +43,7 @@ in
       "hosts/common/optional/system/systemd-boot.nix"
       "hosts/common/optional/system/no-firewall.nix"
       "hosts/common/optional/system/ip-forward.nix"
+      "hosts/common/optional/system/qemu-guest.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/network-storage.nix"
       "hosts/common/optional/nvmeof-client.nix"
@@ -88,11 +89,11 @@ in
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
-            #"${hostNetwork.ip6}/64"
+            "${hostNetwork.ip6}/64"
           ];
           Gateway = [
             "${hostNetwork.gateway4}"
-            #"${hostNetwork.gateway6}"
+            "${hostNetwork.gateway6}"
           ];
           DHCP = "no";
           IPv6AcceptRA = false;
