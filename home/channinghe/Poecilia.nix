@@ -27,11 +27,10 @@
   ];
 
   # ==== bash config for specific host ==== #
-  programs.bash = {
-    shellAliases = {
-      "2dd" = "cd /mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
-    };
-  };
+  # programs.bash = {
+  #   shellAliases = {
+  #   };
+  # };
 
   home.packages = with pkgs; [
     screen

@@ -22,6 +22,10 @@
     # common/optional/sops.nix
   ];
 
+  home.sessionVariables = {
+    DOCKER_DATA = "/mnt/Kiwi/VM/Annulatus/DockerConfig/DOCKER_DATA";
+  };
+
   # SSH Clients Configuration
   # Enable specific SSH hosts from nix-secrets
   #sshClients.enabledHosts = [ "Host1" "Host2" ];
