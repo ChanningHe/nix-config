@@ -79,8 +79,9 @@
 
       # Keys not loaded yet, load them now
       local keys=(
-        "$HOME/.ssh/yk-976-main"
+        "$HOME/.ssh/id_yk288-main"
         "$HOME/.ssh/id-yk5c-806"
+        "$HOME/.ssh/yk-976-main"
       )
 
       for key in "''${keys[@]}"; do
