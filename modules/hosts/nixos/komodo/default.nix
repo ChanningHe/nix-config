@@ -622,7 +622,7 @@ in
         NoNewPrivileges = true;
         PrivateTmp = true;
         ProtectSystem = "full";
-        ProtectHome = true;
+        ProtectHome = "read-only";
       };
     };
   };
