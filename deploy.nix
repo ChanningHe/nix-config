@@ -22,6 +22,11 @@ in
       "-o"
       "StrictHostKeyChecking=accept-new"
     ];
+    # Build on the target host. The control machine is aarch64-darwin and the
+    # local x86_64-linux builder (nix-vz-builder) has been unreliable on kernel
+    # module builds; remote build sidesteps it. Override per-invocation with
+    # `--remote-build false` if you want to build locally.
+    remoteBuild = true;
     profiles.system = {
       user = "root";
       path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos nixosConfigurations.${host};

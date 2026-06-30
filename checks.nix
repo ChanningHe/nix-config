@@ -4,7 +4,14 @@
   pkgs,
   ...
 }:
+let
+  # deploy-rs schema validation. Catches broken `deploy.nodes` definitions at
+  # `just check` time instead of at `just deploy <host>` time.
+  deployChecks = inputs.deploy-rs.lib.${system}.deployChecks inputs.self.deploy;
+in
 {
+  inherit (deployChecks) deploy-schema;
+
   bats-test =
     pkgs.runCommand "bats-test"
       {
