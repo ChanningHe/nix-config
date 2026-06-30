@@ -137,19 +137,14 @@
     #
     # ========= Official NixOS, Nix-Darwin, and HM Package Sources =========
     #
-    # NOTE(starter): As with typical flake-based configs, you'll need to update the nixOS, hm,
-    # and darwin version numbers below when new releases are available.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    # nixpkgs-unstable provides packages not yet in stable, exposed via pkgs.unstable overlay.
+
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     # Pinned nixpkgs-unstable commit where docker_28 = 28.5.1 + runc 1.3.0 (pre-CVE-2025-52881).
     # Used by nixos-rl to avoid runc 1.3.2+ AppArmor breakage in Proxmox LXC.
     # Remove once Proxmox host is updated to PVE 8.4.16+ (lxc-pve 6.0.5-2).
     nixpkgs-docker-compat.url = "github:NixOS/nixpkgs/d560188c88fc6dcedeee0e970472b6c8190d735d";
-
-    # Proxmox VE virtualization platform
-    proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
 
     hardware.url = "github:nixos/nixos-hardware";
     home-manager = {
@@ -158,63 +153,33 @@
     };
 
     nixpkgs-darwin.url = "github:nixos/nixpkgs/nixpkgs-26.05-darwin";
+
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
       #url = "github:nix-darwin/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
-    # Rosetta Linux builder for Apple Silicon
-    nix-rosetta-builder = {
-      url = "github:cpick/nix-rosetta-builder";
-      inputs.nixpkgs.follows = "nixpkgs-darwin";
-    };
-    # Native Linux builder for Apple Silicon (Virtualization.framework,
-    # external-builders): ephemeral VM per build, no SSH/store copying.
-    # NOTE: intentionally NOT following nixpkgs-darwin — the guest kernel
-    # and swift toolchain are tested against this flake's own lock.
+
+    systems-linux.url = "github:nix-systems/default-linux";
+
     nix-vz-builder = {
       url = "github:ChanningHe/nix-vz-builder";
     };
 
-    #
-    # ========= Desktop Environment =========
-    #
+    proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
 
-    # niri: scrollable-tiling Wayland compositor
-    # NOTE: Do NOT follow nixpkgs — niri-flake manages its own mesa overlay for GPU compatibility
     niri.url = "github:sodiboo/niri-flake";
 
-    # Noctalia: minimal desktop shell (bar, launcher, notifications, lock screen)
     noctalia = {
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    #
-    # ========= Applications =========
-    #
-
-    # Linux-only systems list for flake-utils based inputs, so they stop
-    # evaluating nixpkgs for (deprecated) x86_64-darwin
-    systems-linux.url = "github:nix-systems/default-linux";
-
-    # VS Code Server for remote development
-    vscode-server = {
-      url = "github:nix-community/nixos-vscode-server";
-      inputs.nixpkgs.follows = "nixpkgs";
-      # Packages are Linux-only (inotify-tools); skip darwin evaluation
-      inputs.flake-utils.inputs.systems.follows = "systems-linux";
-    };
-
-    # Fast Zsh syntax highlighter (Rust daemon, replaces zsh-syntax-highlighting)
     zsh-patina = {
       url = "github:michel-kraemer/zsh-patina";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    #
-    # ========= Utilities =========
-    #
     nxv = {
       url = "github:utensils/nxv";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -223,19 +188,19 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Declarative hardware detection — replaces hardware-configuration.nix.
+
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
-    # Remote deployment with automatic rollback (provision phase: deploy).
+
     deploy-rs = {
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Secrets management. See ./docs/secretsmgmt.md
+
     sops-nix = {
       url = "github:mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Pre-commit
+
     pre-commit-hooks = {
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -244,10 +209,8 @@
     #
     # ========= Personal Repositories =========
     #
-    # Private secrets repo.  See ./docs/secretsmgmt.md
+    # Private secrets repo.
     # Authenticates via ssh and use shallow clone
-    # FIXME(starter): The url below points to the 'simple' branch of the public, nix-secrets-reference repository which is inherently INSECURE!
-    # Replace the url with your personal, private nix-secrets repo.
     nix-secrets = {
       url = "git+ssh://git@github.com/ChanningHe/nix-secrets.git?ref=master&shallow=1";
       inputs = { };
