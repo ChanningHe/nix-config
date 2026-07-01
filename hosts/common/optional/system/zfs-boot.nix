@@ -21,8 +21,8 @@
     mirroredBoots = [
       {
         devices = [ "nodev" ];
-        path = "/boot1";
-        efiSysMountPoint = "/boot1";
+        path = "/boot";
+        efiSysMountPoint = "/boot";
       }
     ];
   };
