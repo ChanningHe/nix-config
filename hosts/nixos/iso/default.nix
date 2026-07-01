@@ -6,6 +6,10 @@
   config,
   ...
 }:
+let
+  isoSystemFromEnv = builtins.getEnv "NIXOS_ISO_SYSTEM";
+  isoSystem = if isoSystemFromEnv == "" then "x86_64-linux" else isoSystemFromEnv;
+in
 {
   imports = lib.flatten [
     # FIXME(starter): comment/uncomment the following two lines depending on if you want a cli-only, minimal iso, or a graphical iso that installs gnome
@@ -72,7 +76,7 @@
   isoImage.forceTextMode = true;
 
   nixpkgs = {
-    hostPlatform = lib.mkDefault "x86_64-linux";
+    hostPlatform = lib.mkDefault isoSystem;
     config.allowUnfree = true;
   };
 

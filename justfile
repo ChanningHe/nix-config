@@ -74,11 +74,17 @@ update-nix-secrets:
   @[ -d ../nix-secrets ] && (cd ../nix-secrets && git fetch && (git rebase > /dev/null 2>&1 || true)) || true
   nix flake update nix-secrets --timeout 5
 
-# Build an iso image for installing new systems and create a symlink for qemu usage
+# Build an amd64 iso image for installing new systems and create a symlink for qemu usage
 iso:
   # If we dont remove this folder, libvirtd VM doesnt run with the new iso...
   rm -rf result
   nix build --impure .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
+
+# Build an aarch64 iso image for installing new systems and create a symlink for qemu usage
+iso-aarch64:
+  # If we dont remove this folder, libvirtd VM doesnt run with the new iso...
+  rm -rf result
+  NIXOS_ISO_SYSTEM=aarch64-linux nix build --impure .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
 
 # Install the latest iso to a flash drive
 iso-install DRIVE: iso

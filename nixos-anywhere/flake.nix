@@ -24,6 +24,11 @@
       # In pure mode (nix flake check): builtins.getEnv returns "" → nixosConfigurations = {}
       # In impure mode (provision script): builtins.getEnv returns actual values → config is generated
       hostname = builtins.getEnv "NIXOS_HOSTNAME"; # e.g. "Poecilia"
+      system =
+        let
+          v = builtins.getEnv "NIXOS_SYSTEM";
+        in
+        if v == "" then "x86_64-linux" else v; # x86_64-linux|aarch64-linux
       diskLayout =
         let
           v = builtins.getEnv "NIXOS_DISK_LAYOUT";
@@ -93,7 +98,7 @@
       #   nix build --impure ./nixos-anywhere#nixosConfigurations.myhost.config.system.build.toplevel
       nixosConfigurations = nixpkgs.lib.optionalAttrs (hostname != "") {
         ${hostname} = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
+          inherit system;
           specialArgs = minimalSpecialArgs;
           modules = [
             inputs.disko.nixosModules.disko

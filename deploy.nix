@@ -8,6 +8,8 @@
 let
   # Deployable hosts: every nixos host except the live installer image.
   deployable = lib.filter (h: h != "iso") (builtins.attrNames nixosConfigurations);
+  activationLib =
+    host: inputs.deploy-rs.lib.${nixosConfigurations.${host}.pkgs.stdenv.hostPlatform.system};
 in
 {
   nodes = lib.genAttrs deployable (host: {
@@ -29,7 +31,7 @@ in
     remoteBuild = true;
     profiles.system = {
       user = "root";
-      path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos nixosConfigurations.${host};
+      path = (activationLib host).activate.nixos nixosConfigurations.${host};
     };
   });
 }

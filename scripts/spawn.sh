@@ -53,6 +53,7 @@ target_ip=""
 ssh_port=${BOOTSTRAP_SSH_PORT-22}
 target_user=${BOOTSTRAP_USER-channinghe}
 disk_layout=""
+target_system="x86_64-linux"
 build_strategy="no-external" # no-external | no-remote | on-target
 opt_ip4="" opt_gateway4="" opt_dns="" opt_hostid=""
 assume_yes=0
@@ -92,6 +93,7 @@ CONNECTION:
 
 SCAFFOLD (else prompted):
   --disk-layout <ext4|btrfs|zfs|zfs-mirror>
+  --system <x86_64-linux|aarch64-linux>
   --ip4 <addr>  --gateway4 <addr>  --dns <addr>  --host-id <hex>
 
 INSTALL BUILD STRATEGY:
@@ -115,10 +117,19 @@ OTHER:
 
 EXAMPLES:
   $0 Mola -d 10.40.20.101 --disk-layout ext4
+  $0 Mola -d 10.40.20.101 --system aarch64-linux --disk-layout ext4
   $0 Mola --only scaffold
   $0 Mola -d 10.40.20.101 --from install
 EOF
 	exit "${1:-0}"
+}
+
+function normalize_system() {
+	case "$1" in
+	x86_64-linux | amd64) echo "x86_64-linux" ;;
+	aarch64-linux | arm64) echo "aarch64-linux" ;;
+	*) return 1 ;;
+	esac
 }
 
 ###############################################################################
@@ -142,6 +153,10 @@ while [[ $# -gt 0 ]]; do
 		;;
 	--disk-layout)
 		disk_layout=$2
+		shift 2
+		;;
+	--system)
+		target_system=$2
 		shift 2
 		;;
 	--build-strategy)
@@ -201,6 +216,12 @@ while [[ $# -gt 0 ]]; do
 		;;
 	esac
 done
+
+requested_system=$target_system
+if ! target_system=$(normalize_system "$requested_system"); then
+	red "ERROR: invalid --system '${requested_system}' (x86_64-linux | aarch64-linux)"
+	exit 1
+fi
 
 [ -z "$host" ] && {
 	red "ERROR: hostname is required"
@@ -390,14 +411,14 @@ function step_scaffold() {
 	hostid=${opt_hostid:-$(head -c4 /dev/urandom | od -A none -t x4 | xargs)}
 
 	echo
-	blue "Scaffold: ${host}  layout=${disk_layout}  ip=${ip4}  gw=${gw4}  dns=${dns}  hostId=${hostid}"
+	blue "Scaffold: ${host}  system=${target_system}  layout=${disk_layout}  ip=${ip4}  gw=${gw4}  dns=${dns}  hostId=${hostid}"
 	confirm "Create host config?" || {
 		yellow "Aborted."
 		exit 0
 	}
 
 	if [ "$dry_run" -eq 1 ]; then
-		yellow "[DRY-RUN] would scaffold ${host_dir}/default.nix, ${home_file}, network.nix entry"
+		yellow "[DRY-RUN] would scaffold ${host_dir}/default.nix (${target_system}), ${home_file}, network.nix entry"
 		return 0
 	fi
 
@@ -406,6 +427,7 @@ function step_scaffold() {
 		-e "s/hostName = \"foo\"/hostName = \"${host}\"/" \
 		-e "s/hostId = \"xxxxx\"/hostId = \"${hostid}\"/" \
 		-e "s/layout = \"ext4\"/layout = \"${disk_layout}\"/" \
+		-e "s/hostPlatform = lib.mkDefault \"x86_64-linux\"/hostPlatform = lib.mkDefault \"${target_system}\"/" \
 		-e '/# \!\!\!\[FIXME\]\!\!\!/d' \
 		"$host_template" >"${host_dir}/default.nix"
 	green "Created hosts/nixos/${host}/default.nix"
