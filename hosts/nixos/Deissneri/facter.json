@@ -1799,7 +1799,7 @@
           "value": 132
         },
         "slot": {
-          "bus": 0,
+          "bus": 2,
           "number": 0
         },
         "base_class": {
@@ -1830,16 +1830,16 @@
         "serial": "0123456789ABCDEF",
         "model": "NanoKVM USB Mass Storage",
         "sysfs_id": "/class/block/sdb",
-        "sysfs_bus_id": "0:0:0:0",
-        "sysfs_device_link": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-1/1-1:1.5/host0/target0:0:0/0:0:0:0",
+        "sysfs_bus_id": "2:0:0:0",
+        "sysfs_device_link": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-3/1-3.3/1-3.3:1.5/host2/target2:0:0/2:0:0:0",
         "unix_device_names": [
           "/dev/disk/by-id/usb-NanoKVM_USB_Mass_Storage_0123456789ABCDEF-0:0",
-          "/dev/disk/by-path/pci-0004:03:00.0-usb-0:1:1.5-scsi-0:0:0:0",
-          "/dev/disk/by-path/pci-0004:03:00.0-usbv2-0:1:1.5-scsi-0:0:0:0",
+          "/dev/disk/by-path/pci-0004:03:00.0-usb-0:3.3:1.5-scsi-0:0:0:0",
+          "/dev/disk/by-path/pci-0004:03:00.0-usbv2-0:3.3:1.5-scsi-0:0:0:0",
           "/dev/disk/by-uuid/CEFA-0007",
           "/dev/sdb"
         ],
-        "unix_device_name2": "/dev/sg1",
+        "unix_device_name2": "/dev/sg0",
         "resources": [
           {
             "type": "baud",
@@ -1874,89 +1874,6 @@
           "usb_storage"
         ],
         "module_alias": "usb:v3346p1009d0510dcEFdsc02dp01ic08isc06ip50in05"
-      },
-      {
-        "index": 120,
-        "attached_to": 94,
-        "class_list": [
-          "disk",
-          "usb",
-          "scsi",
-          "block_device"
-        ],
-        "bus_type": {
-          "hex": "0084",
-          "name": "SCSI",
-          "value": 132
-        },
-        "slot": {
-          "bus": 1,
-          "number": 0
-        },
-        "base_class": {
-          "hex": "0106",
-          "name": "Mass Storage Device",
-          "value": 262
-        },
-        "sub_class": {
-          "hex": "0000",
-          "name": "Disk",
-          "value": 0
-        },
-        "vendor": {
-          "hex": "0bda",
-          "name": "Realtek",
-          "value": 3034
-        },
-        "device": {
-          "hex": "9210",
-          "name": "RTL9210 NVME",
-          "value": 37392
-        },
-        "revision": {
-          "hex": "0000",
-          "name": "1.00",
-          "value": 0
-        },
-        "serial": "012345679027",
-        "model": "Realtek RTL9210 NVME",
-        "sysfs_id": "/class/block/sda",
-        "sysfs_bus_id": "1:0:0:0",
-        "sysfs_device_link": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb2/2-3/2-3.3/2-3.3:1.0/host1/target1:0:0/1:0:0:0",
-        "unix_device_names": [
-          "/dev/disk/by-id/ata-PM991_NVMe_Samsung_128GB_S50CNE0MB99777",
-          "/dev/disk/by-id/usb-Realtek_RTL9210_NVME_012345679027-0:0",
-          "/dev/disk/by-path/pci-0004:03:00.0-usb-0:3.3:1.0-scsi-0:0:0:0",
-          "/dev/disk/by-path/pci-0004:03:00.0-usbv3-0:3.3:1.0-scsi-0:0:0:0",
-          "/dev/sda"
-        ],
-        "unix_device_name2": "/dev/sg0",
-        "resources": [
-          {
-            "type": "disk_geo",
-            "cylinders": 15566,
-            "heads": 255,
-            "sectors": 63,
-            "size": "0x0",
-            "geo_type": "logical"
-          },
-          {
-            "type": "size",
-            "unit": "sectors",
-            "value_1": 250069680,
-            "value_2": 512
-          }
-        ],
-        "driver": "uas",
-        "driver_module": "uas",
-        "drivers": [
-          "sd",
-          "uas"
-        ],
-        "driver_modules": [
-          "uas"
-        ],
-        "module_alias": "usb:v0BDAp9210d2162dc00dsc00dp00ic08isc06ip62in00"
       }
     ],
     "graphics_card": [
@@ -2036,8 +1953,8 @@
     ],
     "hub": [
       {
-        "index": 125,
-        "attached_to": 126,
+        "index": 122,
+        "attached_to": 124,
         "class_list": [
           "usb",
           "hub"
@@ -2122,7 +2039,7 @@
         "module_alias": "usb:v05E3p0610d9310dc09dsc00dp02ic09isc00ip02in00"
       },
       {
-        "index": 126,
+        "index": 124,
         "attached_to": 94,
         "class_list": [
           "usb",
@@ -2144,7 +2061,7 @@
         },
         "vendor": {
           "hex": "1d6b",
-          "name": "Linux 6.18.37 xhci-hcd",
+          "name": "Linux 6.18.35 xhci-hcd",
           "value": 7531
         },
         "device": {
@@ -2158,7 +2075,7 @@
           "value": 0
         },
         "serial": "0004:03:00.0",
-        "model": "Linux 6.18.37 xhci-hcd xHCI Host Controller",
+        "model": "Linux 6.18.35 xhci-hcd xHCI Host Controller",
         "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-0:1.0",
         "sysfs_bus_id": "1-0:1.0",
         "resources": [
@@ -2209,8 +2126,8 @@
         "module_alias": "usb:v1D6Bp0002d0618dc09dsc00dp01ic09isc00ip00in00"
       },
       {
-        "index": 127,
-        "attached_to": 131,
+        "index": 125,
+        "attached_to": 129,
         "class_list": [
           "usb",
           "hub"
@@ -2285,7 +2202,7 @@
         "module_alias": "usb:v05E3p0620d9310dc09dsc00dp03ic09isc00ip00in00"
       },
       {
-        "index": 131,
+        "index": 129,
         "attached_to": 94,
         "class_list": [
           "usb",
@@ -2307,7 +2224,7 @@
         },
         "vendor": {
           "hex": "1d6b",
-          "name": "Linux 6.18.37 xhci-hcd",
+          "name": "Linux 6.18.35 xhci-hcd",
           "value": 7531
         },
         "device": {
@@ -2321,7 +2238,7 @@
           "value": 0
         },
         "serial": "0004:03:00.0",
-        "model": "Linux 6.18.37 xhci-hcd xHCI Host Controller",
+        "model": "Linux 6.18.35 xhci-hcd xHCI Host Controller",
         "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb2/2-0:1.0",
         "sysfs_bus_id": "2-0:1.0",
         "detail": {
@@ -2390,8 +2307,8 @@
     ],
     "mouse": [
       {
-        "index": 123,
-        "attached_to": 126,
+        "index": 120,
+        "attached_to": 122,
         "class_list": [
           "mouse",
           "usb"
@@ -2434,117 +2351,8 @@
         "compat_vendor": "Unknown",
         "compat_device": "Generic USB Mouse",
         "model": "sipeed NanoKVM",
-        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-1/1-1:1.3",
-        "sysfs_bus_id": "1-1:1.3",
-        "unix_device_names": [
-          "/dev/input/mice"
-        ],
-        "unix_device_name2": "/dev/input/mouse0",
-        "resources": [
-          {
-            "type": "baud",
-            "speed": 480000000,
-            "bits": 0,
-            "stop_bits": 0,
-            "parity": 0,
-            "handshake": 0
-          }
-        ],
-        "detail": {
-          "device_class": {
-            "hex": "00ef",
-            "name": "miscellaneous",
-            "value": 239
-          },
-          "device_subclass": {
-            "hex": "0002",
-            "name": "comm",
-            "value": 2
-          },
-          "device_protocol": 1,
-          "interface_class": {
-            "hex": "0003",
-            "name": "hid",
-            "value": 3
-          },
-          "interface_subclass": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "interface_protocol": 2,
-          "interface_number": 3,
-          "interface_alternate_setting": 0
-        },
-        "hotplug": "usb",
-        "driver": "usbhid",
-        "driver_module": "usbhid",
-        "drivers": [
-          "usbhid"
-        ],
-        "driver_modules": [
-          "usbhid"
-        ],
-        "driver_info": {
-          "type": "mouse",
-          "db_entry_0": [
-            "explorerps/2",
-            "exps2"
-          ],
-          "xf86": "explorerps/2",
-          "gpm": "exps2",
-          "buttons": -1,
-          "wheels": -1
-        },
-        "module_alias": "usb:v3346p1009d0510dcEFdsc02dp01ic03isc00ip02in03"
-      },
-      {
-        "index": 128,
-        "attached_to": 126,
-        "class_list": [
-          "mouse",
-          "usb"
-        ],
-        "bus_type": {
-          "hex": "0086",
-          "name": "USB",
-          "value": 134
-        },
-        "slot": {
-          "bus": 0,
-          "number": 0
-        },
-        "base_class": {
-          "hex": "0105",
-          "name": "Mouse",
-          "value": 261
-        },
-        "sub_class": {
-          "hex": "0003",
-          "name": "USB Mouse",
-          "value": 3
-        },
-        "vendor": {
-          "hex": "3346",
-          "name": "sipeed",
-          "value": 13126
-        },
-        "device": {
-          "hex": "1009",
-          "name": "NanoKVM",
-          "value": 4105
-        },
-        "revision": {
-          "hex": "0000",
-          "name": "5.10",
-          "value": 0
-        },
-        "serial": "0123456789ABCDEF",
-        "compat_vendor": "Unknown",
-        "compat_device": "Generic USB Mouse",
-        "model": "sipeed NanoKVM",
-        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-1/1-1:1.4",
-        "sysfs_bus_id": "1-1:1.4",
+        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-3/1-3.3/1-3.3:1.4",
+        "sysfs_bus_id": "1-3.3:1.4",
         "unix_device_names": [
           "/dev/input/mice"
         ],
@@ -2606,6 +2414,115 @@
           "wheels": -1
         },
         "module_alias": "usb:v3346p1009d0510dcEFdsc02dp01ic03isc00ip02in04"
+      },
+      {
+        "index": 127,
+        "attached_to": 122,
+        "class_list": [
+          "mouse",
+          "usb"
+        ],
+        "bus_type": {
+          "hex": "0086",
+          "name": "USB",
+          "value": 134
+        },
+        "slot": {
+          "bus": 0,
+          "number": 0
+        },
+        "base_class": {
+          "hex": "0105",
+          "name": "Mouse",
+          "value": 261
+        },
+        "sub_class": {
+          "hex": "0003",
+          "name": "USB Mouse",
+          "value": 3
+        },
+        "vendor": {
+          "hex": "3346",
+          "name": "sipeed",
+          "value": 13126
+        },
+        "device": {
+          "hex": "1009",
+          "name": "NanoKVM",
+          "value": 4105
+        },
+        "revision": {
+          "hex": "0000",
+          "name": "5.10",
+          "value": 0
+        },
+        "serial": "0123456789ABCDEF",
+        "compat_vendor": "Unknown",
+        "compat_device": "Generic USB Mouse",
+        "model": "sipeed NanoKVM",
+        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-3/1-3.3/1-3.3:1.3",
+        "sysfs_bus_id": "1-3.3:1.3",
+        "unix_device_names": [
+          "/dev/input/mice"
+        ],
+        "unix_device_name2": "/dev/input/mouse0",
+        "resources": [
+          {
+            "type": "baud",
+            "speed": 480000000,
+            "bits": 0,
+            "stop_bits": 0,
+            "parity": 0,
+            "handshake": 0
+          }
+        ],
+        "detail": {
+          "device_class": {
+            "hex": "00ef",
+            "name": "miscellaneous",
+            "value": 239
+          },
+          "device_subclass": {
+            "hex": "0002",
+            "name": "comm",
+            "value": 2
+          },
+          "device_protocol": 1,
+          "interface_class": {
+            "hex": "0003",
+            "name": "hid",
+            "value": 3
+          },
+          "interface_subclass": {
+            "hex": "0000",
+            "name": "per_interface",
+            "value": 0
+          },
+          "interface_protocol": 2,
+          "interface_number": 3,
+          "interface_alternate_setting": 0
+        },
+        "hotplug": "usb",
+        "driver": "usbhid",
+        "driver_module": "usbhid",
+        "drivers": [
+          "usbhid"
+        ],
+        "driver_modules": [
+          "usbhid"
+        ],
+        "driver_info": {
+          "type": "mouse",
+          "db_entry_0": [
+            "explorerps/2",
+            "exps2"
+          ],
+          "xf86": "explorerps/2",
+          "gpm": "exps2",
+          "buttons": -1,
+          "wheels": -1
+        },
+        "module_alias": "usb:v3346p1009d0510dcEFdsc02dp01ic03isc00ip02in03"
       }
     ],
     "network_controller": [
@@ -2924,8 +2841,8 @@
         "label": "Ethernet Controller 1"
       },
       {
-        "index": 130,
-        "attached_to": 126,
+        "index": 123,
+        "attached_to": 122,
         "class_list": [
           "network_controller",
           "usb"
@@ -2966,10 +2883,10 @@
         },
         "serial": "0123456789ABCDEF",
         "model": "sipeed NanoKVM",
-        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-1/1-1:1.0",
-        "sysfs_bus_id": "1-1:1.0",
+        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-3/1-3.3/1-3.3:1.0",
+        "sysfs_bus_id": "1-3.3:1.0",
         "unix_device_names": [
-          "enP4p3s0u1"
+          "enP4p3s0u3u3"
         ],
         "resources": [
           {
@@ -3044,8 +2961,8 @@
     ],
     "network_interface": [
       {
-        "index": 132,
-        "attached_to": 97,
+        "index": 131,
+        "attached_to": 91,
         "class_list": [
           "network_interface"
         ],
@@ -3060,92 +2977,10 @@
           "value": 1
         },
         "model": "Ethernet network interface",
-        "sysfs_id": "/class/net/eno2",
-        "sysfs_device_link": "/devices/pci0003:00/0003:00:05.0/0003:02:00.1",
+        "sysfs_id": "/class/net/enP12p1s0f1np1",
+        "sysfs_device_link": "/devices/pci000c:00/000c:00:01.0/000c:01:00.1",
         "unix_device_names": [
-          "eno2"
-        ],
-        "resources": [
-          {
-            "type": "hwaddr",
-            "address": 100
-          },
-          {
-            "type": "phwaddr",
-            "address": 100
-          }
-        ],
-        "driver": "igb",
-        "driver_module": "igb",
-        "drivers": [
-          "igb"
-        ],
-        "driver_modules": [
-          "igb"
-        ]
-      },
-      {
-        "index": 133,
-        "attached_to": 130,
-        "class_list": [
-          "network_interface"
-        ],
-        "base_class": {
-          "hex": "0107",
-          "name": "Network Interface",
-          "value": 263
-        },
-        "sub_class": {
-          "hex": "0001",
-          "name": "Ethernet",
-          "value": 1
-        },
-        "model": "Ethernet network interface",
-        "sysfs_id": "/class/net/enP4p3s0u1",
-        "sysfs_device_link": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-1/1-1:1.0",
-        "unix_device_names": [
-          "enP4p3s0u1"
-        ],
-        "resources": [
-          {
-            "type": "hwaddr",
-            "address": 101
-          },
-          {
-            "type": "phwaddr",
-            "address": 101
-          }
-        ],
-        "driver": "rndis_host",
-        "driver_module": "rndis_host",
-        "drivers": [
-          "rndis_host"
-        ],
-        "driver_modules": [
-          "rndis_host"
-        ]
-      },
-      {
-        "index": 134,
-        "attached_to": 111,
-        "class_list": [
-          "network_interface"
-        ],
-        "base_class": {
-          "hex": "0107",
-          "name": "Network Interface",
-          "value": 263
-        },
-        "sub_class": {
-          "hex": "0001",
-          "name": "Ethernet",
-          "value": 1
-        },
-        "model": "Ethernet network interface",
-        "sysfs_id": "/class/net/enP12p1s0f0np0",
-        "sysfs_device_link": "/devices/pci000c:00/000c:00:01.0/000c:01:00.0",
-        "unix_device_names": [
-          "enP12p1s0f0np0"
+          "enP12p1s0f1np1"
         ],
         "resources": [
           {
@@ -3167,7 +3002,29 @@
         ]
       },
       {
-        "index": 135,
+        "index": 132,
+        "attached_to": 0,
+        "class_list": [
+          "network_interface"
+        ],
+        "base_class": {
+          "hex": "0107",
+          "name": "Network Interface",
+          "value": 263
+        },
+        "sub_class": {
+          "hex": "0000",
+          "name": "Loopback",
+          "value": 0
+        },
+        "model": "Loopback network interface",
+        "sysfs_id": "/class/net/lo",
+        "unix_device_names": [
+          "lo"
+        ]
+      },
+      {
+        "index": 133,
         "attached_to": 114,
         "class_list": [
           "network_interface"
@@ -3208,30 +3065,8 @@
         ]
       },
       {
-        "index": 136,
-        "attached_to": 0,
-        "class_list": [
-          "network_interface"
-        ],
-        "base_class": {
-          "hex": "0107",
-          "name": "Network Interface",
-          "value": 263
-        },
-        "sub_class": {
-          "hex": "0000",
-          "name": "Loopback",
-          "value": 0
-        },
-        "model": "Loopback network interface",
-        "sysfs_id": "/class/net/lo",
-        "unix_device_names": [
-          "lo"
-        ]
-      },
-      {
-        "index": 137,
-        "attached_to": 91,
+        "index": 134,
+        "attached_to": 97,
         "class_list": [
           "network_interface"
         ],
@@ -3246,10 +3081,92 @@
           "value": 1
         },
         "model": "Ethernet network interface",
-        "sysfs_id": "/class/net/enP12p1s0f1np1",
-        "sysfs_device_link": "/devices/pci000c:00/000c:00:01.0/000c:01:00.1",
+        "sysfs_id": "/class/net/eno2",
+        "sysfs_device_link": "/devices/pci0003:00/0003:00:05.0/0003:02:00.1",
         "unix_device_names": [
-          "enP12p1s0f1np1"
+          "eno2"
+        ],
+        "resources": [
+          {
+            "type": "hwaddr",
+            "address": 100
+          },
+          {
+            "type": "phwaddr",
+            "address": 100
+          }
+        ],
+        "driver": "igb",
+        "driver_module": "igb",
+        "drivers": [
+          "igb"
+        ],
+        "driver_modules": [
+          "igb"
+        ]
+      },
+      {
+        "index": 135,
+        "attached_to": 123,
+        "class_list": [
+          "network_interface"
+        ],
+        "base_class": {
+          "hex": "0107",
+          "name": "Network Interface",
+          "value": 263
+        },
+        "sub_class": {
+          "hex": "0001",
+          "name": "Ethernet",
+          "value": 1
+        },
+        "model": "Ethernet network interface",
+        "sysfs_id": "/class/net/enP4p3s0u3u3",
+        "sysfs_device_link": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-3/1-3.3/1-3.3:1.0",
+        "unix_device_names": [
+          "enP4p3s0u3u3"
+        ],
+        "resources": [
+          {
+            "type": "hwaddr",
+            "address": 101
+          },
+          {
+            "type": "phwaddr",
+            "address": 101
+          }
+        ],
+        "driver": "rndis_host",
+        "driver_module": "rndis_host",
+        "drivers": [
+          "rndis_host"
+        ],
+        "driver_modules": [
+          "rndis_host"
+        ]
+      },
+      {
+        "index": 136,
+        "attached_to": 111,
+        "class_list": [
+          "network_interface"
+        ],
+        "base_class": {
+          "hex": "0107",
+          "name": "Network Interface",
+          "value": 263
+        },
+        "sub_class": {
+          "hex": "0001",
+          "name": "Ethernet",
+          "value": 1
+        },
+        "model": "Ethernet network interface",
+        "sysfs_id": "/class/net/enP12p1s0f0np0",
+        "sysfs_device_link": "/devices/pci000c:00/000c:00:01.0/000c:01:00.0",
+        "unix_device_names": [
+          "enP12p1s0f0np0"
         ],
         "resources": [
           {
@@ -3342,8 +3259,8 @@
     "system": {},
     "usb": [
       {
-        "index": 124,
-        "attached_to": 126,
+        "index": 121,
+        "attached_to": 122,
         "class_list": [
           "usb",
           "unknown"
@@ -3384,8 +3301,106 @@
         },
         "serial": "0123456789ABCDEF",
         "model": "sipeed NanoKVM",
-        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-1/1-1:1.1",
-        "sysfs_bus_id": "1-1:1.1",
+        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-3/1-3.3/1-3.3:1.2",
+        "sysfs_bus_id": "1-3.3:1.2",
+        "unix_device_names": [
+          "/dev/input/by-id/usb-sipeed_NanoKVM_0123456789ABCDEF-if02-event-kbd",
+          "/dev/input/by-path/pci-0004:03:00.0-usb-0:3.3:1.2-event-kbd",
+          "/dev/input/by-path/pci-0004:03:00.0-usbv2-0:3.3:1.2-event-kbd",
+          "/dev/input/event1"
+        ],
+        "resources": [
+          {
+            "type": "baud",
+            "speed": 480000000,
+            "bits": 0,
+            "stop_bits": 0,
+            "parity": 0,
+            "handshake": 0
+          }
+        ],
+        "detail": {
+          "device_class": {
+            "hex": "00ef",
+            "name": "miscellaneous",
+            "value": 239
+          },
+          "device_subclass": {
+            "hex": "0002",
+            "name": "comm",
+            "value": 2
+          },
+          "device_protocol": 1,
+          "interface_class": {
+            "hex": "0003",
+            "name": "hid",
+            "value": 3
+          },
+          "interface_subclass": {
+            "hex": "0000",
+            "name": "per_interface",
+            "value": 0
+          },
+          "interface_protocol": 1,
+          "interface_number": 2,
+          "interface_alternate_setting": 0
+        },
+        "hotplug": "usb",
+        "driver": "usbhid",
+        "driver_module": "usbhid",
+        "drivers": [
+          "usbhid"
+        ],
+        "driver_modules": [
+          "usbhid"
+        ],
+        "module_alias": "usb:v3346p1009d0510dcEFdsc02dp01ic03isc00ip01in02"
+      },
+      {
+        "index": 128,
+        "attached_to": 122,
+        "class_list": [
+          "usb",
+          "unknown"
+        ],
+        "bus_type": {
+          "hex": "0086",
+          "name": "USB",
+          "value": 134
+        },
+        "slot": {
+          "bus": 0,
+          "number": 0
+        },
+        "base_class": {
+          "hex": "0000",
+          "name": "Unclassified device",
+          "value": 0
+        },
+        "sub_class": {
+          "hex": "0000",
+          "name": "Unclassified device",
+          "value": 0
+        },
+        "vendor": {
+          "hex": "3346",
+          "name": "sipeed",
+          "value": 13126
+        },
+        "device": {
+          "hex": "1009",
+          "name": "NanoKVM",
+          "value": 4105
+        },
+        "revision": {
+          "hex": "0000",
+          "name": "5.10",
+          "value": 0
+        },
+        "serial": "0123456789ABCDEF",
+        "model": "sipeed NanoKVM",
+        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-3/1-3.3/1-3.3:1.1",
+        "sysfs_bus_id": "1-3.3:1.1",
         "resources": [
           {
             "type": "baud",
@@ -3449,8 +3464,8 @@
         "module_alias": "usb:v3346p1009d0510dcEFdsc02dp01ic0Aisc00ip00in01"
       },
       {
-        "index": 129,
-        "attached_to": 126,
+        "index": 130,
+        "attached_to": 122,
         "class_list": [
           "usb",
           "unknown"
@@ -3465,44 +3480,48 @@
           "number": 0
         },
         "base_class": {
-          "hex": "0000",
-          "name": "Unclassified device",
-          "value": 0
+          "hex": "0007",
+          "name": "Communication controller",
+          "value": 7
         },
         "sub_class": {
           "hex": "0000",
-          "name": "Unclassified device",
+          "name": "Serial controller",
           "value": 0
         },
+        "pci_interface": {
+          "hex": "0080",
+          "value": 128
+        },
         "vendor": {
-          "hex": "3346",
-          "name": "sipeed",
-          "value": 13126
+          "hex": "0403",
+          "name": "Future Technology Devices",
+          "value": 1027
         },
         "device": {
-          "hex": "1009",
-          "name": "NanoKVM",
-          "value": 4105
+          "hex": "6001",
+          "name": "FT232R USB UART",
+          "value": 24577
         },
         "revision": {
           "hex": "0000",
-          "name": "5.10",
+          "name": "6.00",
           "value": 0
         },
-        "serial": "0123456789ABCDEF",
-        "model": "sipeed NanoKVM",
-        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-1/1-1:1.2",
-        "sysfs_bus_id": "1-1:1.2",
+        "serial": "A50285BI",
+        "model": "Future Technology Devices FT232R USB UART",
+        "sysfs_id": "/devices/pci0004:00/0004:00:03.0/0004:03:00.0/usb1/1-3/1-3.1/1-3.1:1.0",
+        "sysfs_bus_id": "1-3.1:1.0",
         "unix_device_names": [
-          "/dev/input/by-id/usb-sipeed_NanoKVM_0123456789ABCDEF-if02-event-kbd",
-          "/dev/input/by-path/pci-0004:03:00.0-usb-0:1:1.2-event-kbd",
-          "/dev/input/by-path/pci-0004:03:00.0-usbv2-0:1:1.2-event-kbd",
-          "/dev/input/event1"
+          "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0",
+          "/dev/serial/by-path/pci-0004:03:00.0-usb-0:3.1:1.0-port0",
+          "/dev/serial/by-path/pci-0004:03:00.0-usbv2-0:3.1:1.0-port0",
+          "/dev/ttyUSB0"
         ],
         "resources": [
           {
             "type": "baud",
-            "speed": 480000000,
+            "speed": 12000000,
             "bits": 0,
             "stop_bits": 0,
             "parity": 0,
@@ -3511,40 +3530,41 @@
         ],
         "detail": {
           "device_class": {
-            "hex": "00ef",
-            "name": "miscellaneous",
-            "value": 239
-          },
-          "device_subclass": {
-            "hex": "0002",
-            "name": "comm",
-            "value": 2
-          },
-          "device_protocol": 1,
-          "interface_class": {
-            "hex": "0003",
-            "name": "hid",
-            "value": 3
-          },
-          "interface_subclass": {
             "hex": "0000",
             "name": "per_interface",
             "value": 0
           },
-          "interface_protocol": 1,
-          "interface_number": 2,
+          "device_subclass": {
+            "hex": "0000",
+            "name": "per_interface",
+            "value": 0
+          },
+          "device_protocol": 0,
+          "interface_class": {
+            "hex": "00ff",
+            "name": "vendor_spec",
+            "value": 255
+          },
+          "interface_subclass": {
+            "hex": "00ff",
+            "name": "vendor_spec",
+            "value": 255
+          },
+          "interface_protocol": 255,
+          "interface_number": 0,
           "interface_alternate_setting": 0
         },
         "hotplug": "usb",
-        "driver": "usbhid",
-        "driver_module": "usbhid",
+        "driver": "ftdi_sio",
+        "driver_module": "ftdi_sio",
         "drivers": [
-          "usbhid"
+          "ftdi_sio"
         ],
         "driver_modules": [
-          "usbhid"
+          "ftdi_sio",
+          "usbserial"
         ],
-        "module_alias": "usb:v3346p1009d0510dcEFdsc02dp01ic03isc00ip01in02"
+        "module_alias": "usb:v0403p6001d0600dc00dsc00dp00icFFiscFFipFFin00"
       }
     ],
     "usb_controller": [

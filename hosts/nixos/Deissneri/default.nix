@@ -48,7 +48,8 @@ in
       #
       "hosts/common/optional/system/no-firewall.nix"
       "hosts/common/optional/system/ip-forward.nix"
-      #"hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/services/attic.nix"
+      "hosts/common/optional/system/ipmi.nix"
     ])
   ];
 
