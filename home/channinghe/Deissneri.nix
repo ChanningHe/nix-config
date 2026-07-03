@@ -26,4 +26,5 @@
   # SSH Clients Configuration
   # Enable specific SSH hosts from nix-secrets
   #sshClients.enabledHosts = [ "Host1" "Host2" ];
+  sshClients.enableAll = true;
 }
