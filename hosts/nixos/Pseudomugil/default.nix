@@ -45,6 +45,7 @@ in
       "hosts/common/optional/system/zfs-mirror-boot.nix"
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/system/ipmi.nix"
+      "hosts/common/optional/services/node-exporter.nix"
       "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/tailscale.nix"
       "hosts/common/optional/services/komodo-periphery.nix"

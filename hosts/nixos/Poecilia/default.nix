@@ -43,6 +43,7 @@ in
       "hosts/common/optional/system/no-firewall.nix"
       "hosts/common/optional/system/zfs-mirror-boot.nix"
       "hosts/common/optional/system/ip-forward.nix"
+      "hosts/common/optional/services/node-exporter.nix"
       "hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/services/zfs-zed-mail.nix"
