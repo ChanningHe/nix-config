@@ -17,7 +17,7 @@
     # common/optional/desktops
     # common/optional/comms
     # common/optional/media
-
+    common/optional/llm-agents.nix
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix
   ];

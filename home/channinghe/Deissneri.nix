@@ -20,6 +20,7 @@
 
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix
+    common/optional/llm-agents.nix
   ];
 
   # SSH Clients Configuration

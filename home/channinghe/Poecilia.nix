@@ -24,6 +24,7 @@
 
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix
+    common/optional/llm-agents.nix
   ];
 
   # ==== bash config for specific host ==== #
