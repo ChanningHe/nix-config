@@ -522,9 +522,24 @@ function step_secrets() {
 	fi
 
 	rm -f "${tmp}/key" "${tmp}/key.pub"
-	green "Rekeying secrets (just rekey)"
-	(cd "$nix_secrets_dir" && just rekey) 2>/dev/null || just rekey || yellow "rekey skipped/failed — run 'just rekey' manually."
-	yellow "NOTE: update the nix-secrets flake input so the new key is picked up (nix flake update nix-secrets)."
+
+	green "Rekeying secrets/*.yaml against updated .sops.yaml"
+	local sf_rel rekey_failed=0
+	shopt -s nullglob
+	for sf_rel in "${nix_secrets_dir}"/secrets/*.yaml; do
+		sf_rel="${sf_rel#"${nix_secrets_dir}"/}"
+		if ! (cd "$nix_secrets_dir" && sops --config "$config" updatekeys -y "$sf_rel"); then
+			red "sops updatekeys failed for ${sf_rel}"
+			rekey_failed=1
+		fi
+	done
+	shopt -u nullglob
+	[ "$rekey_failed" -eq 0 ] || {
+		red "Rekey failed — fix .sops.yaml / secrets before continuing."
+		exit 1
+	}
+	green "Rekey complete; shared.yaml now readable by ${host}."
+	yellow "NOTE: commit + push nix-secrets, then update the flake input (nix flake update nix-secrets)."
 	REPO_SECRETS=1
 }
 
@@ -551,11 +566,29 @@ function step_disk() {
 		red "No disk found on target."
 		exit 1
 	}
+	# shopt -s nullglob so an empty /dev/disk/by-id/ doesn't fall through as a
+	# literal '*' path (silent fallback to /dev/${raw} was the previous bug).
+	# Skip -part* symlinks explicitly; they point at partitions, not the disk.
 	chosen=$(tssh "
-		for d in /dev/disk/by-id/*; do [ \"\$(readlink -f \$d)\" = \"/dev/${raw}\" ] && { echo \$d; exit; }; done
-		for d in /dev/disk/by-path/*; do [ \"\$(readlink -f \$d)\" = \"/dev/${raw}\" ] && { echo \$d; exit; }; done
-		echo /dev/${raw}
+		shopt -s nullglob
+		for dir in /dev/disk/by-id /dev/disk/by-path; do
+			for d in \"\$dir\"/*; do
+				case \"\$d\" in *-part*) continue ;; esac
+				[ \"\$(readlink -f \"\$d\")\" = \"/dev/${raw}\" ] && { echo \"\$d\"; exit 0; }
+			done
+		done
+		echo \"/dev/${raw}\"
 	")
+	case "$chosen" in
+	/dev/disk/by-id/*) : ;;
+	/dev/disk/by-path/*)
+		yellow "No /dev/disk/by-id/ alias for /dev/${raw}; using by-path. Stable per PCIe slot but changes if you move the drive."
+		;;
+	*)
+		yellow "No stable /dev/disk/{by-id,by-path} alias for /dev/${raw}; falling back to the kernel name."
+		yellow "This name (nvmeXnY / sdX) can shuffle across reboots — check the target's /dev/disk/by-id/ before continuing."
+		;;
+	esac
 	chosen=$(ask "Primary disk device (Enter to accept)" "$chosen")
 	green "Using primary disk: ${chosen}"
 
