@@ -36,6 +36,7 @@ in
 {
   virtualisation.docker = {
     enable = lib.mkDefault true;
+    logDriver = "local";
     daemon.settings = {
       experimental = true;
       default-address-pools =
