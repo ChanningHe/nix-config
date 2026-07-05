@@ -56,7 +56,7 @@ in
       #"hosts/common/optional/services/proxmox-ve.nix"
       #"hosts/common/optional/services/vscode-server.nix"
       "hosts/common/optional/services/podman.nix"
-      "hosts/common/optional/services/incus.nix"
+      #"hosts/common/optional/services/incus.nix"
     ])
   ];
 
