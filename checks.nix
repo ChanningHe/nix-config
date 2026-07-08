@@ -15,7 +15,7 @@ in
   bats-test =
     pkgs.runCommand "bats-test"
       {
-        src = ../.;
+        src = ./.;
         buildInputs = builtins.attrValues { inherit (pkgs) bats yq-go inetutils; };
       }
       ''
