@@ -2,16 +2,20 @@
 # This file defines overlays/custom modifications to upstream packages
 #
 
-{ inputs, ... }:
+{ inputs, lib, ... }:
 
 let
-  # Add in custom packages from this config
+  # Add in custom packages from this config. Directory layout and dispatch
+  # rules (common, per-platform, per-arch) live in lib/scan-packages.nix so the
+  # `packages` flake output and this overlay agree on what's exposed where.
   additions =
     final: prev:
-    (prev.lib.packagesFromDirectoryRecursive {
-      callPackage = prev.lib.callPackageWith final;
-      directory = ../pkgs/common;
-    });
+    lib.custom.scanPackages {
+      pkgs = final;
+      # Read platform from prev to avoid fixpoint recursion on final.stdenv.
+      hostPlatform = prev.stdenv.hostPlatform;
+      root = ../pkgs;
+    };
 
   # Linux-only package overrides (EmergentMind/nix-config pattern). Uncomment an entry
   # to pull that package from the unstable channel on Linux.

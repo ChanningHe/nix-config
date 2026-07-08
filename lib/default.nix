@@ -21,4 +21,7 @@
 
   # Boot-disk layout -> disko + bootloader modules. See lib/boot-disk.nix.
   bootDiskLayout = import ./boot-disk.nix { inherit lib; };
+
+  # Platform/arch-aware package tree scanner. See lib/scan-packages.nix.
+  scanPackages = import ./scan-packages.nix { inherit lib; };
 }

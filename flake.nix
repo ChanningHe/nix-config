@@ -29,7 +29,7 @@
       # ========= Overlays =========
       #
       # Custom modifications/overrides to upstream packages
-      overlays = import ./overlays { inherit inputs; };
+      overlays = import ./overlays { inherit inputs lib; };
 
       #
       # ========= Host Configurations =========
@@ -87,9 +87,9 @@
             overlays = [ self.overlays.default ];
           };
         in
-        nixpkgs.lib.packagesFromDirectoryRecursive {
-          callPackage = nixpkgs.lib.callPackageWith pkgs;
-          directory = ./pkgs/common;
+        lib.custom.scanPackages {
+          inherit pkgs;
+          root = ./pkgs;
         }
       );
 
