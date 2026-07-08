@@ -6,9 +6,10 @@
   services.xserver.enable = true;
   services.desktopManager.gnome.enable = true;
 
-  # GDM: native GNOME display manager, discovers both GNOME and niri sessions
+  # GDM: native GNOME display manager, discovers both GNOME and niri sessions.
+  # gdm.wayland removed in GNOME 50 — Wayland is now the only session and setting
+  # this option (even to `true`) trips a NixOS assertion.
   services.displayManager.gdm.enable = true;
-  services.displayManager.gdm.wayland = true;
 
   # XDG portal routing for GNOME sessions
   xdg.portal.config.gnome = {
