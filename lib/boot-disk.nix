@@ -28,17 +28,20 @@ let
     ext4 = relativeToRoot "hosts/common/optional/system/systemd-boot.nix";
     btrfs = relativeToRoot "hosts/common/optional/system/systemd-boot.nix";
     zfs = relativeToRoot "hosts/common/optional/system/zfs-boot.nix";
-    zfs-mirror = relativeToRoot "hosts/common/optional/system/zfs-mirror-boot.nix";
+    zfs-mirror = relativeToRoot "hosts/common/optional/system/zfs-boot.nix";
   };
 in
 [
   inputs.disko.nixosModules.disko
   {
+    # Disk paths reach the function-style disko layout files via _module.args.
     _module.args = {
       inherit disk;
       primaryDisk = disk;
       secondaryDisk = disk2;
     };
+
+    hostSpec.zfsMirror = lib.mkDefault (layout == "zfs-mirror");
   }
   diskoFor.${layout}
   bootFor.${layout}

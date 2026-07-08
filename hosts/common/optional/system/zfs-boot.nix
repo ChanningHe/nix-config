@@ -1,14 +1,22 @@
+# GRUB boot for ZFS layouts. Handles both single-disk and mirror.
+#
+# Whether the second ESP (/boot2) is appended is driven by `hostSpec.zfsMirror`:
+#   - Hosts going through `lib.custom.bootDiskLayout` get it set automatically
+#     from the `layout` argument.
+#   - Hosts that import this file directly declare it themselves in `hostSpec`.
 {
   pkgs,
+  lib,
+  config,
   ...
 }:
 let
   # ARM UEFI boards (e.g. Ampere/Deissneri) have unreliable NVRAM boot entries.
   # Skip writing efivars and install to the UEFI removable fallback path instead.
   isAarch64 = pkgs.stdenv.hostPlatform.isAarch64;
+  mirror = config.hostSpec.zfsMirror;
 in
 {
-  # Not use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = false;
   boot.loader.efi.canTouchEfiVariables = !isAarch64;
   boot.supportedFilesystems = [ "zfs" ];
@@ -27,10 +35,14 @@ in
     mirroredBoots = [
       {
         devices = [ "nodev" ];
-        path = "/boot";
-        efiSysMountPoint = "/boot";
+        path = "/boot1";
+        efiSysMountPoint = "/boot1";
       }
-    ];
+    ]
+    ++ lib.optional mirror {
+      devices = [ "nodev" ];
+      path = "/boot2";
+      efiSysMountPoint = "/boot2";
+    };
   };
-
 }

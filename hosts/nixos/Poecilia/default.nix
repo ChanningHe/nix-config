@@ -41,7 +41,7 @@ in
       # ========== Optional Configs ==========
       #
       "hosts/common/optional/system/no-firewall.nix"
-      "hosts/common/optional/system/zfs-mirror-boot.nix"
+      "hosts/common/optional/system/zfs-boot.nix"
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/node-exporter.nix"
       "hosts/common/optional/services/easytier.nix"
@@ -59,6 +59,7 @@ in
 
   hostSpec = {
     hostName = "Poecilia";
+    zfsMirror = true;
     #scaling = lib.mkForce "1";
     # [FIXME] if you want to load your primary user age key in this host
     # loadUserAgeKey = true;

@@ -153,6 +153,13 @@
           default = false;
           description = "Used to indicate a host that should load user age keys for sops decryption";
         };
+        zfsMirror = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Whether the host uses a ZFS mirror boot layout.
+          '';
+        };
       };
     };
   };

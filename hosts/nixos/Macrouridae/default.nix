@@ -41,7 +41,7 @@ in
       # ========== Optional Configs ==========
       #
       "hosts/common/optional/system/no-firewall.nix"
-      "hosts/common/optional/system/zfs-mirror-boot.nix"
+      "hosts/common/optional/system/zfs-boot.nix"
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/services/zfs-zed-mail.nix"
@@ -56,6 +56,7 @@ in
 
   hostSpec = {
     hostName = "Macrouridae";
+    zfsMirror = true;
     #scaling = lib.mkForce "1";
     # [FIXME] if you want to load your primary user age key in this host
     # loadUserAgeKey = true;

@@ -20,7 +20,7 @@
               content = {
                 type = "filesystem";
                 format = "vfat";
-                mountpoint = "/boot";
+                mountpoint = "/boot1";
                 mountOptions = [
                   "fmask=0077"
                   "dmask=0077"
