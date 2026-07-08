@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  inputs,
   ...
 }:
 let
@@ -11,7 +12,10 @@ in
     #
     # ========== Hardware ==========
     #
-    ./hardware-configuration.nix
+    (lib.optional (builtins.pathExists ./facter.json) {
+      imports = [ inputs.nixos-facter-modules.nixosModules.facter ];
+      facter.reportPath = ./facter.json;
+    })
     #inputs.hardware.nixosModules.common-cpu-amd
     #inputs.hardware.nixosModules.common-cpu-intel
     #inputs.hardware.nixosModules.common-gpu-nvidia
@@ -22,7 +26,12 @@ in
     # ========== Disk Layout ==========
     #
     #inputs.disko.nixosModules.disko
-
+    # Boot-disk layout + matching bootloader.
+    (lib.custom.bootDiskLayout inputs {
+      layout = "zfs-mirror"; # ext4 | btrfs | zfs | zfs-mirror
+      disk = "/dev/disk/by-id/nvme-PVC10_SK_hynix_256GB____5MD9N0024104097B1";
+      disk2 = "/dev/disk/by-id/nvme-SKHynix_HFS256GEM9X169N_5ID2Q001010302M12";
+    })
     #
     # ========== Misc Inputs ==========
     #
@@ -41,7 +50,7 @@ in
       # ========== Optional Configs ==========
       #
       "hosts/common/optional/system/no-firewall.nix"
-      "hosts/common/optional/system/zfs-boot.nix"
+      #"hosts/common/optional/system/zfs-boot.nix"
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/node-exporter.nix"
       "hosts/common/optional/services/easytier.nix"
@@ -59,7 +68,7 @@ in
 
   hostSpec = {
     hostName = "Poecilia";
-    zfsMirror = true;
+    #zfsMirror = true;
     #scaling = lib.mkForce "1";
     # [FIXME] if you want to load your primary user age key in this host
     # loadUserAgeKey = true;
@@ -68,6 +77,7 @@ in
   #
   # ========== Host Network ==========
   #
+
   networking = {
     hostId = "e4ae58db";
     networkmanager.enable = false;
