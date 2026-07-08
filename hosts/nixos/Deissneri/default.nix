@@ -112,12 +112,6 @@ in
   boot = {
     initrd.systemd.enable = true;
     #blacklistedKernelModules = [ "xgene-hwmon" ];
-
-    loader = {
-      # Use the UEFI fallback path; this board's NVRAM boot entries are unreliable.
-      efi.canTouchEfiVariables = lib.mkForce false;
-      grub.efiInstallAsRemovable = true;
-    };
   };
 
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";

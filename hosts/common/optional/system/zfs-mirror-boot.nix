@@ -2,10 +2,15 @@
   pkgs,
   ...
 }:
+let
+  # ARM UEFI boards (e.g. Ampere/Deissneri) have unreliable NVRAM boot entries.
+  # Skip writing efivars and install to the UEFI removable fallback path instead.
+  isAarch64 = pkgs.stdenv.hostPlatform.isAarch64;
+in
 {
   # Not use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = false;
-  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.canTouchEfiVariables = !isAarch64;
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.package = pkgs.zfs;
   # New default from 26.11. Safe here: every ZFS host pins a stable networking.hostId,
@@ -18,7 +23,7 @@
     enable = true;
     efiSupport = true;
     zfsSupport = true;
-    #efi.canTouchEfiVariables = true;
+    efiInstallAsRemovable = isAarch64;
     mirroredBoots = [
       {
         devices = [ "nodev" ];
