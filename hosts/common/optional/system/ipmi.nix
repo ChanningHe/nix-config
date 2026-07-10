@@ -23,6 +23,7 @@ in
     enable = true;
     listenAddress = cfg.listenAddress or "0.0.0.0";
     port = cfg.port or 29290;
+    user = "root";
     #openFirewall = true;
     configFile = cfg.configFile or null;
     # configFile = cfg.configFile or (pkgs.writeText "ipmi-exporter-local.yml" ''
