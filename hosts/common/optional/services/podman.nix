@@ -8,9 +8,8 @@ let
   hostname = config.hostSpec.hostName;
   podmanConfig = config.hostSpec.serviceInfo.${hostname}.podman or { };
 
-  # Rootless container runner: all rootless containers (incl. komodo's) live in
-  # this user's storage and use its socket at /run/user/${uid}/podman/podman.sock.
-  runner = "rl-man";
+  # Defaults to "rl-man"; override per-host via serviceInfo.<host>.podman.runner.
+  runner = podmanConfig.runner or "rl-man";
   runnerUid = config.users.users.${runner}.uid;
 in
 {
