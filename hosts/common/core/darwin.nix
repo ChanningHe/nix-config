@@ -82,9 +82,7 @@
     );
     # Enable linux-builder for Darwin
     #settings.linux-builder.enable = true;
-    # Deduplicate and optimize nix store (Darwin-specific)
-    # NOTE: Darwin uses nix.optimise.automatic instead of settings.auto-optimise-store
-    # because auto-optimise-store is known to corrupt the Nix Store on Darwin
-    optimise.automatic = true;
+    # disable case-sensitive path hack
+    use-case-hack = false;
   };
 }
