@@ -83,6 +83,6 @@
     # Enable linux-builder for Darwin
     #settings.linux-builder.enable = true;
     # disable case-sensitive path hack
-    use-case-hack = false;
+    settings.use-case-hack = false;
   };
 }
