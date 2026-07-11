@@ -78,12 +78,73 @@ in
 
   services.resolved.enable = false;
 
-  # systemd-networkd. Match by MAC (stable across renames) when known,
-  # otherwise fall back to the interface name. Both come from network.nix
-  # and are back-filled by spawn.sh.
+  # systemd-networkd.
+  #
+  # Physical NIC is on a switch trunk port:
+  #   - untagged  VLAN 110  -> management, host IP lives here
+  #   - tagged    VLAN 4020 -> Incus guest isolation segment
+  #   - tagged    VLAN 4050 -> Incus guest isolation segment
+  #
+  # Physical NIC is enslaved to br-mgmt directly (untagged traffic falls
+  # into the bridge), and tagged VLANs go through vlan netdevs into their
+  # own bridges so Incus VMs / Podman macvlan can attach by bridge name.
+  #
+  # NIC is matched by MAC (stable across renames) when known, otherwise by
+  # interface name. Both come from network.nix and are back-filled by
+  # spawn.sh.
   systemd.network = {
     enable = true;
+
+    netdevs = {
+      # ---- Bridges (one per usable segment) ----
+      "20-br-mgmt" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "br-mgmt";
+        };
+        bridgeConfig.STP = false;
+      };
+      "20-br-g4020" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "br-g4020";
+        };
+        bridgeConfig.STP = false;
+      };
+      "20-br-g4050" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "br-g4050";
+        };
+        bridgeConfig.STP = false;
+      };
+
+      # ---- Tagged VLAN sub-interfaces on the physical NIC ----
+      "30-vlan4020" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "vlan4020";
+        };
+        vlanConfig.Id = 4020;
+      };
+      "30-vlan4050" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "vlan4050";
+        };
+        vlanConfig.Id = 4050;
+      };
+    };
+
     networks = {
+      # Physical NIC:
+      #   - untagged (VLAN 110) falls directly into br-mgmt
+      #   - tagged 4020 / 4050 are lifted into their vlan netdevs
+      #
+      # Type=ether is REQUIRED: vlan4020/vlan4050 inherit this same MAC,
+      # so a bare MACAddress match would also grab them (10-wired sorts
+      # first), steal them from their own *.network and leave the vlan
+      # bridges memberless -> no-carrier -> networkd-wait-online timeout.
       "10-wired" = {
         matchConfig =
           if (hostNetwork.mac or null) != null then
@@ -94,17 +155,73 @@ in
           else
             { Name = hostNetwork.interface or "eth0"; };
         networkConfig = {
+          Bridge = "br-mgmt";
+          VLAN = [
+            "vlan4020"
+            "vlan4050"
+          ];
+          LinkLocalAddressing = "no";
+          IPv6AcceptRA = false;
+        };
+      };
+
+      # Management bridge: host IP lives here.
+      "20-br-mgmt" = {
+        matchConfig.Name = "br-mgmt";
+        networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
-            #"${hostNetwork.ip6}/64"
+            "${hostNetwork.ip6}/64"
           ];
           Gateway = [
             "${hostNetwork.gateway4}"
-            #"${hostNetwork.gateway6}"
+            "${hostNetwork.gateway6}"
           ];
           DHCP = "no";
           IPv6AcceptRA = false;
         };
+      };
+
+      # VLAN 4020 -> guest isolation bridge (host owns no IP here).
+      "30-vlan4020" = {
+        matchConfig.Name = "vlan4020";
+        networkConfig = {
+          Bridge = "br-g4020";
+          LinkLocalAddressing = "no";
+          IPv6AcceptRA = false;
+        };
+      };
+      "20-br-g4020" = {
+        matchConfig.Name = "br-g4020";
+        # Keep the bridge UP even before any guest attaches, and don't
+        # block boot on it.
+        networkConfig = {
+          DHCP = "no";
+          LinkLocalAddressing = "no";
+          IPv6AcceptRA = false;
+          ConfigureWithoutCarrier = true;
+        };
+        linkConfig.RequiredForOnline = "no";
+      };
+
+      # VLAN 4050 -> guest isolation bridge.
+      "30-vlan4050" = {
+        matchConfig.Name = "vlan4050";
+        networkConfig = {
+          Bridge = "br-g4050";
+          LinkLocalAddressing = "no";
+          IPv6AcceptRA = false;
+        };
+      };
+      "20-br-g4050" = {
+        matchConfig.Name = "br-g4050";
+        networkConfig = {
+          DHCP = "no";
+          LinkLocalAddressing = "no";
+          IPv6AcceptRA = false;
+          ConfigureWithoutCarrier = true;
+        };
+        linkConfig.RequiredForOnline = "no";
       };
     };
   };
