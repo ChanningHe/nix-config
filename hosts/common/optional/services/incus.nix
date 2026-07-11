@@ -14,6 +14,9 @@ in
 {
   virtualisation.incus = {
     enable = true;
+
+    ui.enable = incusCfg.ui.enable or false;
+
     # Pass the whole preseed through. `{ }` means "no preseed" (configure later
     # with `incus admin init` / the `incus` CLI).
     preseed = incusCfg.preseed or { };
