@@ -40,6 +40,9 @@ in
     ];
     sessionVariables = {
       SHELL = "zsh";
+      SOPS_EDITOR = "nvim";
+      EDITOR = "nvim";
+      NH_FLAKE = "$HOME/nix-src/nix-config";
       # Allow ad-hoc `nix shell/build/run` to build unfree packages (needs --impure)
       NIXPKGS_ALLOW_UNFREE = 1;
       # Locale settings
@@ -61,7 +64,7 @@ in
     # p7zip # compression & encryption
     # unzip # zip extraction
     # unrar # rar extraction
-    brush # shell implemented in Rust
+    #brush # shell implemented in Rust
     sops
     age
     ssh-to-age

@@ -11,8 +11,6 @@
   # Darwin-specific environment variables
   home.sessionVariables = {
     SOPS_AGE_KEY_FILE = "$HOME/.config/sops/age/keys.txt";
-    SOPS_EDITOR = "nvim";
-    EDITOR = "nvim";
     NH_FLAKE = "$HOME/nix-src/nix-config";
   };
 
