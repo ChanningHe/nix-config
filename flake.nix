@@ -62,6 +62,13 @@
       );
 
       #
+      # ========= Standalone Home Manager =========
+      #
+      # Generic profiles to load home/<user> on any Linux host with nix.
+      # Activate via `just home`. See homes.nix.
+      homeConfigurations = import ./homes.nix { inherit inputs outputs lib; };
+
+      #
       # ========= deploy-rs nodes =========
       #
       deploy = import ./deploy.nix {
@@ -102,6 +109,12 @@
         deploy = {
           type = "app";
           program = "${inputs.deploy-rs.packages.${system}.default}/bin/deploy";
+        };
+        # `nix run .#home-manager` — home-manager CLI pinned to the locked
+        # input, so standalone activation matches the homeConfigurations above.
+        home-manager = {
+          type = "app";
+          program = "${inputs.home-manager.packages.${system}.default}/bin/home-manager";
         };
       });
 

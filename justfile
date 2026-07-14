@@ -38,6 +38,10 @@ rebuild-trace: rebuild-pre && rebuild-post
     scripts/rebuild.sh trace
     just check
 
+# Activate the generic standalone home-manager profile (any Linux host with nix)
+home:
+    nix run .#home-manager -- switch --flake .#channinghe@$(nix config show system) -b bk
+
 # Update the flake
 update:
     nix flake update
