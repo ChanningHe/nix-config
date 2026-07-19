@@ -76,6 +76,7 @@ in
     wget
     #vivid
     # dev tools
+    gh
     devenv
     bun
     # lsp
