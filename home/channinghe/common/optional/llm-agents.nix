@@ -7,7 +7,8 @@ in
 {
   home.packages = with agents; [
     claude-code
-    #codex
+    codex
+    pi
     #opencode
 
     # Claude Code ecosystem helpers
