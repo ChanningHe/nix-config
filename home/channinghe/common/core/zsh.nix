@@ -48,6 +48,9 @@ in
     # Fish-like inline suggestions from history, accept with Right arrow (order 700)
     autosuggestion.enable = true;
 
+    # Use emacs keybindings by default
+    defaultKeymap = "emacs";
+
     # Shell aliases
     shellAliases = {
       # Nix shortcuts
