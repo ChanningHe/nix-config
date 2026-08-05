@@ -223,50 +223,78 @@ in
     };
   };
 
-  config = lib.mkIf sambaClientEnabled {
-    # Install scripts
-    system.activationScripts.postActivation.text = ''
-      echo "Installing darwin-nix SMB auto-mounter..."
+  config = lib.mkMerge [
+    (lib.mkIf sambaClientEnabled {
+      # Install scripts
+      system.activationScripts.postActivation.text = ''
+        echo "Installing darwin-nix SMB auto-mounter..."
 
-      MOUNTER_DIR="/Users/${config.hostSpec.username}/.config/darwin-nix/smb-mounter"
-      mkdir -p "$MOUNTER_DIR"
-      chown "${config.hostSpec.username}" "$MOUNTER_DIR"
+        MOUNTER_DIR="/Users/${config.hostSpec.username}/.config/darwin-nix/smb-mounter"
+        mkdir -p "$MOUNTER_DIR"
+        chown "${config.hostSpec.username}" "$MOUNTER_DIR"
 
-      # Mount script
-      cat > "$MOUNTER_DIR/mount.sh" <<'MOUNT_SCRIPT_EOF'
-      ${mountScript}
-      MOUNT_SCRIPT_EOF
-      chmod +x "$MOUNTER_DIR/mount.sh"
-      chown "${config.hostSpec.username}" "$MOUNTER_DIR/mount.sh"
+        # Mount script
+        cat > "$MOUNTER_DIR/mount.sh" <<'MOUNT_SCRIPT_EOF'
+        ${mountScript}
+        MOUNT_SCRIPT_EOF
+        chmod +x "$MOUNTER_DIR/mount.sh"
+        chown "${config.hostSpec.username}" "$MOUNTER_DIR/mount.sh"
 
-      # Health check script
-      cat > "$MOUNTER_DIR/check.sh" <<'CHECK_SCRIPT_EOF'
-      ${checkScript}
-      CHECK_SCRIPT_EOF
-      chmod +x "$MOUNTER_DIR/check.sh"
-      chown "${config.hostSpec.username}" "$MOUNTER_DIR/check.sh"
+        # Health check script
+        cat > "$MOUNTER_DIR/check.sh" <<'CHECK_SCRIPT_EOF'
+        ${checkScript}
+        CHECK_SCRIPT_EOF
+        chmod +x "$MOUNTER_DIR/check.sh"
+        chown "${config.hostSpec.username}" "$MOUNTER_DIR/check.sh"
 
-      # Initialize log file
-      touch "$MOUNTER_DIR/mounts.log"
-      chown "${config.hostSpec.username}" "$MOUNTER_DIR/mounts.log"
+        # Initialize log file
+        touch "$MOUNTER_DIR/mounts.log"
+        chown "${config.hostSpec.username}" "$MOUNTER_DIR/mounts.log"
 
-      echo "✓ Installed scripts in $MOUNTER_DIR"
-      echo "  - mount.sh: Manual mount all shares"
-      echo "  - check.sh: Periodic health check (called by LaunchAgent)"
-      echo "  - mounts.log: Unified log file"
-    '';
+        echo "✓ Installed scripts in $MOUNTER_DIR"
+        echo "  - mount.sh: Manual mount all shares"
+        echo "  - check.sh: Periodic health check (called by LaunchAgent)"
+        echo "  - mounts.log: Unified log file"
+      '';
 
-    # LaunchAgent for periodic health checks
-    launchd.user.agents.darwin-nix-smb-mounter = {
-      serviceConfig = {
-        ProgramArguments = [
-          "/Users/${config.hostSpec.username}/.config/darwin-nix/smb-mounter/check.sh"
-        ];
-        RunAtLoad = true; # Run on login (initial mount)
-        StartInterval = cfg.client.samba.checkInterval; # Periodic check
-        StandardOutPath = "/Users/${config.hostSpec.username}/.config/darwin-nix/smb-mounter/stdout.log";
-        StandardErrorPath = "/Users/${config.hostSpec.username}/.config/darwin-nix/smb-mounter/stderr.log";
+      # LaunchAgent for periodic health checks
+      launchd.user.agents.darwin-nix-smb-mounter = {
+        serviceConfig = {
+          ProgramArguments = [
+            "/Users/${config.hostSpec.username}/.config/darwin-nix/smb-mounter/check.sh"
+          ];
+          RunAtLoad = true; # Run on login (initial mount)
+          StartInterval = cfg.client.samba.checkInterval; # Periodic check
+          StandardOutPath = "/Users/${config.hostSpec.username}/.config/darwin-nix/smb-mounter/stdout.log";
+          StandardErrorPath = "/Users/${config.hostSpec.username}/.config/darwin-nix/smb-mounter/stderr.log";
+        };
       };
-    };
-  };
+    })
+
+    (lib.mkIf (!sambaClientEnabled) {
+      # nix-darwin does not remove per-user LaunchAgents that disappear from
+      # the configuration, so clean up artifacts left by an earlier generation.
+      system.activationScripts.postActivation.text = ''
+        SMB_USER="${config.hostSpec.username}"
+        SMB_UID="$(id -u "$SMB_USER")"
+        SMB_LABEL="org.nixos.darwin-nix-smb-mounter"
+        SMB_PLIST="/Users/$SMB_USER/Library/LaunchAgents/$SMB_LABEL.plist"
+        MOUNTER_DIR="/Users/$SMB_USER/.config/darwin-nix/smb-mounter"
+
+        if launchctl print "gui/$SMB_UID/$SMB_LABEL" >/dev/null 2>&1; then
+          echo "Removing disabled darwin-nix SMB auto-mounter..."
+          launchctl bootout "gui/$SMB_UID/$SMB_LABEL" 2>/dev/null || true
+        fi
+
+        rm -f "$SMB_PLIST"
+        rm -f \
+          "$MOUNTER_DIR/mount.sh" \
+          "$MOUNTER_DIR/check.sh" \
+          "$MOUNTER_DIR/mounts.log" \
+          "$MOUNTER_DIR/stdout.log" \
+          "$MOUNTER_DIR/stderr.log"
+        rmdir "$MOUNTER_DIR" 2>/dev/null || true
+      '';
+    })
+  ];
 }
