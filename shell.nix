@@ -22,6 +22,9 @@
 
     nativeBuildInputs = builtins.attrValues {
       inherit (pkgs)
+        # mkShell puts the minimal stdenv bash (no readline) on PATH, which
+        # shadows the system bashInteractive and breaks flyline; re-shadow it
+        bashInteractive
         nix
         home-manager
         nh

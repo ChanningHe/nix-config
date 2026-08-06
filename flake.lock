@@ -222,6 +222,27 @@
         "type": "github"
       }
     },
+    "flyline": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785795988,
+        "narHash": "sha256-2apK1e/Hqb8bUj9Ng7cB+pz27Hv14MXMy2JYYI7nxKE=",
+        "owner": "HalFrgrd",
+        "repo": "flyline",
+        "rev": "d437a509ec6eb59a2da8f1942f4d25863c5ae619",
+        "type": "github"
+      },
+      "original": {
+        "owner": "HalFrgrd",
+        "ref": "v1.5.0",
+        "repo": "flyline",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -735,6 +756,7 @@
       "inputs": {
         "deploy-rs": "deploy-rs",
         "disko": "disko",
+        "flyline": "flyline",
         "hardware": "hardware",
         "home-manager": "home-manager",
         "llm-agents": "llm-agents",
