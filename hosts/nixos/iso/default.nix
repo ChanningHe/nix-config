@@ -96,7 +96,9 @@ in
   };
 
   boot = {
-    kernelPackages = pkgs.linuxPackages_latest;
+    # Keep the recovery ISO on nixpkgs' supported kernel series. The latest
+    # kernel may be newer than the kernel range supported by ZFS.
+    kernelPackages = pkgs.linuxPackages;
     supportedFilesystems = lib.mkForce [
       "zfs"
       "vfat"
