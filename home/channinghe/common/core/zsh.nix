@@ -6,7 +6,7 @@
 #   - As-you-type hints .... zsh-autosuggestions (inline ghost text from history)
 #   - History search ....... atuin (Ctrl+R TUI)
 #   - Directory jumping .... zoxide (frecency-ranked `cd`)
-#   - Syntax highlighting .. zsh-patina (Rust daemon, via flake input)
+#   - Syntax highlighting .. zsh-patina
 #   (fzf-tab / fzf shell integration currently disabled; kept as comments below)
 #
 # home-manager .zshrc ordering (lib.mkOrder):
@@ -17,12 +17,8 @@
 {
   lib,
   pkgs,
-  inputs,
   ...
 }:
-let
-  zsh-patina = inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default;
-in
 {
   dotfiles = {
     enable = true;
@@ -34,7 +30,8 @@ in
   };
 
   home.packages = [
-    zsh-patina
+    # todo: remove "unstable" after zsh-patina is darwin stable channel
+    pkgs.unstable.zsh-patina
     # fzf binary WITHOUT shell integration: zoxide's interactive mode
     pkgs.fzf
   ];

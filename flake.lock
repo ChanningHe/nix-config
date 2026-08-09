@@ -706,8 +706,7 @@
         "pre-commit-hooks": "pre-commit-hooks",
         "proxmox-nixos": "proxmox-nixos",
         "sops-nix": "sops-nix",
-        "systems-linux": "systems-linux",
-        "zsh-patina": "zsh-patina"
+        "systems-linux": "systems-linux"
       }
     },
     "rust-overlay": {
@@ -919,26 +918,6 @@
       "original": {
         "owner": "Supreeeme",
         "repo": "xwayland-satellite",
-        "type": "github"
-      }
-    },
-    "zsh-patina": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1786046587,
-        "narHash": "sha256-lsalJHGQIYRzHtqhtXlH0KRTAoW1CdAmvH3vSFR/NPY=",
-        "owner": "michel-kraemer",
-        "repo": "zsh-patina",
-        "rev": "63d033ce397becd7dc325171b7a9b933bda8ea6e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "michel-kraemer",
-        "repo": "zsh-patina",
         "type": "github"
       }
     }

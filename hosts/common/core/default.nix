@@ -77,7 +77,7 @@ in
     dnsutils
     unzip
     tmux
-    nxv
+    inputs.nxv.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
   # Force home-manager to use global packages
   home-manager.useGlobalPkgs = true;
@@ -91,7 +91,6 @@ in
   nixpkgs = {
     overlays = [
       outputs.overlays.default
-      inputs.nxv.overlays.default
     ];
     config = {
       allowUnfree = true;

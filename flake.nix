@@ -187,11 +187,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    zsh-patina = {
-      url = "github:michel-kraemer/zsh-patina";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Bash loadable builtin replacing readline: inline autosuggestions,
     # fuzzy tab completion, syntax highlighting, fuzzy Ctrl+R.
     # Pinned to the release tag: master (post-#879/#881 viewport rework)
