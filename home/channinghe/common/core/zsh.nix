@@ -15,6 +15,7 @@
 #   -> 1200 atuin autosuggest strategy override (ours)
 #   -> 1400 patina (ours) -> mkAfter p10k config
 {
+  inputs,
   lib,
   pkgs,
   ...
@@ -30,8 +31,12 @@
   };
 
   home.packages = [
-    # todo: remove "unstable" after zsh-patina is darwin stable channel
-    pkgs.unstable.zsh-patina
+    # nixpkgs-26.05 has zsh-patina on Linux, while the Darwin package set may
+    # lag behind. Keep this module independent of the repository overlay so it
+    # also evaluates in lightweight configurations such as the recovery ISO.
+    (pkgs.zsh-patina
+      or inputs.nixpkgs-unstable.legacyPackages.${pkgs.stdenv.hostPlatform.system}.zsh-patina
+    )
     # fzf binary WITHOUT shell integration: zoxide's interactive mode
     pkgs.fzf
   ];
