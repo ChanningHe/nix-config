@@ -99,13 +99,22 @@ in
           local last_status=$?
           local char_color='\[\e[1;32m\]'
           [ "$last_status" -ne 0 ] && char_color='\[\e[1;31m\]'
-          PS1='\[\e[1;34m\]\w\[\e[0m\]FLYLINE_GIT_INFO\n'"$char_color"'❯\[\e[0m\] '
+          # Show user@host when this shell was reached over SSH
+          local ssh_part=""
+          [ -n "''${SSH_TTY:-}''${SSH_CONNECTION:-}" ] && ssh_part='\[\e[1;35m\]\u@\h\[\e[0m\] '
+          PS1="$ssh_part"'\[\e[1;34m\]\w\[\e[0m\]FLYLINE_GIT_INFO\n'"$char_color"'❯\[\e[0m\] '
         }
         precmd_functions+=(__flyline_set_ps1)
 
         RPS1='\e[2mFLYLINE_LAST_COMMAND_DURATION \t\e[0m'
         PS1_FILL='\e[2m·\e[0m'
         PS2='\e[2mFLYLINE_PROMPT_LINE_NUMBER❯\e[0m '
+
+        flyline set-cursor --effect blink
+
+        # Right arrow accepts the highlighted tab-completion entry (like Enter)
+        flyline key bind Right tabCompletionEntrySelected=tabCompletionAcceptEntry
+        flyline suggestions --auto-suggest
       '')
     ];
   };
