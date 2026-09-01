@@ -16,8 +16,8 @@ in
 {
   users.users.${hostSpec.username} = {
     name = hostSpec.username;
-    # Default shell (can be overridden by platform-specific configs)
-    shell = pkgs.zsh;
+    # bashInteractive, not pkgs.bash: the latter is the non-readline build.
+    shell = pkgs.bashInteractive;
 
     # These get placed into /etc/ssh/authorized_keys.d/<name> on nixos
     openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);

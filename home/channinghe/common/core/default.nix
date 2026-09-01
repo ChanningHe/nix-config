@@ -39,7 +39,7 @@ in
       "$HOME/.local/bin"
     ];
     sessionVariables = {
-      SHELL = "zsh";
+      SHELL = "bash";
       SOPS_EDITOR = "nvim";
       EDITOR = "nvim";
       NH_FLAKE = "$HOME/nix-src/nix-config";
