@@ -192,7 +192,7 @@
     # Pinned to the release tag: master (post-#879/#881 viewport rework)
     # regressed double-width chars — typing CJK loops the renderer.
     flyline = {
-      url = "github:HalFrgrd/flyline/v1.5.0";
+      url = "github:HalFrgrd/flyline/v1.7.1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
