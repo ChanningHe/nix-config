@@ -5,21 +5,9 @@
   lib,
   ...
 }:
-{
-  # Ensure Nix-managed OpenSSH is available
-  home.packages = with pkgs; [
-    openssh
-  ];
-
-  # Environment variables for SSH
-  home.sessionVariables = {
-    SSH_ASKPASS = "/opt/homebrew/bin/ssh-askpass";
-    DISPLAY = ":0";
-  };
-
-  # SSH agent configuration with single-instance guarantee
-  programs.zsh.initContent = lib.mkAfter ''
-    # ===== SSH Agent Management - Performance Optimized =====
+let
+  sshAgentInit = ''
+    # ===== SSH Agent Management =====
 
     # Force use of Nix-managed SSH tools (not macOS system versions)
     NIX_SSH_ADD="/run/current-system/sw/bin/ssh-add"
@@ -98,4 +86,20 @@
     alias ssh-list="$NIX_SSH_ADD -l"
     alias ssh-clear="$NIX_SSH_ADD -D"
   '';
+in
+{
+  # Ensure Nix-managed OpenSSH is available
+  home.packages = with pkgs; [
+    openssh
+  ];
+
+  # Environment variables for SSH
+  home.sessionVariables = {
+    SSH_ASKPASS = "/opt/homebrew/bin/ssh-askpass";
+    DISPLAY = ":0";
+  };
+
+  # SSH agent configuration with single-instance guarantee, for both shells
+  programs.zsh.initContent = lib.mkAfter sshAgentInit;
+  programs.bash.initExtra = lib.mkAfter sshAgentInit;
 }
