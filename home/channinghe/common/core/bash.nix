@@ -27,10 +27,11 @@ let
           ;;
       esac
     done <<<"$(git status --porcelain --no-renames 2>/dev/null)"
-    out=" \e[1;32m''${branch}\e[0m"
-    [ "$staged" -gt 0 ] && out="$out \e[32m+''${staged}\e[0m"
-    [ "$unstaged" -gt 0 ] && out="$out \e[33m!''${unstaged}\e[0m"
-    [ "$untracked" -gt 0 ] && out="$out \e[36m?''${untracked}\e[0m"
+    # branch/clean 76, modified 178, untracked 39
+    out=" \e[38;5;76m''${branch}\e[0m"
+    [ "$staged" -gt 0 ] && out="$out \e[38;5;178m+''${staged}\e[0m"
+    [ "$unstaged" -gt 0 ] && out="$out \e[38;5;178m!''${unstaged}\e[0m"
+    [ "$untracked" -gt 0 ] && out="$out \e[38;5;39m?''${untracked}\e[0m"
     printf '%s' "$out"
   '';
 in
@@ -81,29 +82,30 @@ in
         if [[ $TERM != dumb && -z ''${FLYLINE_DISABLE:-} ]] \
             && enable -f ${flyline}/lib/${flylineLib} flyline 2>/dev/null; then
           flyline --set-frame-rate 60
-          # p10k-like prompt: cwd + async git widget · duration + clock / ❯ input
+          #  cwd + async git widget · duration + clock / > input
           flyline create-prompt-widget custom --name FLYLINE_GIT_INFO \
             --command '${flylineGitPrompt}' --placeholder prev
           flyline create-prompt-widget last-command-duration
 
           PROMPT_DIRTRIM=5
 
-          # Rebuild PS1 each prompt: ❯ turns red after a failing command
+          # dir 108, char ok 71 / err 124,
+          # ssh context 180, duration 101, clock 66, fill 244
           source ${pkgs.bash-preexec}/share/bash/bash-preexec.sh
           __flyline_set_ps1() {
             local last_status=$?
-            local char_color='\[\e[1;32m\]'
-            [ "$last_status" -ne 0 ] && char_color='\[\e[1;31m\]'
+            local char_color='\[\e[1;38;5;71m\]'
+            [ "$last_status" -ne 0 ] && char_color='\[\e[1;38;5;124m\]'
             # Show user@host when this shell was reached over SSH
             local ssh_part=""
-            [ -n "''${SSH_TTY:-}''${SSH_CONNECTION:-}" ] && ssh_part='\[\e[1;35m\]\u@\h\[\e[0m\] '
-            PS1="$ssh_part"'\[\e[1;34m\]\w\[\e[0m\]FLYLINE_GIT_INFO\n'"$char_color"'❯\[\e[0m\] '
+            [ -n "''${SSH_TTY:-}''${SSH_CONNECTION:-}" ] && ssh_part='\[\e[38;5;180m\]\u@\h\[\e[0m\] '
+            PS1="$ssh_part"'\[\e[38;5;108m\]\w\[\e[0m\]FLYLINE_GIT_INFO\n'"$char_color"'>\[\e[0m\] '
           }
           precmd_functions+=(__flyline_set_ps1)
 
-          RPS1='\e[2mFLYLINE_LAST_COMMAND_DURATION \t\e[0m'
-          PS1_FILL='\e[2m·\e[0m'
-          PS2='\e[2mFLYLINE_PROMPT_LINE_NUMBER❯\e[0m '
+          RPS1='\e[38;5;101mFLYLINE_LAST_COMMAND_DURATION \e[38;5;66m\t\e[0m'
+          PS1_FILL='\e[38;5;244m·\e[0m'
+          PS2='\e[38;5;244mFLYLINE_PROMPT_LINE_NUMBER>\e[0m '
 
           flyline set-cursor --effect blink
 
@@ -111,8 +113,9 @@ in
           flyline key bind Right tabCompletionEntrySelected=tabCompletionAcceptEntry
           flyline suggestions --auto-suggest
         else
-          # Basic fallback: plain prompt, user@host prefix when over SSH
-          PS1='\[\e[1;34m\]\w\[\e[0m\]\n\[\e[1;32m\]❯\[\e[0m\] '
+          # Basic fallback: plain prompt (conservative 16-color ANSI only),
+          # user@host prefix when over SSH
+          PS1='\[\e[1;34m\]\w\[\e[0m\]\n\[\e[1;32m\]>\[\e[0m\] '
           if [ -n "''${SSH_TTY:-}''${SSH_CONNECTION:-}" ]; then
             PS1='\[\e[1;35m\]\u@\h\[\e[0m\] '"$PS1"
           fi
