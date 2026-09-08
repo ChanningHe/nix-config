@@ -84,7 +84,14 @@ in
     enable = true;
     networks = {
       "10-wired" = {
-        matchConfig.Name = "enp3s0";
+        matchConfig =
+          if (hostNetwork.mac or null) != null then
+            {
+              MACAddress = hostNetwork.mac;
+              Type = "ether";
+            }
+          else
+            { Name = hostNetwork.interface or "eth0"; };
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
