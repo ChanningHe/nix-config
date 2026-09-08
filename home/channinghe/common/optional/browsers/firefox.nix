@@ -1,7 +1,9 @@
 { ... }:
 {
   programs.firefox = {
-    enable = true;   };
+    enable = true;
+    configPath = ".mozilla/firefox";
+  };
 
   xdg.mimeApps.defaultApplications = {
     "text/html" = [ "firefox.desktop" ];

@@ -25,6 +25,10 @@ let
       # neovim = final.unstable.neovim;
       # neovide = final.unstable.neovide;
       # vimPlugins = final.unstable.vimPlugins;
+
+      # 26.05 ships qq 3.2.29, whose upstream tarball is 404 (Tencent prunes old
+      # release paths). Track unstable until nixos-26.05 catches up.
+      qq = final.unstable.qq;
     };
 
   modifications = final: prev: {

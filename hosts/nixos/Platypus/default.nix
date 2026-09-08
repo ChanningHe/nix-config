@@ -120,6 +120,8 @@ in
     systemd.enable = true;
   };
 
+  boot.zfs.forceImportRoot = false;
+
   boot.loader = {
     efi = {
       canTouchEfiVariables = true;

@@ -33,6 +33,19 @@
     simple-scan
   ];
 
+  # ── Power / Idle ──────────────────────────────────────
+  # gsd-power ships upstream defaults sleep-inactive-ac-type='suspend' with
+  # sleep-inactive-ac-timeout=900, so an idle desktop suspends after 15 min and
+  # drops off the network. These are workstations/servers that must stay
+  # reachable, so never suspend on idle. Screen blanking
+  # (org.gnome.desktop.session idle-delay) is left at its default.
+  services.desktopManager.gnome.extraGSettingsOverrides = ''
+    [org.gnome.settings-daemon.plugins.power]
+    sleep-inactive-ac-type='nothing'
+    sleep-inactive-battery-type='nothing'
+  '';
+  services.desktopManager.gnome.extraGSettingsOverridePackages = [ pkgs.gnome-settings-daemon ];
+
   # Useful GNOME extras not included by default
   environment.systemPackages = with pkgs; [
     gnome-tweaks
