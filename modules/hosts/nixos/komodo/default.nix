@@ -75,9 +75,6 @@ let
       cfg.configFile;
 in
 {
-  # nixpkgs 26.05 introduced an upstream `services.komodo-periphery` module that
-  # collides with this one (duplicate option declaration). Disable upstream; this
-  # custom module is the authoritative definition for nix-config.
   disabledModules = [ "services/admin/komodo-periphery.nix" ];
 
   imports = with lib; [
@@ -565,6 +562,16 @@ in
       ++ lib.optional (cfg.dockerHost == null) "docker.service";
       wantedBy = [ "multi-user.target" ];
 
+      # Periphery shells out to `docker`, `docker compose` and `git` through `sh -c`.
+      path = [
+        pkgs.git
+        config.virtualisation.docker.package
+      ]
+      ++ lib.optionals (!cfg.disableTerminals) [
+        "/run/current-system/sw"
+        "/run/wrappers"
+      ];
+
       serviceConfig = {
         Type = "simple";
         User = cfg.user;
@@ -608,11 +615,6 @@ in
           }
           // cfg.environment
         );
-
-        ExecSearchPath = lib.mkIf (!cfg.disableTerminals) [
-          "/run/current-system/sw/bin"
-          "/run/wrappers/bin"
-        ];
 
         EnvironmentFile = lib.mkIf (cfg.environmentFile != null) cfg.environmentFile;
 

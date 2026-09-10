@@ -203,7 +203,6 @@ in
         # the ExecStart= command name.
         path =
           (with pkgs; [
-            git
             age
             sops
             openssh
