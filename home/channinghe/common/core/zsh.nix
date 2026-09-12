@@ -21,15 +21,6 @@
   ...
 }:
 {
-  dotfiles = {
-    enable = true;
-    installAll = true;
-    # components = [
-    #   "p10k"
-    #   "ghostty"
-    # ];
-  };
-
   home.packages = [
     # nixpkgs-26.05 has zsh-patina on Linux, while the Darwin package set may
     # lag behind. Keep this module independent of the repository overlay so it
