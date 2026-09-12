@@ -1,8 +1,16 @@
 # Dotfiles Configuration Module
-# This module clones the dotfiles repository and runs getdots.sh
 #
 # The actual dotfile mappings are defined in dotfiles/dotfiles.toml
 # This keeps the Nix module simple and the config in one place (SSoT)
+#
+# Sync policy (deliberately minimal):
+#   - repo missing            -> clone
+#   - new home-manager gen    -> one `git pull --ff-only`; failure only warns
+#   - same generation (boot)  -> no network access at all
+#   - never deletes or resets the checkout; fix a broken/diverged repo by hand
+#
+# Prints nothing during activation; the last run's full output (git,
+# getdots.sh) is in ~/.local/state/dotfiles-sync.log
 #
 # Usage:
 #   dotfiles.enable = true;
@@ -33,51 +41,65 @@ let
     else
       "";
 
+  # $1 = current home-manager generation path (empty = always sync)
   dotfilesScript = pkgs.writeShellScript "dotfiles-setup" ''
     set -euo pipefail
-    DOTFILES_DIR="${cfg.directory}"
-    REPO_URL="${cfg.repoUrl}"
-    BRANCH="${cfg.branch}"
+    # Nix values are defaults so the script can be exercised standalone
+    : "''${DOTFILES_DIR:=${cfg.directory}}"
+    : "''${REPO_URL:=${cfg.repoUrl}}"
+    : "''${BRANCH:=${cfg.branch}}"
+    GEN="''${1:-}"
+    STAMP="$DOTFILES_DIR/.git/dotfiles-synced-gen"
+    NET_TIMEOUT=60
+    LOG="''${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles-sync.log"
 
-    clone_fresh() {
-      echo "dotfiles: Cloning $REPO_URL ..."
-      rm -rf "$DOTFILES_DIR"
-      mkdir -p "$(dirname "$DOTFILES_DIR")"
-      ${gitBin} clone --branch "$BRANCH" "$REPO_URL" "$DOTFILES_DIR"
-    }
+    # Quiet activation: everything below goes to the last-run log
+    mkdir -p "$(dirname "$LOG")"
+    exec > "$LOG" 2>&1
+    echo "dotfiles-setup $(date '+%Y-%m-%d %H:%M:%S') gen=''${GEN:-<none>}"
 
-    if [ ! -d "$DOTFILES_DIR/.git" ]; then
-      clone_fresh
+    # Activation has no tty: never prompt, never hang
+    export GIT_TERMINAL_PROMPT=0
+    export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -oBatchMode=yes"
+
+    log()  { echo "dotfiles: $*"; }
+    warn() { echo "dotfiles: WARN: $*" >&2; }
+    stamp() { [ -n "$GEN" ] && echo "$GEN" > "$STAMP" 2>/dev/null || true; }
+
+    if [ ! -d "$DOTFILES_DIR" ]; then
+      log "cloning $REPO_URL ($BRANCH) into $DOTFILES_DIR"
+      if ! ${pkgs.coreutils}/bin/timeout "$NET_TIMEOUT" \
+          ${gitBin} clone --quiet --branch "$BRANCH" "$REPO_URL" "$DOTFILES_DIR"; then
+        warn "clone failed (offline?); nothing linked, retrying on next rebuild"
+        exit 0
+      fi
+      stamp
+    elif [ -n "$GEN" ] && [ "$(cat "$STAMP" 2>/dev/null || true)" = "$GEN" ]; then
+      log "generation unchanged, skipping pull"
     else
-      # Anything `git status` can't read = broken checkout.
-      worktree_status=$(${gitBin} -C "$DOTFILES_DIR" status --porcelain 2>/dev/null || echo BROKEN)
-      case "$worktree_status" in
-        BROKEN)
-          echo "dotfiles: Broken checkout at $DOTFILES_DIR, re-cloning ..."
-          clone_fresh
-          ;;
-        "")
-          echo "dotfiles: Updating (pull --ff-only) ..."
-          if ! ${gitBin} -C "$DOTFILES_DIR" pull --ff-only; then
-            # Clean worktree + pull failed = upstream rewrote history,
-            # branch was renamed, or remote URL changed. Recover by re-cloning.
-            echo "dotfiles: pull failed on clean worktree, re-cloning ..."
-            clone_fresh
-          fi
-          ;;
-        *)
-          echo "dotfiles: Local changes present, skipping pull."
-          ;;
-      esac
+      stamp
+      stashes_before=$(${gitBin} -C "$DOTFILES_DIR" stash list | wc -l)
+      if ${pkgs.coreutils}/bin/timeout "$NET_TIMEOUT" \
+          ${gitBin} -C "$DOTFILES_DIR" pull --quiet --ff-only --autostash; then
+        log "pulled $(${gitBin} -C "$DOTFILES_DIR" rev-parse --short HEAD)"
+        if [ "$(${gitBin} -C "$DOTFILES_DIR" stash list | wc -l)" -gt "$stashes_before" ]; then
+          # git leaves conflict markers in the tree on autostash failure;
+          # the local edits are already in stash@{0}, so restore upstream
+          ${gitBin} -C "$DOTFILES_DIR" reset --hard --quiet
+          warn "local changes conflicted with upstream and were parked in git stash@{0}"
+        fi
+      else
+        warn "pull failed (offline or diverged); keeping current checkout"
+      fi
     fi
 
     INSTALL_SCRIPT="$DOTFILES_DIR/getdots.sh"
-    if [ -x "$INSTALL_SCRIPT" ]; then
-      echo "dotfiles: Running getdots.sh ${installArgs} ..."
-      "$INSTALL_SCRIPT" ${installArgs}
-    else
-      echo "dotfiles: getdots.sh not found at $INSTALL_SCRIPT"
+    if [ ! -f "$INSTALL_SCRIPT" ]; then
+      warn "getdots.sh not found at $INSTALL_SCRIPT"
+      exit 0
     fi
+    ${pkgs.bash}/bin/bash "$INSTALL_SCRIPT" ${installArgs} \
+      || warn "getdots.sh failed (see log above)"
   '';
 in
 {
@@ -133,8 +155,25 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.directory != "" && cfg.directory != "/";
+        message = "dotfiles.directory must be a non-root path";
+      }
+      {
+        assertion = cfg.directory != config.home.homeDirectory;
+        message = "dotfiles.directory must not be the home directory itself";
+      }
+    ];
+
+    warnings = lib.optional (
+      cfg.installAll && cfg.components != [ ]
+    ) "dotfiles.components is ignored while dotfiles.installAll = true";
+
+    # $newGenPath is defined by home-manager's activation script; it changes
+    # on every rebuild but not when the NixOS boot service re-runs activation.
     home.activation.setupDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run ${dotfilesScript} || echo "dotfiles: setup failed (see log above)."
+      run ${dotfilesScript} "$newGenPath" || true
     '';
   };
 }
