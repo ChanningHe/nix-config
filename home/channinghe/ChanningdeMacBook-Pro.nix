@@ -26,10 +26,6 @@
     # common/optional/sops.nix
   ];
 
-  programs.zsh.shellAliases = {
-    "2c" = "cd /Volumes/Codes/";
-  };
-
   home.sessionPath = [
     "$HOME/.bun/bin"
   ];

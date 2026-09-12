@@ -19,6 +19,7 @@ in
 
     # Add/edit as desired
     ./bash.nix
+    ./flyline.nix
     ./direnv.nix
     ./fonts.nix
     ./git.nix
