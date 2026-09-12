@@ -203,6 +203,8 @@ in
         # the ExecStart= command name.
         path =
           (with pkgs; [
+            git
+            docker
             age
             sops
             openssh
