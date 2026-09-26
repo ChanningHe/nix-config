@@ -189,10 +189,8 @@
 
     # Bash loadable builtin replacing readline: inline autosuggestions,
     # fuzzy tab completion, syntax highlighting, fuzzy Ctrl+R.
-    # Pinned to the release tag: master (post-#879/#881 viewport rework)
-    # regressed double-width chars — typing CJK loops the renderer.
     flyline = {
-      url = "github:HalFrgrd/flyline/v1.7.1";
+      url = "github:HalFrgrd/flyline/v1.9.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

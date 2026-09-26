@@ -205,16 +205,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1787170908,
-        "narHash": "sha256-MscTAE921ymn0qyL3YQ06P3+AGg23c//6rh7+c+Iv4Y=",
+        "lastModified": 1789934755,
+        "narHash": "sha256-bKFTAAN+A3Po0PnVv1XYQyLWqBQT3btYUUuFu7jcCXA=",
         "owner": "HalFrgrd",
         "repo": "flyline",
-        "rev": "b6d44125fa764c2fee93fd73e9fe379b9446b7be",
+        "rev": "3b9e900f628a9da1211030016ca765fdfa2533dc",
         "type": "github"
       },
       "original": {
         "owner": "HalFrgrd",
-        "ref": "v1.7.1",
+        "ref": "v1.9.0",
         "repo": "flyline",
         "type": "github"
       }
