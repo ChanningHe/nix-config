@@ -77,7 +77,7 @@ in
     dnsutils
     unzip
     tmux
-    inputs.nxv.packages.${pkgs.stdenv.hostPlatform.system}.default
+    #inputs.nxv.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
   # Force home-manager to use global packages
   home-manager.useGlobalPkgs = true;
