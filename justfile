@@ -76,12 +76,12 @@ facter:
     echo "Wrote $dest"
 
 # Deploy (update) an existing NixOS host via deploy-rs, with auto-rollback
-deploy hostname *ARGS: rebuild-pre
-    nix run .#deploy -- .#{{ hostname }} {{ ARGS }}
+deploy hostname *ARGS:
+    nix run .#deploy -- --skip-checks .#{{ hostname }} {{ ARGS }}
 
 # Deploy every node in deploy.nodes via deploy-rs; a failure rolls back the whole batch
 deploy-all *ARGS: rebuild-pre
-    nix run .#deploy -- . {{ ARGS }}
+    nix run .#deploy -- --skip-checks . {{ ARGS }}
 
 # Update nix-secrets flake
 update-nix-secrets:

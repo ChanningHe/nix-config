@@ -13,11 +13,9 @@ let
 in
 {
   nodes = lib.genAttrs deployable (host: {
-    # Real IP from nix-secrets; spawn.sh may still override with --hostname.
-    hostname = inputs.nix-secrets.networkInfo.hosts.${host}.ip4 or host;
-    # Root SSH is disabled (PermitRootLogin no); log in as the primary user and
-    # let deploy-rs sudo to activate. `-A` forwards the SSH agent so the remote
-    # sudo can authenticate via pam_ssh_agent_auth (passwordless).
+    # SSH target is the node name, resolved by ~/.ssh/config.
+    # Override per-invocation with `--hostname <ip>`.
+    hostname = host;
     sshUser = nixosConfigurations.${host}.config.hostSpec.username;
     sshOpts = [
       "-A"
