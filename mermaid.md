@@ -8,16 +8,16 @@ graph TD
     subgraph "Flake Layer"
         flake[flake.nix<br />Root Configuration]
     end
-    
+
     subgraph "Core System"
         lib[lib.custom]
         overlays[Overlays]
         packages[Custom Packages]
     end
-    
+
     subgraph "Configuration & Modules"
         direction LR
-        
+
         subgraph "Configuration Layers"
             direction TB
             Layer1[Core System<br />hosts/common/core/]
@@ -25,7 +25,7 @@ graph TD
             Layer3[User Specific<br />hosts/common/users/]
             Layer4[Host Specific<br />hosts/nixos/hostname/]
         end
-        
+
         subgraph "Module System"
             direction TB
             host-spec[host-spec.nix]
@@ -35,7 +35,7 @@ graph TD
             home-manager-config[Home Manager]
         end
     end
-    
+
     subgraph "Host Configurations"
         direction TB
         subgraph "NixOS Hosts"
@@ -48,7 +48,7 @@ graph TD
             macbook[ChanningdeMacBook-Pro]
         end
     end
-    
+
     subgraph "Flake Inputs"
         nixpkgs[Nixpkgs 25.05]
         nixpkgs-darwin[Nixpkgs Darwin 25.05]
@@ -65,22 +65,22 @@ graph TD
     flake --> packages
     flake --> Layer1
     flake --> host-spec
-    
+
     Layer1 --> Layer2
     Layer2 --> Layer3
     Layer3 --> Layer4
-    
+
     host-spec --> common-modules
     common-modules --> nixos-modules
     common-modules --> darwin-modules
     common-modules --> home-manager-config
-    
+
     Layer4 --> iso
     Layer4 --> tester
     Layer4 --> poecilia
     Layer4 --> pseudomugil
     Layer4 --> macbook
-    
+
     nixpkgs --> flake
     nixpkgs-darwin --> flake
     nix-darwin --> flake
@@ -96,7 +96,7 @@ graph TD
     classDef darwinLayer stroke:#e65100,stroke-width:2px
     classDef inputLayer stroke:#00838f,stroke-width:2px
     classDef neutral stroke:#616161,stroke-width:2px
-    
+
     class flake systemLayer
     class lib,overlays,packages systemLayer
     class Layer1,Layer2,Layer3,Layer4 configLayer
@@ -112,23 +112,23 @@ graph TD
 graph TD
     subgraph "Configuration Inheritance"
         Root[Root Configuration<br />flake.nix]
-        
+
         subgraph "Common Base"
             CommonCore[Common Core<br />hosts/common/core/]
             CommonOptional[Common Optional<br />hosts/common/optional/]
             CommonUsers[Common Users<br />hosts/common/users/]
         end
-        
+
         subgraph "Platform Specific"
             NixOSBase[NixOS Base<br />hosts/nixos/common/]
             DarwinBase[Darwin Base<br />hosts/darwin/common/]
         end
-        
+
         subgraph "Host Specific"
             HostConfig[Host Configuration<br />hosts/nixos/hostname/]
             Hardware[Hardware Config<br />hardware-configuration.nix]
         end
-        
+
         subgraph "User Environment"
             HomeManager[Home Manager<br />home-manager]
             UserConfig[User Config<br />home/username/]
@@ -141,16 +141,16 @@ graph TD
     CommonUsers --> NixOSBase
     NixOSBase --> HostConfig
     HostConfig --> Hardware
-    
+
     CommonCore --> HomeManager
     HomeManager --> UserConfig
-    
+
     classDef base stroke:#e65100,stroke-width:2px
     classDef platform stroke:#0d47a1,stroke-width:2px
     classDef host stroke:#880e4f,stroke-width:2px
     classDef user stroke:#33691e,stroke-width:2px
     classDef neutral stroke:#616161,stroke-width:2px
-    
+
     class CommonCore,CommonOptional,CommonUsers base
     class NixOSBase,DarwinBase platform
     class HostConfig,Hardware host
@@ -167,12 +167,12 @@ sequenceDiagram
     participant Common as Common Modules
     participant Platform as Platform Modules
     participant User as User Config
-    
+
     Flake->>Host: Load host-specific configuration
     Host->>Common: Import common core modules
     Common->>Platform: Load platform-specific modules
     Platform->>User: Apply user environment
-    
+
     Note over Common: hosts/common/core/default.nix
     Note over Platform: hosts/nixos/hostname/
     Note over User: home/username/common/
@@ -187,35 +187,35 @@ graph LR
         HostSpec[hostSpec Module]
         Hardware[Hardware Config]
     end
-    
+
     subgraph "Configuration Processing"
         Flake[Flake Processing]
         Modules[Module System]
         Overlays[Overlays]
     end
-    
+
     subgraph "Final Configuration"
         NixOS[NixOS System]
         HomeManager[Home Manager]
         Packages[Custom Packages]
     end
-    
+
     Secrets -->|domain, email, networking| HostSpec
     HostSpec -->|user config| Flake
     Hardware -->|system specs| Flake
-    
+
     Flake --> Modules
     Modules --> Overlays
-    
+
     Modules --> NixOS
     Modules --> HomeManager
     Overlays --> Packages
-    
+
     classDef dataSource stroke:#6a1b9a,stroke-width:2px
     classDef processing stroke:#00695c,stroke-width:2px
     classDef finalConfig stroke:#c62828,stroke-width:2px
     classDef neutral stroke:#616161,stroke-width:2px
-    
+
     class Secrets,HostSpec,Hardware dataSource
     class Flake,Modules,Overlays processing
     class NixOS,HomeManager,Packages finalConfig
@@ -234,7 +234,7 @@ nix-config/
 │   │   │   └── sops.nix         # Secrets management
 │   │   ├── optional/             # Optional services
 │   │   └── users/                # User configurations
-│   │       └── channinghe/       
+│   │       └── channinghe/
 │   │           ├── default.nix   # Platform-agnostic user config
 │   │           ├── nixos.nix     # NixOS-specific user config
 │   │           └── darwin.nix    # Darwin-specific user config
@@ -298,17 +298,17 @@ graph TD
         Layer3["Layer 3: User Specific<br />hosts/common/users/"]
         Layer4["Layer 4: Host Specific<br />hosts/nixos/hostname/"]
     end
-    
+
     Layer1 --> Layer2
     Layer2 --> Layer3
     Layer3 --> Layer4
-    
+
     classDef base stroke:#e65100,stroke-width:2px
     classDef optional stroke:#7b1fa2,stroke-width:2px
     classDef user stroke:#33691e,stroke-width:2px
     classDef host stroke:#880e4f,stroke-width:2px
     classDef neutral stroke:#616161,stroke-width:2px
-    
+
     class Layer1 base
     class Layer2 optional
     class Layer3 user
@@ -328,15 +328,15 @@ graph LR
         NixOS[nixos.nix<br />Linux-specific<br />systemd, NetworkManager]
         Darwin[darwin.nix<br />macOS-specific<br />nix-darwin, launchd]
     end
-    
+
     Default -->|lib.mkDefault| NixOS
     Default -->|lib.mkDefault| Darwin
-    
+
     classDef common stroke:#2e7d32,stroke-width:2px
     classDef linux stroke:#1565c0,stroke-width:2px
     classDef macos stroke:#ef6c00,stroke-width:2px
     classDef neutral stroke:#616161,stroke-width:2px
-    
+
     class Default common
     class NixOS linux
     class Darwin macos
@@ -357,10 +357,10 @@ graph LR
    ```nix
    # default.nix - low priority
    shell = lib.mkDefault pkgs.bash;
-   
+
    # darwin.nix - normal priority (overrides default)
    shell = pkgs.zsh;
-   
+
    # If conflicts - use lib.mkForce (high priority)
    nix.registry = lib.mkForce { ... };
    ```
