@@ -34,7 +34,7 @@
       #
       # ========= Host Configurations =========
       #
-      # Building configurations is available through `just rebuild` or `nixos-rebuild --flake .#hostname`
+      # Building configurations is available through `just switch` or `nixos-rebuild --flake .#hostname`
       nixosConfigurations = builtins.listToAttrs (
         map (host: {
           name = host;

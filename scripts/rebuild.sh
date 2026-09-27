@@ -29,9 +29,7 @@ HOST=$(hostname)
 ACTION="switch"
 
 switch_args="--show-trace --impure --flake "
-if [[ -n $1 && $1 == "trace" ]]; then
-	switch_args="$switch_args --show-trace "
-elif [[ -n $1 && $1 == "build" ]]; then
+if [[ -n $1 && $1 == "build" ]]; then
 	ACTION="build"
 elif [[ -n $1 ]]; then
 	HOST=$1

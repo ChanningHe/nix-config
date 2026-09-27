@@ -8,10 +8,12 @@ default:
     @just --list
 
 # Update commonly changing flakes and prep for a rebuild
+[private]
 rebuild-pre: update-nix-secrets
     @git add --intent-to-add .
 
 # Run post-rebuild checks, like if sops is running properly afterwards
+[private]
 rebuild-post: check-sops
 
 # Run a flake check on the config and installer
@@ -19,8 +21,8 @@ check ARGS="":
     NIXPKGS_ALLOW_UNFREE=1 REPO_PATH=$(pwd) nix flake check --impure --keep-going --show-trace {{ ARGS }}
     cd nixos-anywhere && NIXPKGS_ALLOW_UNFREE=1 REPO_PATH=$(pwd) nix flake check --impure --keep-going --show-trace {{ ARGS }}
 
-# Rebuild the system
-rebuild: rebuild-pre && rebuild-post
+# Build and activate the current host (nixos-rebuild / darwin-rebuild switch)
+switch: rebuild-pre && rebuild-post
     # NOTE: Add --option eval-cache false if you end up caching a failure you can't get around
     scripts/rebuild.sh
 
@@ -28,14 +30,9 @@ rebuild: rebuild-pre && rebuild-post
 build: rebuild-pre
     scripts/rebuild.sh build
 
-# Rebuild the system and run a flake check
-rebuild-full: rebuild-pre && rebuild-post
+# Switch and then run a flake check
+switch-full: rebuild-pre && rebuild-post
     scripts/rebuild.sh
-    just check
-
-# Rebuild the system and run a flake check
-rebuild-trace: rebuild-pre && rebuild-post
-    scripts/rebuild.sh trace
     just check
 
 # Activate the generic standalone home-manager profile (any Linux host with nix)
@@ -46,8 +43,8 @@ home:
 update:
     nix flake update
 
-# Update and then rebuild
-rebuild-update: update rebuild
+# Update flake inputs and then switch
+switch-update: update switch
 
 # Git diff there entire repo expcept for flake.lock
 diff:

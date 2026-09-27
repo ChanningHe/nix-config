@@ -253,7 +253,7 @@ You will, of course, need to declare additional backup options for the module to
 
 ### 5. Rebuild (optional)
 
-If you did any of the steps from 3 through 5, you will need to rebuild for the changes to take effect. Run `just rebuild` from the `nix-config` directory on the new host.
+If you did any of the steps from 3 through 5, you will need to rebuild for the changes to take effect. Run `just switch` from the `nix-config` directory on the new host.
 
 ### 6. Everything else (optional)
 
