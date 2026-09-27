@@ -1,6 +1,6 @@
 # ChanningHe's Nix-Config
 
-Personal NixOS + Darwin configuration managing a mix of home servers, VMs, and a MacBook. Built on top of [EmergentMind/nix-config-starter](https://github.com/EmergentMind/nix-config-starter), adapted for my own setup over time.
+Personal NixOS + Darwin configuration managing a mix of home servers, VMs, and MacOS.
 
 Secrets are managed with sops-nix and kept in a separate private repo. Most machines run NixOS; the MacBook uses nix-darwin.
 
@@ -17,13 +17,9 @@ Secrets are managed with sops-nix and kept in a separate private repo. Most mach
 | `Macrouridae` | NAS | Intel Atom C3558 | 4 GB | — | Cold backup |
 | `ChanningdeMacBook-Pro` | Laptop | Apple M4 Pro | 48 GB | — | Primary workstation |
 
-## System Architecture Overview
-![](./docs/images/SystemOverviewV1.2.png)
-*Generated with [mermaid-to-excalidraw](https://github.com/excalidraw/mermaid-to-excalidraw)*
-
-## Configuration Inheritance Hierarchy
-![](./docs/images/ConfigurationInheritanceV1.2.png)
-*Generated with [mermaid-to-excalidraw](https://github.com/excalidraw/mermaid-to-excalidraw)*
+## Nix-Config Anatomy
+![Nix-Config Anatomy](./docs/images/Anatomy.svg)
+*Layout inspired by [EmergentMind's Nix-Config Anatomy](https://github.com/EmergentMind/nix-config).*
 
 ## References
 Fork from [EmergentMind/nix-config-starter](https://github.com/EmergentMind/nix-config-starter)
