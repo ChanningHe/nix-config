@@ -41,7 +41,5 @@
     DOCKER_DATA = "/mnt/rpool/ConfigData/DockerConfig/DOCKER_DATA";
   };
 
-  sshClients.enabledHosts = [
-    "Pseudomugil"
-  ];
+  sshClients.enableAll = true;
 }
