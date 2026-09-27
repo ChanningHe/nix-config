@@ -109,12 +109,14 @@
         deploy = {
           type = "app";
           program = "${inputs.deploy-rs.packages.${system}.default}/bin/deploy";
+          meta.description = "deploy-rs CLI pinned to the locked input";
         };
         # `nix run .#home-manager` — home-manager CLI pinned to the locked
         # input, so standalone activation matches the homeConfigurations above.
         home-manager = {
           type = "app";
           program = "${inputs.home-manager.packages.${system}.default}/bin/home-manager";
+          meta.description = "home-manager CLI pinned to the locked input";
         };
       });
 
