@@ -153,12 +153,8 @@
 
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    # Pinned nixpkgs-unstable commit where docker_28 = 28.5.1 + runc 1.3.0 (pre-CVE-2025-52881).
-    # Used by nixos-rl to avoid runc 1.3.2+ AppArmor breakage in Proxmox LXC.
-    # Remove once Proxmox host is updated to PVE 8.4.16+ (lxc-pve 6.0.5-2).
-    nixpkgs-docker-compat.url = "github:NixOS/nixpkgs/d560188c88fc6dcedeee0e970472b6c8190d735d";
-
     hardware.url = "github:nixos/nixos-hardware";
+
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";

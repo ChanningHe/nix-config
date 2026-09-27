@@ -385,22 +385,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-docker-compat": {
-      "locked": {
-        "lastModified": 1765065333,
-        "narHash": "sha256-tEeNdsf7FrIIuBJEOQ6WfiXDzzV8wJInoaB6VCm5vRI=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "d560188c88fc6dcedeee0e970472b6c8190d735d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "d560188c88fc6dcedeee0e970472b6c8190d735d",
-        "type": "github"
-      }
-    },
     "nixpkgs-libvncserver": {
       "locked": {
         "lastModified": 1750111231,
@@ -620,7 +604,6 @@
         "nixos-facter-modules": "nixos-facter-modules",
         "nixpkgs": "nixpkgs_6",
         "nixpkgs-darwin": "nixpkgs-darwin",
-        "nixpkgs-docker-compat": "nixpkgs-docker-compat",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "noctalia": "noctalia",
         "pre-commit-hooks": "pre-commit-hooks",

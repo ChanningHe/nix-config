@@ -43,6 +43,5 @@
 
   sshClients.enabledHosts = [
     "Pseudomugil"
-    "nixos-rl"
   ];
 }
