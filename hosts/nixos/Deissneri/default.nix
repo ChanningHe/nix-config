@@ -29,8 +29,9 @@ in
     #
     # Boot-disk layout + matching bootloader.
     (lib.custom.bootDiskLayout inputs {
-      layout = "zfs"; # ext4 | btrfs | zfs | zfs-mirror
-      disk = "/dev/disk/by-id/nvme-EO000375KWJUC_PHKE203600DZ375AGN";
+      layout = "zfs-mirror"; # ext4 | btrfs | zfs | zfs-mirror
+      disk = "/dev/disk/by-id/nvme-eui.fd5b42cebc8f9d54ace42e00415dc131";
+      disk2 = "/dev/disk/by-id/nvme-eui.fd5b42cebc8f9d54ace42e004174d925";
     })
 
     (map lib.custom.relativeToRoot [
