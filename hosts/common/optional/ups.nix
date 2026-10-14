@@ -146,8 +146,10 @@ in
   # the default 5-restarts-in-10s rate limit.
   systemd.services.upsdrv = {
     serviceConfig = {
-      Restart = "on-failure";
-      RestartSec = "30s";
+      Type = lib.mkForce "forking";
+      RemainAfterExit = lib.mkForce false;
+      Restart = lib.mkForce "always";
+      RestartSec = "15s";
     };
     unitConfig.StartLimitIntervalSec = 0;
   };
