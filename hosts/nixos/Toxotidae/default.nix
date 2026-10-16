@@ -48,6 +48,7 @@ in
       "hosts/common/optional/network-storage.nix"
       "hosts/common/optional/services/docker.nix"
       "hosts/common/optional/tape.nix"
+      "hosts/common/optional/services/hermes-agent.nix"
     ])
   ];
 
