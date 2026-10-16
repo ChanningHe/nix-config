@@ -7,6 +7,7 @@
 {
   config,
   inputs,
+  pkgs,
   ...
 }:
 let
@@ -32,6 +33,11 @@ in
     };
 
     environmentFiles = [ config.sops.secrets.${envSecret}.path ];
+
+    extraPackages = [
+      config.nix.package
+      pkgs.mcp-victoriametrics
+    ];
   };
 
   # Upstream creates the user/group (createUser = true); only pin the ids.
