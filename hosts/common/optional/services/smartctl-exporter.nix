@@ -30,6 +30,6 @@ in
     #openFirewall = true;
     devices = cfg.devices or [ ];
     maxInterval = cfg.maxInterval or "60s";
-    extraFlags = cfg.extraFlags or [ ];
+    extraFlags = cfg.extraFlags or [ "--smartctl.device-exclude=^(zd|loop)" ];
   };
 }

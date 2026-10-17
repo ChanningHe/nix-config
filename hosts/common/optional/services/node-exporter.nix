@@ -36,8 +36,12 @@ in
     listenAddress = cfg.listenAddress or "0.0.0.0";
     port = cfg.port or 29100;
     #openFirewall = true;
-    enabledCollectors = cfg.enabledCollectors or [ ];
-    disabledCollectors = cfg.disabledCollectors or [ ];
+    enabledCollectors =
+      cfg.enabledCollectors or [
+        "systemd"
+        "processes"
+      ];
+    disabledCollectors = cfg.disabledCollectors or [ "btrfs" ];
     extraFlags = defaultExtraFlags ++ (cfg.extraFlags or [ ]);
   };
 }
