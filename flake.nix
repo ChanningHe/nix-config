@@ -176,7 +176,7 @@
       url = "github:ChanningHe/nix-vz-builder";
     };
 
-    proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
+    #proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
 
     niri.url = "github:sodiboo/niri-flake";
 
