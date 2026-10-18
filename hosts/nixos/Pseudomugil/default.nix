@@ -186,11 +186,11 @@ in
         networkConfig = {
           Address = [
             "${hostNetwork.ip4}/24"
-            #"${hostNetwork.ip6}/64"
+            "${hostNetwork.ip6}/64"
           ];
           Gateway = [
             "${hostNetwork.gateway4}"
-            #"${hostNetwork.gateway6}"
+            "${hostNetwork.gateway6}"
           ];
           DHCP = "no";
           IPv6AcceptRA = false;
