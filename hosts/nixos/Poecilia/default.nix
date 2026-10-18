@@ -54,7 +54,7 @@ in
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/services/node-exporter.nix"
       "hosts/common/optional/services/smartctl-exporter.nix"
-      "hosts/common/optional/services/easytier.nix"
+      #"hosts/common/optional/services/easytier.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/services/zfs-zed-mail.nix"
       "hosts/common/optional/services/znapzend.nix"
