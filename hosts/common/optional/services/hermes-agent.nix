@@ -32,7 +32,7 @@ in
       approval.transport_fallback = "deny";
     };
 
-    environmentFiles = [ config.sops.secrets.${envSecret}.path ];
+    #environmentFiles = [ config.sops.secrets.${envSecret}.path ];
 
     extraPackages = [
       config.nix.package
@@ -48,7 +48,7 @@ in
   # $HERMES_HOME/.env (0640 hermes:hermes) after setupSecrets.
   sops.secrets.${envSecret} = {
     inherit sopsFile;
-    owner = "root";
+    owner = config.services.hermes-agent.user;
     mode = "0400";
     restartUnits = [ "hermes-agent.service" ];
   };
