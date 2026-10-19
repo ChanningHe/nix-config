@@ -37,6 +37,7 @@ in
     extraPackages = [
       config.nix.package
       pkgs.mcp-victoriametrics
+      pkgs.mcp-victorialogs
     ];
   };
 
