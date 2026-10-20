@@ -11,10 +11,19 @@
   ...
 }:
 let
+  cfg = config.services.hermes-agent;
   sopsFile = "${builtins.toString inputs.nix-secrets}/secrets/${config.hostSpec.hostName}.yaml";
   envSecret = "hermes/env";
   # Fixed ids (repo convention uid == gid) for predictable file ownership.
   hermesId = 7000;
+
+  # Run the service's own hermes CLI as the service user against its state.
+  hadm = pkgs.writeShellScriptBin "hadm" ''
+    cd ${cfg.stateDir}
+    exec /run/wrappers/bin/sudo -u ${cfg.user} \
+      env HOME=${cfg.stateDir} HERMES_HOME=${cfg.stateDir}/.hermes \
+      ${cfg.package}/bin/hermes "$@"
+  '';
 in
 {
   imports = [ inputs.hermes-agent.nixosModules.default ];
@@ -40,6 +49,8 @@ in
       pkgs.mcp-victorialogs
     ];
   };
+
+  environment.systemPackages = [ hadm ];
 
   # Upstream creates the user/group (createUser = true); only pin the ids.
   users.users.${config.services.hermes-agent.user}.uid = hermesId;
