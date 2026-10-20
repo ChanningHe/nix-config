@@ -56,7 +56,7 @@ in
 
   hostSpec = {
     hostName = "Macrouridae";
-    zfsMirror = true;
+    zfsMirror = false; # only /boot1 is declared in hardware-configuration.nix
     #scaling = lib.mkForce "1";
     # [FIXME] if you want to load your primary user age key in this host
     # loadUserAgeKey = true;

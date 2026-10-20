@@ -17,6 +17,16 @@ let
   mirror = config.hostSpec.zfsMirror;
 in
 {
+  # A dead mirror disk must not block boot via its ESP mount.
+  fileSystems = lib.mkIf mirror (
+    lib.genAttrs [ "/boot1" "/boot2" ] (_: {
+      options = [
+        "nofail"
+        "x-systemd.device-timeout=10s"
+      ];
+    })
+  );
+
   boot.loader.systemd-boot.enable = false;
   boot.loader.efi.canTouchEfiVariables = !isAarch64;
   boot.supportedFilesystems = [ "zfs" ];
