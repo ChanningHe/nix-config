@@ -27,6 +27,9 @@ let
 
   sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
   hasSharedYaml = builtins.pathExists "${sopsFolder}/shared.yaml";
+
+  # Only evaluated on NixOS; `or false` guards hosts without the docker module.
+  hasDocker = config.virtualisation.docker.enable or false;
 in
 {
   config = lib.mkIf (servername != "" && endpoint != "") (
@@ -90,7 +93,8 @@ in
         description = "Push new store paths to Attic cache ${cacheName}";
         wantedBy = [ "multi-user.target" ];
         wants = [ "network-online.target" ];
-        after = [ "network-online.target" ];
+        # Ordering only: start after docker when present, but never depend on it.
+        after = [ "network-online.target" ] ++ lib.optional hasDocker "docker.service";
         # attic resolves config.toml/netrc relative to $HOME
         environment.HOME = config.hostSpec.home;
         serviceConfig = {
