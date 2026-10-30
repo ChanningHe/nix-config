@@ -155,7 +155,11 @@
 
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    hardware.url = "github:nixos/nixos-hardware";
+    hardware = {
+      url = "github:nixos/nixos-hardware";
+      # Only used by its own tests/formatter; avoid a separate tarball nixpkgs
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
@@ -174,6 +178,8 @@
 
     nix-vz-builder = {
       url = "github:ChanningHe/nix-vz-builder";
+      # Upstream tracks nixpkgs-unstable; reuse ours instead of a 6th copy
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     #proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
@@ -235,7 +241,8 @@
     # Authenticates via ssh and use shallow clone
     nix-secrets = {
       url = "git+ssh://git@github.com/ChanningHe/nix-secrets.git?ref=master&shallow=1";
-      inputs = { };
+      # `inputs = { }` does not drop its declared nixpkgs input; follow ours
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 }

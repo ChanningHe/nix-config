@@ -14,7 +14,9 @@
   ...
 }:
 {
-  default = pkgs.mkShell {
+  # mkShellNoCC: nothing here compiles, and mkShell's stdenv drags in
+  # clang/llvm/apple-sdk (~1.1 GiB on darwin) for no reason.
+  default = pkgs.mkShellNoCC {
     NIX_CONFIG = "extra-experimental-features = nix-command flakes";
     BOOTSTRAP_USER = "channinghe";
     BOOTSTRAP_SSH_PORT = "22";
@@ -28,7 +30,9 @@
         nix
         home-manager
         nh
-        git
+        # Full git pulls python3 -> apple-sdk -> llvm (~1.3 GiB on darwin).
+        # Minimal lacks osxkeychain/send-email/manpages; remotes are ssh.
+        gitMinimal
         just
         sops
         jq # for JSON encoding multiline values in provision-nixos.sh
@@ -40,15 +44,18 @@
 
     # Thin pre-commit hook. Delegates the actual run to the `.#pre-commit`
     # devShell so shellcheck / nixfmt / deadnix / pre-commit-hooks are only
-    # realized on the first `git commit` and cached in the store thereafter.
+    # realized on the first `git commit`. `--profile` registers the whole
+    # pre-commit env (pre-commit itself + hook tools) as a GC root, so a
+    # `nix-collect-garbage` doesn't force a re-download on the next commit.
     shellHook = ''
       if [ -d .git ]; then
         cat > .git/hooks/pre-commit <<'HOOK'
       #!/bin/sh
       set -e
       cd "$(git rev-parse --show-toplevel)"
+      mkdir -p .direnv
       exec nix --extra-experimental-features "nix-command flakes" \
-        develop .#pre-commit --command \
+        develop --profile .direnv/pre-commit-profile .#pre-commit --command \
         pre-commit run --hook-stage pre-commit --color always "$@"
       HOOK
         chmod +x .git/hooks/pre-commit
@@ -58,12 +65,11 @@
 
   # Heavy pre-commit environment. Entered lazily by the thin git hook above,
   # or explicitly with `nix develop .#pre-commit` / `just check`.
-  pre-commit = pkgs.mkShell {
+  pre-commit = pkgs.mkShellNoCC {
     buildInputs = checks.pre-commit-check.enabledPackages ++ [ pkgs.pre-commit ];
 
-    # Materialize the config JSON (same one git-hooks.nix would produce) and
-    # register it as an indirect GC root so `nix-collect-garbage` keeps the
-    # hook closure alive between runs.
+    # Materialize the config JSON (same one git-hooks.nix would produce) at
+    # the path pre-commit reads it from, as an indirect GC root.
     shellHook = ''
       nix-store --add-root .pre-commit-config.yaml --indirect --realise \
         ${checks.pre-commit-check.config.configFile} >/dev/null
