@@ -46,6 +46,20 @@ update:
 # Update flake inputs and then switch
 switch-update: update switch
 
+kexec:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -e /etc/NIXOS ] || { echo "kexec: NixOS only" >&2; exit 1; }
+    kver() { local d; d=$(dirname "$(readlink -f "$1/kernel")"); echo "${d#*-}"; }
+    echo "booted: $(kver /run/booted-system)"
+    echo "target: $(kver /nix/var/nix/profiles/system) ($(readlink /nix/var/nix/profiles/system))"
+    read -rp "kexec now? [y/N] " ans
+    [[ $ans == [yY] ]] || exit 0
+    # Drop any stale load so prepare-kexec doesn't skip the new profile
+    sudo kexec --unload
+    sudo systemctl start prepare-kexec.service
+    sudo systemctl kexec
+
 # Git diff there entire repo expcept for flake.lock
 diff:
     git diff ':!flake.lock'
