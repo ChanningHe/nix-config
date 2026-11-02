@@ -37,6 +37,7 @@ in
     (lib.optionals (!isDarwin) (
       map lib.custom.relativeToRoot [
         "hosts/common/core/openssh-server.nix"
+        "hosts/common/core/facter.nix"
       ]
     ))
   ];

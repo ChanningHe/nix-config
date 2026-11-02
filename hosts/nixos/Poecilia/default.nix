@@ -12,10 +12,9 @@ in
     #
     # ========== Hardware ==========
     #
-    (lib.optional (builtins.pathExists ./facter.json) {
-      imports = [ inputs.nixos-facter-modules.nixosModules.facter ];
-      facter.reportPath = ./facter.json;
-    })
+    # Declarative hardware detection via nixos-facter.
+    # Defaults in hosts/common/core/facter.nix.
+    (lib.optional (builtins.pathExists ./facter.json) { facter.reportPath = ./facter.json; })
     #inputs.hardware.nixosModules.common-cpu-amd
     #inputs.hardware.nixosModules.common-cpu-intel
     #inputs.hardware.nixosModules.common-gpu-nvidia
