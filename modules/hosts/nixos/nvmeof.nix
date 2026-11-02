@@ -3,14 +3,13 @@
 {
   config,
   lib,
-  inputs,
   pkgs,
   ...
 }:
 let
   cfg = config.nvmeofStorage;
 
-  nvmeofInfo = inputs.nix-secrets.nvmeofInfo or { };
+  nvmeofInfo = config.hostSpec.nvmeofInfo;
   hostConfig = nvmeofInfo.${cfg.hostname} or { };
 
   enabled = cfg.enable && hostConfig != { };

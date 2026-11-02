@@ -4,7 +4,6 @@
 {
   config,
   lib,
-  inputs,
   pkgs,
   ...
 }:
@@ -12,7 +11,7 @@ let
   cfg = config.networkStorage;
 
   # Read network storage info from nix-secrets
-  networkStorageInfo = inputs.nix-secrets.networkStorageInfo or { };
+  networkStorageInfo = config.hostSpec.networkStorageInfo;
 
   # Get configuration for current host
   hostConfig = networkStorageInfo.${cfg.hostname} or { };

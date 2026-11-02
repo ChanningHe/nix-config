@@ -17,13 +17,12 @@
 
 {
   config,
-  inputs,
   lib,
   ...
 }:
 let
   hostname = config.hostSpec.hostName;
-  networkStorageInfo = inputs.nix-secrets.networkStorageInfo or { };
+  networkStorageInfo = config.hostSpec.networkStorageInfo;
   hostConfig = networkStorageInfo.${hostname} or { };
 
   serverConfig = hostConfig.server or { };
@@ -113,7 +112,7 @@ in
       map (serverName: {
         name = "samba-${serverName}";
         value = {
-          sopsFile = lib.mkDefault (inputs.nix-secrets + "/secrets/${hostname}.yaml");
+          sopsFile = lib.mkDefault "${config.hostSpec.sopsDir}/${hostname}.yaml";
           key = "samba/${serverName}";
         };
       }) sambaServers

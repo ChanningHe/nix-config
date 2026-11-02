@@ -2,7 +2,6 @@
 {
   config,
   lib,
-  inputs,
   ...
 }:
 let
@@ -12,7 +11,7 @@ let
   # Non-SK key pinned with IdentitiesOnly so builds never trigger a YubiKey touch.
   builderKey = "${primaryUserHome}/.ssh/hl-intrl";
 
-  sshClientsInfo = inputs.nix-secrets.sshClientsInfo or { };
+  sshClientsInfo = config.hostSpec.sshClientsInfo;
 
   # Render one root-scoped block per host so root can resolve builder aliases.
   # `localuser` (not `user`) matches the local nix-daemon, not the remote login.

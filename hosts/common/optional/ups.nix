@@ -15,7 +15,6 @@
 {
   config,
   lib,
-  inputs,
   pkgs,
   ...
 }:
@@ -24,7 +23,7 @@ let
   upsInfo = config.hostSpec.serviceInfo.${hostName}.ups;
   firstUpsName = lib.head (lib.attrNames upsInfo.ups);
 
-  sopsFolder = "${inputs.nix-secrets}/secrets";
+  sopsFolder = config.hostSpec.sopsDir;
 
   mail = config.hostSpec.serviceInfo.mail;
   notifyEnabled = mail.enable && mail.recipients != [ ];

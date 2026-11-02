@@ -37,7 +37,11 @@ let
             networking
             networkInfo
             serviceInfo
+            networkStorageInfo
+            nvmeofInfo
+            sshClientsInfo
             ;
+          sopsDir = "${inputs.nix-secrets}/secrets";
         };
       };
       modules = [ ./home/${username}/generic.nix ];

@@ -5,12 +5,11 @@
 # hosts level sops. see home/[user]/common/optional/sops.nix for home/user level
 {
   lib,
-  inputs,
   config,
   ...
 }:
 let
-  sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
+  sopsFolder = config.hostSpec.sopsDir;
 in
 {
   #the import for inputs.sops-nix.nixosModules.sops is handled in hosts/common/core/default.nix so that it can be dynamically input according to the platform

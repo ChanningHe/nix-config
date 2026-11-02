@@ -9,7 +9,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
@@ -21,7 +20,7 @@ let
   komodoUidStr = if komodoUid == null then "INVALID" else toString komodoUid;
   hostName = config.hostSpec.hostName;
   hostKomodo = config.hostSpec.serviceInfo.${hostName}.komodo or { };
-  sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
+  sopsFolder = config.hostSpec.sopsDir;
   sopsFile = "${sopsFolder}/${hostName}.yaml";
   # hasSopsFile stays here: also used in the cfg.enable block below
   hasSopsFile = lib.pathExists sopsFile;

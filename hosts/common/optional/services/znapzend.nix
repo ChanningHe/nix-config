@@ -4,14 +4,13 @@
 {
   config,
   lib,
-  inputs,
   ...
 }:
 let
   hostName = config.hostSpec.hostName;
   znapzendInfo = config.hostSpec.serviceInfo.${hostName}.znapzend;
   sshTargets = znapzendInfo.ssh.targets or { };
-  sopsFile = "${builtins.toString inputs.nix-secrets}/secrets/${hostName}.yaml";
+  sopsFile = "${config.hostSpec.sopsDir}/${hostName}.yaml";
 in
 {
   imports = [

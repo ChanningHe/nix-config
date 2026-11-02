@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  inputs,
   utils,
   ...
 }:
@@ -19,7 +18,7 @@ let
 
   nfsUnits = toUnits (
     lib.optionals useNfs (
-      map (m: m.mountPoint) (inputs.nix-secrets.networkStorageInfo.${hostname}.client.nfs.mounts or [ ])
+      map (m: m.mountPoint) (config.hostSpec.networkStorageInfo.${hostname}.client.nfs.mounts or [ ])
     )
   );
 
@@ -27,7 +26,7 @@ let
     lib.optionals useNvmeof (
       map (t: t.mountPoint) (
         lib.filter (t: (t.mountPoint or null) != null) (
-          inputs.nix-secrets.nvmeofInfo.${hostname}.targets or [ ]
+          config.hostSpec.nvmeofInfo.${hostname}.targets or [ ]
         )
       )
     )

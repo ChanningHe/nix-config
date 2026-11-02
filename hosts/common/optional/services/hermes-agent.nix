@@ -12,7 +12,7 @@
 }:
 let
   cfg = config.services.hermes-agent;
-  sopsFile = "${builtins.toString inputs.nix-secrets}/secrets/${config.hostSpec.hostName}.yaml";
+  sopsFile = "${config.hostSpec.sopsDir}/${config.hostSpec.hostName}.yaml";
   envSecret = "hermes/env";
   # Fixed ids (repo convention uid == gid) for predictable file ownership.
   hermesId = 7000;

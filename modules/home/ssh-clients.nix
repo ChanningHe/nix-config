@@ -7,14 +7,13 @@
 {
   config,
   lib,
-  inputs,
   ...
 }:
 let
   cfg = config.sshClients;
 
   # Read SSH clients info from nix-secrets
-  sshClientsInfo = inputs.nix-secrets.sshClientsInfo or { };
+  sshClientsInfo = config.hostSpec.sshClientsInfo;
 
   # Format a single host block with proper indentation
   formatHostBlock =

@@ -44,6 +44,25 @@
           type = lib.types.attrsOf lib.types.anything;
           description = "An attribute set of services information";
         };
+        networkStorageInfo = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf lib.types.anything;
+          description = "Per-host NFS/Samba server and client definitions";
+        };
+        nvmeofInfo = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf lib.types.anything;
+          description = "Per-host NVMe-oF target definitions";
+        };
+        sshClientsInfo = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf lib.types.anything;
+          description = "SSH client host definitions";
+        };
+        sopsDir = lib.mkOption {
+          type = lib.types.str;
+          description = "Directory holding the sops-encrypted secret files";
+        };
         wifi = lib.mkOption {
           type = lib.types.bool;
           default = false;

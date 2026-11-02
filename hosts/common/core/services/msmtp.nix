@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   isDarwin,
   lib,
   ...
@@ -9,7 +8,7 @@ let
   isLinux = !isDarwin;
   mail = config.hostSpec.serviceInfo.mail;
   mailEnabled = config.hostSpec.serviceInfo ? mail && mail.enable;
-  sharedSopsFile = "${inputs.nix-secrets}/secrets/shared.yaml";
+  sharedSopsFile = "${config.hostSpec.sopsDir}/shared.yaml";
 in
 lib.optionalAttrs isLinux {
   config = lib.mkIf mailEnabled {

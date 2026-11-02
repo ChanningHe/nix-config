@@ -21,14 +21,13 @@
 {
   config,
   lib,
-  inputs,
   ...
 }:
 let
   cfg = config.networkStorage;
 
   # Read network storage info from nix-secrets
-  networkStorageInfo = inputs.nix-secrets.networkStorageInfo or { };
+  networkStorageInfo = config.hostSpec.networkStorageInfo;
   hostConfig = networkStorageInfo.${cfg.hostname} or { };
   clientConfig = hostConfig.client or { };
   sambaClientConfig = clientConfig.samba or null;

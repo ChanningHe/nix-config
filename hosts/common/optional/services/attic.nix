@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   isDarwin, # Use isDarwin from specialArgs to avoid infinite recursion with config.hostSpec.isDarwin
   ...
 }:
@@ -25,7 +24,7 @@ let
   netrcPath = "${config.hostSpec.home}/.config/attic/netrc";
   configDir = "${config.hostSpec.home}/.config/attic";
 
-  sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
+  sopsFolder = config.hostSpec.sopsDir;
   hasSharedYaml = builtins.pathExists "${sopsFolder}/shared.yaml";
 
   # Only evaluated on NixOS; `or false` guards hosts without the docker module.

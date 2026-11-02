@@ -59,7 +59,11 @@ in
       networking
       networkInfo
       serviceInfo
+      networkStorageInfo
+      nvmeofInfo
+      sshClientsInfo
       ;
+    sopsDir = "${inputs.nix-secrets}/secrets";
   };
 
   networking.hostName = config.hostSpec.hostName;

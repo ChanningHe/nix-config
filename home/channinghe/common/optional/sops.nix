@@ -5,7 +5,7 @@
   ...
 }:
 let
-  sopsFolder = builtins.toString inputs.nix-secrets + "/secrets";
+  sopsFolder = config.hostSpec.sopsDir;
   #secretsFilePath = "${sopsFolder}/secrets.yaml";
   secretsFilePath = "${sopsFolder}/${config.hostSpec.hostName}.yaml";
   homeDirectory = config.home.homeDirectory;
