@@ -84,5 +84,8 @@
     #settings.linux-builder.enable = true;
     # disable case-sensitive path hack
     settings.use-case-hack = false;
+    # Sandbox builds (nix-darwin defaults to off); "relaxed" lets the odd
+    # __noChroot derivation opt out instead of failing.
+    settings.sandbox = "relaxed";
   };
 }
