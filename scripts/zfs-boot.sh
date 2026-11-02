@@ -329,19 +329,22 @@ function dev_in_use() {
 	if findmnt --source "$resolved" >/dev/null 2>&1; then
 		return 0
 	fi
-	# In any zpool? zpool status shows the base name, so match by basename.
-	local base
-	base=$(basename "$resolved")
-	if zpool status 2>/dev/null | grep -qwF "$base"; then
-		return 0
-	fi
-	# Held by md / LVM / LUKS / bcache / etc?
-	local type
-	type=$(lsblk -no TYPE "$resolved" 2>/dev/null | head -1 || true)
-	case "$type" in
-	raid* | lvm | crypt | dmraid | bcache) return 0 ;;
-	esac
+	# Leaf of an imported pool, or carrying a ZFS label (exported/foreign pool)?
+	pool_has_dev "" "$resolved" && return 0
+	[ "$(blkid -p -s TYPE -o value "$resolved" 2>/dev/null || true)" = "zfs_member" ] && return 0
+	# Held by md / LVM / LUKS / bcache / etc? Holders show up as children, so
+	# check every line, not just the device's own TYPE. (No grep -q in these
+	# pipelines: an early exit can SIGPIPE the producer and, under pipefail,
+	# turn a match into "not in use".)
+	lsblk -no TYPE "$resolved" 2>/dev/null | grep -E '^(raid.*|lvm|crypt|dmraid|bcache)$' >/dev/null && return 0
 	return 1
+}
+
+# pool_has_dev <pool|""> <kernel dev> — is /dev/<kernel name> a leaf of the pool
+# (any pool if empty)? Plain `zpool status` prints by-id / partlabel names, so
+# -L resolves leaves to kernel devices and -P prints them as full paths.
+function pool_has_dev() {
+	zpool status -LP ${1:+"$1"} 2>/dev/null | awk '$1 ~ /^\/dev\// { print $1 }' | grep -xF "$2" >/dev/null
 }
 
 # Reject if any partition of $1 is in use. Whole-disk overwrite is dangerous.
@@ -349,17 +352,16 @@ function assert_disk_free() {
 	local disk=$1
 	local resolved
 	resolved=$(resolve_dev "$disk")
-	# Every partition of $resolved
+	# The disk itself (whole-disk vdev / PV) and every partition of it
 	local p
 	while IFS= read -r p; do
 		[ -z "$p" ] && continue
-		[ "$p" = "$resolved" ] && continue
 		if dev_in_use "$p"; then
 			red "SAFETY: $p is in use (mounted / in zpool / md / lvm / luks)."
 			red "SAFETY: Refusing to touch $disk. Detach it first."
 			exit 1
 		fi
-	done < <(lsblk -lno PATH "$resolved" 2>/dev/null | tail -n +2)
+	done < <(lsblk -lno PATH "$resolved" 2>/dev/null)
 }
 
 ###############################################################################
@@ -383,22 +385,29 @@ function pool_healthy() {
 	zpool status -x "$pool" 2>&1 | grep -qE "pool '${pool}' is healthy|all pools are healthy"
 }
 
-# For attach: find the single existing member's disk path (by-id if resolvable).
+# Find a healthy pool member's disk path (by-id). Used as the GPT copy source:
+# the existing member in attach mode, the surviving one in replace mode. Skips
+# the --failed member and anything already on --new, so replace never copies
+# from the disk being swapped out (nor from the new disk on a re-run).
 function detect_existing_disk() {
-	# zpool status shows the leaf vdev — could be a partlabel path, by-id path,
-	# or a bare device name. Extract the first leaf under the pool config.
-	local leaf resolved by_id
-	leaf=$(zpool status -P "$pool" 2>/dev/null |
+	local new_parent="" failed_base="" leaf state parent=""
+	[ -b "$new_disk" ] && new_parent=$(basename "$(resolve_dev "$new_disk")")
+	[ -n "$failed_ref" ] && failed_base=$(basename "$failed_ref")
+	# zpool status -P shows leaves as full paths (partlabel / by-id / kernel).
+	while read -r leaf state; do
+		[ "$state" = "ONLINE" ] || continue
+		[ -n "$failed_base" ] && [ "$(basename "$leaf")" = "$failed_base" ] && continue
+		parent=$(lsblk -no PKNAME "$(resolve_dev "$leaf")" 2>/dev/null | head -1 || true)
+		[ -n "$parent" ] && [ "$parent" != "$new_parent" ] && break
+		parent=""
+	done < <(zpool status -P "$pool" 2>/dev/null |
 		awk -v p="$pool" '
 			$0 ~ "^\t" p "$" { in_pool=1; next }
-			in_pool && NF>=2 && $1 ~ /^\// { print $1; exit }
+			in_pool && NF>=2 && $1 ~ /^\// { print $1, $2 }
 		')
-	[ -n "$leaf" ] || die "ERROR: could not detect existing pool member (use --existing)"
-	resolved=$(resolve_dev "$leaf")
+	[ -n "$parent" ] || die "ERROR: could not detect a healthy pool member (use --existing)"
 	# Walk back to a stable by-id link that points to the parent disk.
-	local parent
-	parent=$(lsblk -no PKNAME "$resolved" 2>/dev/null | head -1)
-	[ -n "$parent" ] || die "ERROR: cannot find parent disk of $resolved"
+	local by_id
 	# Find a /dev/disk/by-id/* that resolves to /dev/$parent AND does not end in -partN
 	by_id=$(find /dev/disk/by-id -maxdepth 1 -type l 2>/dev/null | while read -r link; do
 		tgt=$(readlink -f "$link")
@@ -561,11 +570,10 @@ function phase_mount_boot_run() {
 function phase_zpool_attach_check() {
 	# Pool topology is mirror AND the new pool partition is a leaf under it.
 	[ "$(pool_topology)" = "mirror" ] || return 1
-	local new_pool_pt basename
+	local new_pool_pt
 	new_pool_pt=$(partition_path "$new_disk" "$pool_part")
 	[ -b "$new_pool_pt" ] || return 1
-	basename=$(basename "$(resolve_dev "$new_pool_pt")")
-	zpool status "$pool" 2>/dev/null | grep -qwF "$basename"
+	pool_has_dev "$pool" "$(resolve_dev "$new_pool_pt")"
 }
 
 function phase_zpool_attach_run() {
@@ -581,12 +589,12 @@ function phase_zpool_attach_run() {
 
 function phase_zpool_replace_check() {
 	# The new pool partition is a leaf under pool AND failed_ref no longer appears.
-	local new_pool_pt basename
+	local new_pool_pt
 	new_pool_pt=$(partition_path "$new_disk" "$pool_part")
 	[ -b "$new_pool_pt" ] || return 1
-	basename=$(basename "$(resolve_dev "$new_pool_pt")")
-	zpool status "$pool" 2>/dev/null | grep -qwF "$basename" || return 1
-	# Failed device gone from status?
+	pool_has_dev "$pool" "$(resolve_dev "$new_pool_pt")" || return 1
+	# Failed device gone from status? (--failed is given as shown in plain
+	# `zpool status`, so match it there by name.)
 	if zpool status "$pool" 2>/dev/null | grep -qwF "$(basename "$failed_ref")"; then
 		return 1
 	fi
@@ -807,6 +815,10 @@ replace)
 	[ "$top" = "mirror" ] || die "ERROR: pool '$pool' is not a mirror; use 'attach' first"
 	;;
 esac
+
+if [ -n "$existing_disk" ] && [ "$(resolve_dev "$new_disk")" = "$(resolve_dev "$existing_disk")" ]; then
+	die "ERROR: --new and --existing are the same disk ($(resolve_dev "$new_disk"))"
+fi
 
 build_plan
 print_state

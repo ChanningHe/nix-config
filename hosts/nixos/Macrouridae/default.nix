@@ -68,7 +68,6 @@ in
   networking = {
     hostId = "6799b07f";
     networkmanager.enable = false;
-    enableIPv6 = false;
     useDHCP = false;
     dhcpcd.enable = false;
     nameservers = hostNetwork.dns;

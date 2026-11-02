@@ -35,7 +35,7 @@
         gitMinimal
         just
         sops
-        jq # for JSON encoding multiline values in provision-nixos.sh
+        jq # used by spawn.sh
         yq-go # yq for yaml, used by helpers.sh (sops_update_age_key, creation rules)
         age # for bootstrap script
         ssh-to-age # for bootstrap script

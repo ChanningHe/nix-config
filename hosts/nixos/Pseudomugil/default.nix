@@ -85,7 +85,6 @@ in
   networking = {
     hostId = "e874e2fb";
     networkmanager.enable = false;
-    enableIPv6 = false;
     useDHCP = false;
     dhcpcd.enable = false;
     #nameservers = hostNetwork.dns;
@@ -246,11 +245,9 @@ in
   };
 
   boot.kernelParams = [
-    "console=ttyS0,115200"
-    "console=tty1"
     "amd_iommu=on"
     "amd_pstate=passive"
-    "iommu=pt"
+    # iommu=pt comes from the nvidia-vgpu module
     "zfs.zfs_arc_max=4294967296"
     "pcie_aspm=off"
   ];

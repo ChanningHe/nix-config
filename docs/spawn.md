@@ -146,6 +146,3 @@ spawn is thin because the heavy lifting is declarative:
 - **x86_64-linux builds from a Mac** go through the configured remote builders.
 - **magic-rollback** only catches connectivity loss at activation, not a config
   that fails to boot on the next reboot.
-
-The legacy `scripts/provision-nixos.sh` (phase-based) is documented in
-[add-new-host.md](add-new-host.md) and remains available.

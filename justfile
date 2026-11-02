@@ -72,10 +72,6 @@ age-key:
 check-sops:
     scripts/check-sops.sh
 
-# Scaffold a new NixOS host config (provision phase 0, interactive)
-new-host hostname:
-    scripts/provision-nixos.sh -n {{ hostname }} --phases 0
-
 # Provision a NixOS host end to end (idempotent, resumable). See scripts/spawn.sh
 spawn hostname *ARGS:
     scripts/spawn.sh {{ hostname }} {{ ARGS }}
@@ -117,16 +113,6 @@ iso-aarch64:
 # Install the latest iso to a flash drive
 iso-install DRIVE: iso
     sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{ DRIVE }} bs=4M status=progress oflag=sync
-
-# Configure a drive password using disko
-disko DRIVE PASSWORD:
-    echo "{{ PASSWORD }}" > /tmp/disko-password
-    sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- \
-      --mode disko \
-      disks/btrfs-luks-impermanence-disko.nix \
-      --arg disk '"{{ DRIVE }}"' \
-      --arg password '"{{ PASSWORD }}"'
-    rm /tmp/disko-password
 
 # Copy all the config files to the remote host
 sync USER HOST PATH:

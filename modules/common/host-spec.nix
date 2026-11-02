@@ -133,11 +133,6 @@
           default = true;
           description = "Used to indicate a host that uses a window manager";
         };
-        useAtticCache = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-          description = "Used to indicate a host that uses LAN atticd for caching";
-        };
         hdr = lib.mkOption {
           type = lib.types.bool;
           default = false;

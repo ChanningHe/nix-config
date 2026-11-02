@@ -21,6 +21,8 @@ in
     settings = {
       # Harden
       PasswordAuthentication = false;
+      # PAM keyboard-interactive would still accept the account password
+      KbdInteractiveAuthentication = false;
       PermitRootLogin = "no";
       # Automatically remove stale sockets
       StreamLocalBindUnlink = "yes";

@@ -4,6 +4,7 @@
 # This script is used to rebuild the system configuration for the current host.
 #
 # SC2086 is ignored because we purposefully pass some values as a set of arguments, so we want the splitting to happen
+set -euo pipefail
 
 function red() {
 	echo -e "\x1B[31m[!] $1 \x1B[0m"
@@ -27,14 +28,16 @@ function yellow() {
 
 HOST=$(hostname)
 ACTION="switch"
+# Only pin nh to a host when one is given; otherwise nh picks the local one.
+nh_host_args=()
 
-switch_args="--show-trace --impure --flake "
-if [[ -n $1 && $1 == "build" ]]; then
+if [[ ${1-} == "build" ]]; then
 	ACTION="build"
-elif [[ -n $1 ]]; then
+elif [[ -n ${1-} ]]; then
 	HOST=$1
+	nh_host_args=(-H "$HOST")
 fi
-switch_args="$switch_args .#$HOST switch"
+switch_args="--show-trace --impure --flake .#$HOST $ACTION"
 
 os=$(uname -s)
 if [ "$os" == "Darwin" ]; then
@@ -71,7 +74,7 @@ if [ "$os" == "Darwin" ]; then
 	if command -v nh &>/dev/null; then
 		REPO_PATH=$(pwd)
 		export REPO_PATH
-		nh darwin $ACTION . -- --impure --show-trace
+		nh darwin $ACTION . "${nh_host_args[@]}" -- --impure --show-trace
 	else
 		# Fallback: bootstrap or use darwin-rebuild directly
 		if ! which darwin-rebuild &>/dev/null; then
@@ -86,32 +89,31 @@ else
 	if command -v nh &>/dev/null; then
 		REPO_PATH=$(pwd)
 		export REPO_PATH
-		nh os $ACTION . -- --impure --show-trace
+		nh os $ACTION . "${nh_host_args[@]}" -- --impure --show-trace
 	else
 		sudo nixos-rebuild $ACTION --show-trace --impure --flake .#"$HOST"
 	fi
 fi
 
-# shellcheck disable=SC2181
-if [ $? -eq 0 ]; then
-	if [ "$ACTION" == "build" ]; then
-		green "====== BUILD COMPLETE ======"
-		green "Build successful (not switched)"
-	else
-		green "====== POST-REBUILD ======"
-		green "Rebuilt successfully"
+# set -e: reaching this point means the rebuild above succeeded.
+if [ "$ACTION" == "build" ]; then
+	green "====== BUILD COMPLETE ======"
+	green "Build successful (not switched)"
+	exit 0
+fi
 
-		# Check if there are any pending changes that would affect the build succeeding.
-		if git diff --exit-code >/dev/null && git diff --staged --exit-code >/dev/null; then
-			# Check if the current commit has a buildable tag
-			if git tag --points-at HEAD | grep -q buildable; then
-				yellow "Current commit is already tagged as buildable"
-			else
-				git tag buildable-"$(date +%Y%m%d%H%M%S)" -m ''
-				green "Tagged current commit as buildable"
-			fi
-		else
-			yellow "WARN: There are pending changes that would affect the build succeeding. Commit them before tagging"
-		fi
+green "====== POST-REBUILD ======"
+green "Rebuilt successfully"
+
+# Check if there are any pending changes that would affect the build succeeding.
+if git diff --exit-code >/dev/null && git diff --staged --exit-code >/dev/null; then
+	# Check if the current commit has a buildable tag
+	if [[ $(git tag --points-at HEAD) == *buildable* ]]; then
+		yellow "Current commit is already tagged as buildable"
+	else
+		git tag buildable-"$(date +%Y%m%d%H%M%S)" -m ''
+		green "Tagged current commit as buildable"
 	fi
+else
+	yellow "WARN: There are pending changes that would affect the build succeeding. Commit them before tagging"
 fi

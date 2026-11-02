@@ -53,7 +53,8 @@ in
         '';
         owner = config.hostSpec.username;
         group = userGroup;
-        mode = "0644";
+        # Holds the push token; only the owner (CLI + attic-watch-store) reads it
+        mode = "0600";
       };
 
       sops.templates."attic-netrc" = {

@@ -57,6 +57,7 @@ target_system="x86_64-linux"
 build_strategy="no-external" # no-external | no-remote | on-target
 opt_ip4="" opt_gateway4="" opt_dns="" opt_hostid=""
 assume_yes=0
+force_wipe=0
 dry_run=0
 only_step=""
 from_step=""
@@ -111,7 +112,9 @@ STEP CONTROL:
 
 OTHER:
   -y, --yes                  Don't ask for confirmation
-  --dry-run                  Detect + print plan only
+  --force-wipe               With -y: allow install on a target that is not
+                             the NixOS installer (running OS gets wiped)
+  --dry-run                 Detect + print plan only
   --debug                    set -x
   -h, --help
 
@@ -195,6 +198,10 @@ while [[ $# -gt 0 ]]; do
 		assume_yes=1
 		shift
 		;;
+	--force-wipe)
+		force_wipe=1
+		shift
+		;;
 	--dry-run)
 		dry_run=1
 		shift
@@ -235,6 +242,12 @@ no-external | no-remote | on-target) ;;
 	;;
 esac
 check_dependencies
+
+# Private scratch root for key material, removed on any exit. Per-function
+# RETURN traps miss `exit` and set -e aborts, leaking decrypted host keys.
+spawn_tmp=$(mktemp -d -p /dev/shm 2>/dev/null || mktemp -d)
+trap 'rm -rf "$spawn_tmp"' EXIT
+trap 'exit 130' INT TERM
 
 ###############################################################################
 # Small helpers
@@ -292,10 +305,10 @@ function detect_repo_state() {
 		REPO_SECRETS=1
 	fi
 
-	# disk device already pinned in the bootDiskLayout call? (anchored to ^ so it's a
-	# real `disk = "/dev/..."` line, not a comment).
-	if [ "$REPO_SCAFFOLDED" -eq 1 ] &&
-		grep -qE '^[[:space:]]*disk[[:space:]]*=[[:space:]]*"/dev/' "${git_root}/hosts/nixos/${host}/default.nix"; then
+	# disk device(s) already pinned in the bootDiskLayout call? zfs-mirror also
+	# needs disk2, otherwise lib/boot-disk.nix silently falls back to /dev/vdb.
+	if [ "$REPO_SCAFFOLDED" -eq 1 ] && disk_pinned disk &&
+		{ [ "$(host_layout)" != "zfs-mirror" ] || disk_pinned disk2; }; then
 		REPO_DISK_SET=1
 	fi
 }
@@ -478,9 +491,7 @@ function step_secrets() {
 	fi
 
 	local tmp
-	tmp=$(mktemp -d -p /dev/shm 2>/dev/null || mktemp -d)
-	# shellcheck disable=SC2064
-	trap "rm -rf '$tmp'" RETURN
+	tmp=$(mktemp -d -p "$spawn_tmp")
 
 	ssh-keygen -t ed25519 -f "${tmp}/key" -C "${target_user}@${host}" -N "" -q
 	local age_key
@@ -547,29 +558,32 @@ function step_secrets() {
 # Step: disk  (discover device + NIC MAC, back-fill config)
 ###############################################################################
 
-function step_disk() {
-	if [ "$REPO_DISK_SET" -eq 1 ]; then
-		yellow "disk: primary already pinned — skipping."
-		return 0
-	fi
-	if [ -z "$target_ip" ] || [ "$TARGET_STATE" = "UNREACHABLE" ]; then
-		red "disk: target ${target_ip:-?} unreachable; -d <ip> required."
-		exit 1
-	fi
+function host_file() { echo "${git_root}/hosts/nixos/${host}/default.nix"; }
 
-	# Pick the most stable alias for the target's primary disk: by-id > by-path > raw.
-	green "Probing target disks on ${target_ip}..."
-	tssh "lsblk -dno NAME,SIZE,MODEL,TYPE | grep disk" || true
-	local raw chosen
-	raw=$(tssh "lsblk -dno NAME,TYPE | awk '\$2==\"disk\"{print \$1; exit}'")
-	[ -z "$raw" ] && {
-		red "No disk found on target."
-		exit 1
-	}
+# Layout from the host's bootDiskLayout call ("" if not scaffolded).
+function host_layout() {
+	[ -f "$(host_file)" ] || return 0
+	sed -nE 's/^[[:space:]]*layout[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$(host_file)" | head -n1
+}
+
+# disk_pinned <attr> — is `<attr> = "/dev/...";` set? (anchored to ^ so it's a
+# real attribute line, not a comment; `disk` never matches `disk2`).
+function disk_pinned() {
+	grep -qE "^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"/dev/" "$(host_file)"
+}
+
+function pinned_disk() {
+	sed -nE "s#^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"(/dev/[^\"]+)\".*#\\1#p" "$(host_file)" | head -n1
+}
+
+# stable_disk_alias <kernel name> — most stable alias on the target:
+# by-id > by-path > raw. Warnings go to stderr so callers can capture stdout.
+function stable_disk_alias() {
+	local raw=$1 alias
 	# shopt -s nullglob so an empty /dev/disk/by-id/ doesn't fall through as a
 	# literal '*' path (silent fallback to /dev/${raw} was the previous bug).
 	# Skip -part* symlinks explicitly; they point at partitions, not the disk.
-	chosen=$(tssh "
+	alias=$(tssh "
 		shopt -s nullglob
 		for dir in /dev/disk/by-id /dev/disk/by-path; do
 			for d in \"\$dir\"/*; do
@@ -579,18 +593,67 @@ function step_disk() {
 		done
 		echo \"/dev/${raw}\"
 	")
-	case "$chosen" in
+	case "$alias" in
 	/dev/disk/by-id/*) : ;;
 	/dev/disk/by-path/*)
-		yellow "No /dev/disk/by-id/ alias for /dev/${raw}; using by-path. Stable per PCIe slot but changes if you move the drive."
+		yellow "No /dev/disk/by-id/ alias for /dev/${raw}; using by-path. Stable per PCIe slot but changes if you move the drive." >&2
 		;;
 	*)
-		yellow "No stable /dev/disk/{by-id,by-path} alias for /dev/${raw}; falling back to the kernel name."
-		yellow "This name (nvmeXnY / sdX) can shuffle across reboots — check the target's /dev/disk/by-id/ before continuing."
+		yellow "No stable /dev/disk/{by-id,by-path} alias for /dev/${raw}; falling back to the kernel name." >&2
+		yellow "This name (nvmeXnY / sdX) can shuffle across reboots — check the target's /dev/disk/by-id/ before continuing." >&2
 		;;
 	esac
-	chosen=$(ask "Primary disk device (Enter to accept)" "$chosen")
-	green "Using primary disk: ${chosen}"
+	echo "$alias"
+}
+
+function step_disk() {
+	if [ "$REPO_DISK_SET" -eq 1 ]; then
+		yellow "disk: already pinned — skipping."
+		return 0
+	fi
+	if [ -z "$target_ip" ] || [ "$TARGET_STATE" = "UNREACHABLE" ]; then
+		red "disk: target ${target_ip:-?} unreachable; -d <ip> required."
+		exit 1
+	fi
+
+	green "Probing target disks on ${target_ip}..."
+	tssh "lsblk -dno NAME,SIZE,MODEL,TYPE | grep disk" || true
+	local -a raws=()
+	mapfile -t raws < <(tssh "lsblk -dno NAME,TYPE | awk '\$2==\"disk\"{print \$1}'")
+	[ ${#raws[@]} -gt 0 ] || {
+		red "No disk found on target."
+		exit 1
+	}
+
+	local chosen="" chosen2=""
+	if disk_pinned disk; then
+		chosen=$(pinned_disk disk)
+		green "Primary disk already pinned: ${chosen}"
+	else
+		chosen=$(ask "Primary disk device (Enter to accept)" "$(stable_disk_alias "${raws[0]}")")
+		green "Using primary disk: ${chosen}"
+	fi
+
+	if [ "$(host_layout)" = "zfs-mirror" ] && ! disk_pinned disk2; then
+		local primary_dev r default2=""
+		primary_dev=$(tssh "readlink -f '${chosen}'")
+		for r in "${raws[@]}"; do
+			if [ "/dev/${r}" != "$primary_dev" ]; then
+				default2=$(stable_disk_alias "$r")
+				break
+			fi
+		done
+		chosen2=$(ask "Secondary (mirror) disk device" "$default2")
+		[ -n "$chosen2" ] || {
+			red "zfs-mirror needs a second disk."
+			exit 1
+		}
+		[ "$(tssh "readlink -f '${chosen2}'")" != "$primary_dev" ] || {
+			red "Secondary disk resolves to the primary (${primary_dev})."
+			exit 1
+		}
+		green "Using secondary disk: ${chosen2}"
+	fi
 
 	# Discover the NIC MAC for reliable systemd-networkd matching.
 	local iface mac
@@ -599,30 +662,45 @@ function step_disk() {
 	green "Primary NIC ${iface} MAC: ${mac:-unknown}"
 
 	if [ "$dry_run" -eq 1 ]; then
-		yellow "[DRY-RUN] would pin disk=${chosen}, mac=${mac} (iface ${iface})"
+		yellow "[DRY-RUN] would pin disk=${chosen}${chosen2:+, disk2=${chosen2}}, mac=${mac} (iface ${iface})"
 		return 0
 	fi
 
-	backfill_disk_device "$chosen"
-	[ -n "$mac" ] && backfill_network_mac "$mac" "$iface"
+	disk_pinned disk || backfill_disk_attr disk "$chosen" layout
+	if [ -n "$chosen2" ]; then backfill_disk_attr disk2 "$chosen2" disk; fi
+	if [ -n "$mac" ]; then backfill_network_mac "$mac" "$iface"; fi
 	REPO_DISK_SET=1
 }
 
-# Set `disk = "<dev>";` inside the host's lib.custom.bootDiskLayout call (the
-# disko device). Inserted right after the `layout = "...";` line.
-function backfill_disk_device() {
-	local dev="$1"
-	local f="${git_root}/hosts/nixos/${host}/default.nix"
-	# Device paths never contain '#', so it's safe as the sed delimiter.
-	if grep -qE '^[[:space:]]*disk[[:space:]]*=' "$f"; then
-		sed -i.bak -E "s#^([[:space:]]*)disk[[:space:]]*=[[:space:]]*\"[^\"]*\";#\\1disk = \"${dev}\";#" "$f"
+# backfill_disk_attr <attr> <dev> <anchor> — set `<attr> = "<dev>";` inside the
+# host's lib.custom.bootDiskLayout call, inserted on its own line right after
+# the `<anchor> = "...";` line (disk after layout, disk2 after disk).
+function backfill_disk_attr() {
+	local attr="$1" dev="$2" anchor="$3" f
+	f=$(host_file)
+	if grep -qE "^[[:space:]]*${attr}[[:space:]]*=" "$f"; then
+		# Device paths never contain '#', so it's safe as the sed delimiter.
+		sed -i.bak -E "s#^([[:space:]]*)${attr}[[:space:]]*=[[:space:]]*\"[^\"]*\";#\\1${attr} = \"${dev}\";#" "$f"
+		rm -f "${f}.bak"
 	else
-		# Insert on its own line after layout, reusing its indentation.
-		# `&` keeps the whole layout line (incl. its trailing comment) intact.
-		sed -i.bak -E "s#^([[:space:]]*)layout = \"[^\"]*\";.*#&\n\\1disk = \"${dev}\";#" "$f"
+		# awk instead of a sed `\n` replacement, which BSD sed doesn't support.
+		# Reuses the anchor line's indentation and keeps its trailing comment.
+		local tmp
+		tmp=$(mktemp)
+		awk -v attr="$attr" -v dev="$dev" -v anchor="$anchor" '
+			{ print }
+			!done && $0 ~ ("^[[:space:]]*" anchor "[[:space:]]*=") {
+				indent = $0
+				sub(/[^[:space:]].*$/, "", indent)
+				printf "%s%s = \"%s\";\n", indent, attr, dev
+				done = 1
+			}
+		' "$f" >"$tmp"
+		# cat, not mv: keep the tracked file's mode instead of mktemp's 0600.
+		cat "$tmp" >"$f"
+		rm -f "$tmp"
 	fi
-	rm -f "${f}.bak"
-	green "Pinned disk = \"${dev}\" in hosts/nixos/${host}/default.nix"
+	green "Pinned ${attr} = \"${dev}\" in hosts/nixos/${host}/default.nix"
 }
 
 # Add `mac = "<mac>"; interface = "<iface>";` to the host's network.nix entry.
@@ -677,6 +755,24 @@ function nix_secrets_gate() {
 # Step: install  (nixos-anywhere: disko + facter + install + reboot)
 ###############################################################################
 
+# Anything but the live installer is a running OS that nixos-anywhere kexecs
+# out of and wipes. The plan-level confirm is skipped by -y, so this one isn't.
+function confirm_wipe() {
+	[ "$TARGET_STATE" = "INSTALLER" ] && return 0
+	red "install: ${target_ip} is ${TARGET_STATE}, not the NixOS installer — its disks will be WIPED."
+	if [ "$assume_yes" -eq 1 ]; then
+		[ "$force_wipe" -eq 1 ] && return 0
+		red "Refusing under -y without --force-wipe."
+		exit 1
+	fi
+	local typed
+	typed=$(ask "Type the host name '${host}' to wipe ${target_ip}")
+	[ "$typed" = "$host" ] || {
+		red "Name mismatch — aborted."
+		exit 1
+	}
+}
+
 function step_install() {
 	if [ "$TARGET_STATE" = "INSTALLED_THIS" ]; then
 		yellow "install: target already running ${host} — skipping."
@@ -690,12 +786,11 @@ function step_install() {
 		red "install: secrets not ready (run secrets step first)."
 		exit 1
 	}
+	confirm_wipe
 
 	# Extract the sops ssh host key into a secure temp for --extra-files.
 	local tmp persist="etc/ssh"
-	tmp=$(mktemp -d -p /dev/shm 2>/dev/null || mktemp -d)
-	# shellcheck disable=SC2064
-	trap "rm -rf '$tmp'" RETURN
+	tmp=$(mktemp -d -p "$spawn_tmp")
 	install -d -m755 "${tmp}/${persist}"
 	local sf="${nix_secrets_dir}/secrets/${host}.yaml" sc="${nix_secrets_dir}/.sops.yaml"
 	sops --config "$sc" -d --extract '["keys"]["ssh_host_ed25519_key"]' "$sf" >"${tmp}/${persist}/ssh_host_ed25519_key"
