@@ -95,21 +95,7 @@ fi
 if [ "$ACTION" == "build" ]; then
 	green "====== BUILD COMPLETE ======"
 	green "Build successful (not switched)"
-	exit 0
-fi
-
-green "====== POST-REBUILD ======"
-green "Rebuilt successfully"
-
-# Check if there are any pending changes that would affect the build succeeding.
-if git diff --exit-code >/dev/null && git diff --staged --exit-code >/dev/null; then
-	# Check if the current commit has a buildable tag
-	if [[ $(git tag --points-at HEAD) == *buildable* ]]; then
-		yellow "Current commit is already tagged as buildable"
-	else
-		git tag buildable-"$(date +%Y%m%d%H%M%S)" -m ''
-		green "Tagged current commit as buildable"
-	fi
 else
-	yellow "WARN: There are pending changes that would affect the build succeeding. Commit them before tagging"
+	green "====== POST-REBUILD ======"
+	green "Rebuilt successfully"
 fi
