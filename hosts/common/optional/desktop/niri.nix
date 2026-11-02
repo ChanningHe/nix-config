@@ -8,6 +8,8 @@
 
   programs.niri.enable = true;
   programs.niri.package = pkgs.niri;
+  # niri comes from nixpkgs (cache.nixos.org); niri.cachix.org would never hit
+  niri-flake.cache.enable = false;
 
   # XDG portal routing rules specific to niri
   xdg.portal.config.niri = {

@@ -21,7 +21,10 @@
       ];
 
       # ========== Extend lib with lib.custom ==========
-      lib = nixpkgs.lib.extend (self: super: { custom = import ./lib { inherit (nixpkgs) lib; }; });
+      # Built per nixpkgs so Darwin hosts get the lib of the nixpkgs they evaluate against.
+      mkLib = np: np.lib.extend (self: super: { custom = import ./lib { inherit (np) lib; }; });
+      lib = mkLib nixpkgs;
+      darwinLib = mkLib inputs.nixpkgs-darwin;
 
     in
     {
@@ -53,7 +56,8 @@
           name = host;
           value = nix-darwin.lib.darwinSystem {
             specialArgs = {
-              inherit inputs outputs lib;
+              inherit inputs outputs;
+              lib = darwinLib;
               isDarwin = true;
             };
             modules = [ ./hosts/darwin/${host} ];
@@ -184,7 +188,13 @@
 
     #proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
 
-    niri.url = "github:sodiboo/niri-flake";
+    niri = {
+      url = "github:sodiboo/niri-flake";
+      # Only its NixOS/HM modules are used (package = pkgs.niri), so its own
+      # nixpkgs copies (unstable + 25.11) would just sit in the lock unused.
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs-stable.follows = "nixpkgs";
+    };
 
     noctalia = {
       url = "github:noctalia-dev/noctalia-shell";
