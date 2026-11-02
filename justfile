@@ -18,7 +18,7 @@ rebuild-post: check-sops
 
 # Run a flake check on the config and installer
 check ARGS="":
-    NIXPKGS_ALLOW_UNFREE=1 REPO_PATH=$(pwd) nix flake check --impure --keep-going --show-trace {{ ARGS }}
+    nix flake check --keep-going --show-trace {{ ARGS }}
     cd nixos-anywhere && NIXPKGS_ALLOW_UNFREE=1 REPO_PATH=$(pwd) nix flake check --impure --keep-going --show-trace {{ ARGS }}
 
 # Build and activate the current host (nixos-rebuild / darwin-rebuild switch)
@@ -102,7 +102,7 @@ update-nix-secrets:
 iso:
     # If we dont remove this folder, libvirtd VM doesnt run with the new iso...
     rm -rf result
-    nix build --impure .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
+    nix build .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
 
 # Build an aarch64 iso image for installing new systems and create a symlink for qemu usage
 iso-aarch64:
@@ -120,7 +120,7 @@ sync USER HOST PATH:
 
 # Run nixos-rebuild on the remote host
 build-host HOST:
-    NIX_SSHOPTS="-p22" nixos-rebuild --target-host {{ HOST }} --use-remote-sudo --show-trace --impure --flake .#"{{ HOST }}" switch
+    NIX_SSHOPTS="-p22" nixos-rebuild --target-host {{ HOST }} --use-remote-sudo --show-trace --flake .#"{{ HOST }}" switch
 
 # Called by the rekey recipe
 sops-rekey:

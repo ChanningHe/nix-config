@@ -53,19 +53,15 @@ in
       config.users.users.${config.hostSpec.username}.openssh.authorizedKeys.keys;
   };
 
-  environment.etc = {
-    isoBuildTime = {
-      #
-      text = lib.readFile (
-        "${pkgs.runCommand "timestamp" {
-          # builtins.currentTime requires --impure
-          env.when = builtins.currentTime;
-        } "echo -n `date -d @$when  +%Y-%m-%d_%H-%M-%S` > $out"}"
-      );
-    };
-  };
+  # Commit time of the config (pure, unlike builtins.currentTime), as
+  # YYYY-MM-DD_HH-MM-SS from lastModifiedDate's YYYYMMDDHHMMSS.
+  environment.etc.isoBuildTime.text =
+    let
+      at = start: len: builtins.substring start len inputs.self.lastModifiedDate;
+    in
+    "${at 0 4}-${at 4 2}-${at 6 2}_${at 8 2}-${at 10 2}-${at 12 2}";
 
-  # Add the build time to the prompt so it's easier to know the ISO age
+  # Add the config time to the prompt so it's easier to know the ISO age
   programs.bash.promptInit = ''
     export PS1="\\[\\033[01;32m\\]\\u@\\h-$(cat /etc/isoBuildTime)\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]\\$ "
   '';

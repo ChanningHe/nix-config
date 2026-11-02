@@ -37,7 +37,7 @@ elif [[ -n ${1-} ]]; then
 	HOST=$1
 	nh_host_args=(-H "$HOST")
 fi
-switch_args="--show-trace --impure --flake .#$HOST $ACTION"
+switch_args="--show-trace --flake .#$HOST $ACTION"
 
 os=$(uname -s)
 if [ "$os" == "Darwin" ]; then
@@ -72,9 +72,7 @@ if [ "$os" == "Darwin" ]; then
 
 	green "====== ${ACTION^^} ======"
 	if command -v nh &>/dev/null; then
-		REPO_PATH=$(pwd)
-		export REPO_PATH
-		nh darwin $ACTION . "${nh_host_args[@]}" -- --impure --show-trace
+		nh darwin $ACTION . "${nh_host_args[@]}" -- --show-trace
 	else
 		# Fallback: bootstrap or use darwin-rebuild directly
 		if ! which darwin-rebuild &>/dev/null; then
@@ -87,11 +85,9 @@ if [ "$os" == "Darwin" ]; then
 else
 	green "====== ${ACTION^^} ======"
 	if command -v nh &>/dev/null; then
-		REPO_PATH=$(pwd)
-		export REPO_PATH
-		nh os $ACTION . "${nh_host_args[@]}" -- --impure --show-trace
+		nh os $ACTION . "${nh_host_args[@]}" -- --show-trace
 	else
-		sudo nixos-rebuild $ACTION --show-trace --impure --flake .#"$HOST"
+		sudo nixos-rebuild $ACTION --show-trace --flake .#"$HOST"
 	fi
 fi
 
