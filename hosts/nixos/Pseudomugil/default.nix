@@ -1,5 +1,5 @@
 {
-  #inputs,
+  inputs,
   lib,
   config,
   ...
@@ -12,7 +12,10 @@ in
     #
     # ========== Hardware ==========
     #
-    ./hardware-configuration.nix
+    # Declarative hardware detection via nixos-facter.
+    # Skipped until then so the host still evaluates.
+    # Defaults in hosts/common/core/facter.nix.
+    (lib.optional (builtins.pathExists ./facter.json) { facter.reportPath = ./facter.json; })
     #inputs.hardware.nixosModules.common-cpu-amd
     #inputs.hardware.nixosModules.common-cpu-intel
     #inputs.hardware.nixosModules.common-gpu-nvidia
@@ -20,9 +23,14 @@ in
     #inputs.hardware.nixosModules.common-pc-ssd
 
     #
-    # ========== Disk Layout ==========
+    # ========== Disk Layout & Bootloader ==========
     #
-    #inputs.disko.nixosModules.disko
+    # Boot-disk layout + matching bootloader.
+    (lib.custom.bootDiskLayout inputs {
+      layout = "zfs-mirror"; # ext4 | btrfs | zfs | zfs-mirror
+      disk = "/dev/disk/by-id/ata-INTEL_SSDSC2BB160G4_PHWL508000AD160MGN";
+      disk2 = "/dev/disk/by-id/nvme-SAMSUNG_MZ9L4128HCHQ-00BH1_S774NF0X619395";
+    })
 
     #
     # ========== Misc Inputs ==========
@@ -42,7 +50,6 @@ in
       #
       # ========== Optional Configs ==========
       "hosts/common/optional/system/no-firewall.nix"
-      "hosts/common/optional/system/zfs-boot.nix"
       "hosts/common/optional/system/ip-forward.nix"
       "hosts/common/optional/system/ipmi.nix"
       "hosts/common/optional/services/ipmi-bmc-reset.nix"
@@ -68,7 +75,6 @@ in
 
   hostSpec = {
     hostName = "Pseudomugil";
-    zfsMirror = true;
     scaling = lib.mkForce "1";
     # loadUserAgeKey = true;
   };
