@@ -20,7 +20,6 @@
     NIX_CONFIG = "extra-experimental-features = nix-command flakes";
     BOOTSTRAP_USER = "channinghe";
     BOOTSTRAP_SSH_PORT = "22";
-    BOOTSTRAP_SSH_KEY = "~/.ssh/id_yk288-main";
 
     nativeBuildInputs = builtins.attrValues {
       inherit (pkgs)

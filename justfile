@@ -19,7 +19,6 @@ rebuild-post: check-sops
 # Run a flake check on the config and installer
 check ARGS="":
     nix flake check --keep-going --show-trace {{ ARGS }}
-    cd nixos-anywhere && NIXPKGS_ALLOW_UNFREE=1 REPO_PATH=$(pwd) nix flake check --impure --keep-going --show-trace {{ ARGS }}
 
 # Build and activate the current host (nixos-rebuild / darwin-rebuild switch)
 switch: rebuild-pre && rebuild-post

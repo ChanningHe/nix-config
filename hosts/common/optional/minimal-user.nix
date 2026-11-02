@@ -1,4 +1,4 @@
-# NOTE: This module is required for nixos-anywhere
+# Known temp password for the installer iso
 { config, ... }:
 {
   # Set a temp password for use by minimal builds like installer and iso
