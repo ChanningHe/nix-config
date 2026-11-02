@@ -14,6 +14,19 @@
     usbutils # USB device utilities (lsusb)
   ];
 
+  # Networking is static systemd-networkd per host; nothing else manages links or DNS.
+  # Plain values, not mkDefault: nixpkgs itself mkDefaults resolved (networkd) and
+  # networkmanager (gnome) to true. A host opting back in needs lib.mkForce.
+  networking = {
+    networkmanager.enable = false;
+    useDHCP = false;
+    dhcpcd.enable = false;
+  };
+  services.resolved.enable = false;
+
+  # systemd stage 1 (already the 26.05 default; pinned so it can't silently flip)
+  boot.initrd.systemd.enable = lib.mkDefault true;
+
   # Database for aiding terminal-based programs
   environment.enableAllTerminfo = true;
   # Enable firmware with a license allowing redistribution

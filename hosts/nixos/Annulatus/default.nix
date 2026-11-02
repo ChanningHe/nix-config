@@ -75,13 +75,8 @@ in
   #
   networking = {
     hostId = "15b9f89f";
-    networkmanager.enable = false;
-    useDHCP = false;
-    dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
   };
-
-  services.resolved.enable = false;
 
   # systemd-networkd
   systemd.network = {
@@ -103,10 +98,6 @@ in
         };
       };
     };
-  };
-
-  boot.initrd = {
-    systemd.enable = true;
   };
 
   # https://wiki.nixos.org/wiki/FAQ/When_do_I_update_stateVersion

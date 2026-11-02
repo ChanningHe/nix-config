@@ -71,13 +71,8 @@ in
   #
   networking = {
     hostId = "02ca03a2";
-    networkmanager.enable = false;
-    useDHCP = false;
-    dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
   };
-
-  services.resolved.enable = false;
 
   # systemd-networkd.
   #
@@ -228,7 +223,6 @@ in
   };
 
   boot = {
-    initrd.systemd.enable = true;
     #blacklistedKernelModules = [ "xgene-hwmon" ];
   };
 

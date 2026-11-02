@@ -70,13 +70,8 @@ in
   #
   networking = {
     hostId = "424e1708";
-    networkmanager.enable = false;
-    useDHCP = false;
-    dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
   };
-
-  services.resolved.enable = false;
 
   # systemd-networkd
   systemd.network = {
@@ -113,10 +108,6 @@ in
     prime.offload.enable = false;
     prime.sync.enable = false;
     modesetting.enable = true;
-  };
-
-  boot.initrd = {
-    systemd.enable = true;
   };
 
   boot.zfs.forceImportRoot = false;

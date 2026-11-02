@@ -80,13 +80,8 @@ in
 
   networking = {
     hostId = "e4ae58db";
-    networkmanager.enable = false;
-    useDHCP = false;
-    dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
   };
-
-  services.resolved.enable = false;
 
   # systemd-networkd
   systemd.network = {
@@ -110,10 +105,6 @@ in
         };
       };
     };
-  };
-
-  boot.initrd = {
-    systemd.enable = true;
   };
 
   #

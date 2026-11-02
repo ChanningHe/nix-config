@@ -72,13 +72,8 @@ in
   networking = {
     # !!![FIXME]!!!
     hostId = "xxxxx";
-    networkmanager.enable = false;
-    useDHCP = false;
-    dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
   };
-
-  services.resolved.enable = false;
 
   # systemd-networkd. Match by MAC (stable across renames) when known,
   # otherwise fall back to the interface name. Both come from network.nix
@@ -106,10 +101,6 @@ in
         };
       };
     };
-  };
-
-  boot.initrd = {
-    systemd.enable = true;
   };
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";

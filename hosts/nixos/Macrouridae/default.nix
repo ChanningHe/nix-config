@@ -67,13 +67,8 @@ in
   #
   networking = {
     hostId = "6799b07f";
-    networkmanager.enable = false;
-    useDHCP = false;
-    dhcpcd.enable = false;
     nameservers = hostNetwork.dns;
   };
-
-  services.resolved.enable = false;
 
   # systemd-networkd
   systemd.network = {
@@ -95,10 +90,6 @@ in
         };
       };
     };
-  };
-
-  boot.initrd = {
-    systemd.enable = true;
   };
 
   #

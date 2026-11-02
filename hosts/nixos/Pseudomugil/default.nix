@@ -84,17 +84,12 @@ in
   #
   networking = {
     hostId = "e874e2fb";
-    networkmanager.enable = false;
-    useDHCP = false;
-    dhcpcd.enable = false;
     #nameservers = hostNetwork.dns;
     nameservers = [ "1.1.1.1" ];
     extraHosts = ''
       10.1.10.8 git-local.homielab.cc
     '';
   };
-
-  services.resolved.enable = false;
 
   # systemd-networkd
   # systemd.network = {
@@ -238,10 +233,6 @@ in
       RouteMetric = 2048;
       # 若你根本不想从 RA 装默认路由，则：UseGateway = false;
     };
-  };
-
-  boot.initrd = {
-    systemd.enable = true;
   };
 
   boot.kernelParams = [
