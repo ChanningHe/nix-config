@@ -61,8 +61,20 @@ in
     (lib.mkIf (cfg.enable && hasSopsFile) (
       let
         sopsContent = builtins.readFile sopsFile;
-        # lib.hasInfix replaces builtins.match ".*x.*" — no regex compilation/backtracking
-        hasKey = key: lib.all (part: lib.hasInfix "${part}:" sopsContent) (lib.splitString "/" key);
+        # sops emits YAML with 4-space indentation; match the key path level by
+        # level so e.g. "private_key" never matches inside "syncoid: ssh_private_key".
+        hasKeyAt =
+          depth: block: parts:
+          let
+            indent = lib.concatStrings (lib.replicate depth "    ");
+            header = "${indent}${lib.head parts}:";
+            idx = lib.lists.findFirstIndex (lib.hasPrefix header) null block;
+            rest = lib.drop (idx + 1) block;
+            isChild = l: l == "" || lib.hasPrefix "${indent}    " l;
+            children = lib.take (lib.lists.findFirstIndex (l: !isChild l) (lib.length rest) rest) rest;
+          in
+          idx != null && (lib.tail parts == [ ] || hasKeyAt (depth + 1) children (lib.tail parts));
+        hasKey = key: hasKeyAt 0 (lib.splitString "\n" sopsContent) (lib.splitString "/" key);
 
         hasPasskeys = hasKey "komodo/passkeys";
         hasPrivateKey = hasKey "komodo/private_key";
