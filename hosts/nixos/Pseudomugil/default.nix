@@ -60,6 +60,7 @@ in
       "hosts/common/optional/services/komodo-periphery.nix"
       "hosts/common/optional/services/attic.nix"
       "hosts/common/optional/services/zfs-zed-mail.nix"
+      "hosts/common/optional/services/syncoid.nix"
       "hosts/common/optional/network-storage.nix"
       "hosts/common/optional/system/nvidia-vgpu.nix"
       "hosts/common/optional/services/podman.nix"
@@ -232,6 +233,8 @@ in
       # 若你根本不想从 RA 装默认路由，则：UseGateway = false;
     };
   };
+
+  boot.zfs.extraPools = [ "Anubias" ];
 
   boot.kernelParams = [
     "amd_iommu=on"
