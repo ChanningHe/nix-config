@@ -50,3 +50,12 @@ Rebuild the system with darwin-rebuild
 ```bash
 sudo darwin-rebuild switch --flake .#$HOSTNAME
 ```
+
+
+## Reset Nvidia
+```
+sudo systemctl stop nvidia-vgpu-mgr nvidia-vgpud
+sudo modprobe -r nvidia_vgpu_vfio nvidia
+echo 1 | sudo tee /sys/bus/pci/devices/${pci id}/reset
+sudo modprobe nvidia && sudo modprobe nvidia_vgpu_vfio && sudo systemctl start nvidia-vgpud nvidia-vgpu-mgr
+```
