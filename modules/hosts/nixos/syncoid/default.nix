@@ -39,6 +39,8 @@ let
         ++ lib.optional (src.ssh.port != 22) "--sshport=${toString src.ssh.port}";
         service = {
           after = lib.optional (i > 0) "syncoid-${jobName name (lib.elemAt src.datasets (i - 1))}.service";
+          # A switch must not kill a multi-hour seed; the new unit applies next run.
+          restartIfChanged = false;
           serviceConfig.Type = "oneshot";
           serviceConfig.ExecStartPre = lib.mkBefore [ "+${prepare}/bin/syncoid-prepare ${src.targetRoot}" ];
           unitConfig.OnFailure = lib.optional cfg.notify.enable "syncoid-notify@%n.service";
@@ -95,6 +97,9 @@ let
       )
     } || rc=1";
 
+  # Non-empty "/"-separated components: rejects "", "a/", "/a" and "a//b".
+  datasetName = lib.types.strMatching "[^/]+(/[^/]+)*";
+
   sourceType = lib.types.submodule {
     options = {
       ssh = {
@@ -113,7 +118,7 @@ let
         };
       };
       targetRoot = lib.mkOption {
-        type = lib.types.strMatching "[^/].*[^/]";
+        type = datasetName;
         example = "Anubias/backup/truenas";
         description = "Local parent dataset; must sit under a loaded encryption root.";
       };
@@ -137,7 +142,7 @@ let
         };
       };
       datasets = lib.mkOption {
-        type = lib.types.nonEmptyListOf lib.types.str;
+        type = lib.types.nonEmptyListOf datasetName;
         description = "Source datasets, each replicated non-recursively to <targetRoot>/<basename>.";
       };
     };
@@ -238,6 +243,7 @@ in
       # Waits for any syncoid job still running (e.g. a long initial seed).
       after = [ "zfs.target" ] ++ map (c: "syncoid-${c.name}.service") commands;
       startAt = cfg.pruneInterval;
+      restartIfChanged = false;
       serviceConfig.Type = "oneshot";
       unitConfig.OnFailure = lib.optional cfg.notify.enable "syncoid-notify@%n.service";
       script = ''
