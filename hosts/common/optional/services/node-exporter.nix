@@ -29,6 +29,7 @@
 #   };
 {
   config,
+  lib,
   ...
 }:
 let
@@ -66,6 +67,8 @@ in
     disabledCollectors = cfg.disabledCollectors or [ "btrfs" ];
     extraFlags = defaultExtraFlags ++ (cfg.extraFlags or [ ]);
   };
+
+  systemd.services.prometheus-node-exporter.serviceConfig.ProtectHome = lib.mkForce "read-only";
 
   services.prometheus.exporters.process = {
     enable = true;
