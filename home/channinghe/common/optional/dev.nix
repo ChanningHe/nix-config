@@ -1,4 +1,6 @@
+# Development toolchain: editor, LSPs, dev environments, remote-editor servers.
 {
+  lib,
   pkgs,
   ...
 }:
@@ -15,10 +17,34 @@
     ripgrep # Required for Telescope live_grep
     lazygit # Git integration
     nodejs # Required for many LSP servers
+    gh
+    devenv
+    # lsp
+    nil
+    nixd
+    # langs
+    go
+    gcc
+    cargo
+    python3
   ];
 
   home.shellAliases = {
     vim = "nvim";
     vi = "nvim";
+  };
+
+  home.sessionVariables = {
+    EDITOR = "nvim";
+    SOPS_EDITOR = "nvim";
+  };
+
+  programs.git.package = pkgs.gitFull;
+
+  # For Zed Remote Server
+  home.file.".zed_server" = lib.mkIf pkgs.stdenv.isLinux {
+    source = "${pkgs.zed-editor.remote_server}/bin";
+    # keeps the folder writable, but symlinks the binaries into it
+    recursive = true;
   };
 }

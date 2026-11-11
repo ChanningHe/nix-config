@@ -21,12 +21,9 @@ in
     ./bash.nix
     ./flyline.nix
     ./direnv.nix
-    ./fonts.nix
     ./git.nix
     ./dotfiles.nix
     ./ssh.nix
-    ./zsh.nix
-    ./neovim.nix
   ];
 
   inherit hostSpec;
@@ -40,8 +37,9 @@ in
     ];
     sessionVariables = {
       SHELL = "bash";
-      SOPS_EDITOR = "nvim";
-      EDITOR = "nvim";
+      # nvim comes from optional/dev.nix; nano is always on the system
+      SOPS_EDITOR = lib.mkDefault "nano";
+      EDITOR = lib.mkDefault "nano";
       NH_FLAKE = "$HOME/nix-src/nix-config";
       # Allow ad-hoc `nix shell/build/run` to build unfree packages (needs --impure)
       NIXPKGS_ALLOW_UNFREE = 1;
@@ -75,13 +73,7 @@ in
     btop
     wget
     #vivid
-    # dev tools
-    gh
-    devenv
     #bun
-    # lsp
-    nil
-    nixd
     # langs
     #go
     #gcc

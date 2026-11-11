@@ -12,6 +12,9 @@
     # ========== Required Configs ==========
     #
     common/core
+    common/optional/dev.nix
+    common/optional/zsh.nix
+    common/optional/fonts.nix
 
     #
     # ========== Host-specific Optional Configs ==========

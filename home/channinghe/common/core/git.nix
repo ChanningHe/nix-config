@@ -1,12 +1,11 @@
 # git is core no matter what but additional settings may could be added made in optional/foo   eg: development.nix
 {
-  pkgs,
   ...
 }:
 {
+  # Plain git here; optional/dev.nix switches to gitFull
   programs.git = {
     enable = true;
-    package = pkgs.gitFull;
     settings = {
       user = {
         name = "Channing He";

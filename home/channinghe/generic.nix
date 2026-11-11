@@ -10,6 +10,9 @@
     # ========== Required Configs ==========
     #
     common/core
+    common/optional/dev.nix
+    common/optional/zsh.nix
+    common/optional/fonts.nix
 
     #
     # ========== Generic Optional Configs ==========
