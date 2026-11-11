@@ -3,7 +3,6 @@
 {
   inputs,
   config,
-  pkgs,
   lib,
   ...
 }:
@@ -14,14 +13,7 @@
   system.configurationRevision = null;
   # Set primary user for user-level launchd agents
   system.primaryUser = config.hostSpec.username;
-  # Enable sudo authentication via Yubikey/Touch ID
-  #security.pam.services.sudo_local.touchIdAuth = true;
-  environment.etc."pam.d/sudo_local".text = ''
-    # YubiKey auth
-    auth       sufficient     ${pkgs.pam_u2f}/lib/security/pam_u2f.so cue [cue_prompt=Touch YubiKey for sudo]
-    # Fallback to Touch ID
-    auth       sufficient     pam_tid.so
-  '';
+  # sudo via YubiKey/Touch ID: see services/yubikey.nix
 
   #
   # ========== Nix Helper ==========

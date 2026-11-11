@@ -1,0 +1,13 @@
+--- a/src/sign_verify.rs
++++ b/src/sign_verify.rs
+@@ -144,6 +144,10 @@
+         // regenerate the message as per U2F spec
+         PublicKey::SkEcDsa(_) | PublicKey::SkEd25519(_) => {
+             let sig: proto::SkSignature = from_bytes(ssh_sig)?;
++            // Like sshd: reject assertions made without user presence (touch)
++            if sig.flags & 0x01 == 0 {
++                return Err(RsshErr::SignVerifyErr.into_ptr());
++            }
+             let app = match pubkey {
+                 PublicKey::SkEcDsa(k) => &k.application,
+                 PublicKey::SkEd25519(k) => &k.application,

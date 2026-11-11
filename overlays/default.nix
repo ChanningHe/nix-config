@@ -29,6 +29,12 @@ let
       # 26.05 ships qq 3.2.29, whose upstream tarball is 404 (Tencent prunes old
       # release paths). Track unstable until nixos-26.05 catches up.
       qq = final.unstable.qq;
+
+      # pam_rssh accepts FIDO signatures without the user-presence flag, so a
+      # tampered sk key handle could sudo without a touch.
+      pam_rssh = prev.pam_rssh.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./pam_rssh-require-user-presence.patch ];
+      });
     };
 
   modifications = final: prev: {

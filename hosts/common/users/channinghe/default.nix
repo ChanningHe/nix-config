@@ -1,6 +1,3 @@
-# NOTE(starter): this is the primary user across all hosts. The username for primary is defined in hostSpec,
-# and is declared in `nix-config/common/core/default.nix`
-
 # User config applicable to both nixos and darwin
 {
   inputs,
@@ -10,17 +7,24 @@
   ...
 }:
 let
-  hostSpec = config.hostSpec;
-  pubKeys = lib.filesystem.listFilesRecursive ./keys;
+  inherit (config) hostSpec;
+  inherit (hostSpec) username;
+  # Every file in dir holds one entry
+  readEntries = dir: map (f: lib.trim (builtins.readFile f)) (lib.filesystem.listFilesRecursive dir);
+  # One `pamu2fcfg -n -o pam://shoal-pam -i pam://shoal-pam` output per YubiKey
+  u2fCreds = map (lib.removePrefix ":") (readEntries ./u2f);
 in
 {
-  users.users.${hostSpec.username} = {
-    name = hostSpec.username;
+  # Read by pam_u2f, see services/yubikey.nix
+  environment.etc."u2f_mappings".text = lib.concatStringsSep ":" ([ username ] ++ u2fCreds) + "\n";
+
+  users.users.${username} = {
+    name = username;
     # bashInteractive, not pkgs.bash: the latter is the non-readline build.
     shell = pkgs.bashInteractive;
 
     # These get placed into /etc/ssh/authorized_keys.d/<name> on nixos
-    openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+    openssh.authorizedKeys.keys = readEntries ./keys;
   };
 
   programs.zsh = {
