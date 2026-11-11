@@ -36,6 +36,7 @@ in
       # ========== Required Configs ==========
       #
       "hosts/common/core"
+      "hosts/common/optional/system/nix-ld.nix"
 
       #
       # ========== Non-Primary Users to Create ==========

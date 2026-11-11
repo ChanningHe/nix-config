@@ -1,6 +1,5 @@
 # Core functionality for every nixos host
 {
-  inputs,
   config,
   lib,
   pkgs,
@@ -29,8 +28,10 @@
 
   # Database for aiding terminal-based programs
   environment.enableAllTerminfo = true;
-  # Enable firmware with a license allowing redistribution
-  hardware.enableRedistributableFirmware = true;
+  # Redistributable firmware (~850MB closure). Also the default for
+  # hardware.cpu.{intel,amd}.updateMicrocode, so keep it on for bare metal;
+  # VMs turn it off in optional/system/qemu-guest.nix.
+  hardware.enableRedistributableFirmware = lib.mkDefault true;
 
   # env_keep+=SSH_AUTH_SOCK is added by the pam rssh module (services/yubikey.nix)
   security.sudo.extraConfig = ''
@@ -56,9 +57,6 @@
     "rpcrdma"
   ];
 
-  # Allow cursor/vscode to dynamically linked binaries built for other Linux distributions
-  programs.nix-ld.enable = true;
-
   #
   # ========== Nix Helper ==========
   #
@@ -70,18 +68,9 @@
     flake = "${config.hostSpec.home}/nix-config";
   };
 
-  #
-  # ========== Nix Registry & NixPath ==========
-  #
-  nix = {
-    # This will add each flake input as a registry
-    # To make nix3 commands consistent with your flake
-    registry = lib.mapAttrs (_: value: { flake = value; }) inputs;
-
-    # This will add your inputs to the system's legacy channels
-    # Making legacy nix commands consistent as well, awesome!
-    nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
-  };
+  # Registry/NIX_PATH: nixpkgs.flake.setFlakeRegistry/setNixPath (default on with
+  # nixosSystem) pin only `nixpkgs`. Pinning every input would drag all their
+  # sources (other nixpkgs copies, hermes-agent, ...) into the system closure.
 
   #
   # ========== Localization ==========

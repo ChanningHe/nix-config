@@ -103,16 +103,7 @@ in
   # ========== Nix Nix Nix ==========
   #
   nix = {
-    # # This will add each flake input as a registry
-    # # To make nix3 commands consistent with your flake
-    # registry = lib.mapAttrs (_: value: { flake = value; }) inputs;
-
-    # # This will add your inputs to the system's legacy channels
-    # # Making legacy nix commands consistent as well, awesome!
-    # nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
-
-    # NOTE: registry and nixPath configuration moved to platform-specific files
-    # (darwin.nix and nixos.nix) due to different handling between platforms
+    # NOTE: registry and nixPath are platform-specific (see darwin.nix and nixos.nix)
 
     settings = {
       # See https://jackson.dev/post/nix-reasonable-defaults/
@@ -133,7 +124,8 @@ in
       warn-dirty = false;
 
       #https://github.com/NixOS/nix/issues/11728#issuecomment-2725297584
-      download-buffer-size = 524288000;
+      # mkDefault: low-memory hosts drop back to nix's 64MB default
+      download-buffer-size = lib.mkDefault 524288000;
 
       allow-import-from-derivation = true;
 
