@@ -244,6 +244,12 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
+    bootvine = {
+      url = "git+https://codeberg.org/wvhulle/bootvine";
+      # Its closure lands in the initrd; build against the host's glibc/systemd
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     #
     # ========= Personal Repositories =========
     #
