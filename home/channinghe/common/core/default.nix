@@ -27,7 +27,6 @@ in
     ./ssh.nix
     ./zsh.nix
     ./neovim.nix
-    ./yazi.nix
   ];
 
   inherit hostSpec;
@@ -60,7 +59,7 @@ in
   # Platform-specific packages are defined in nixos.nix and darwin.nix
   home.packages = with pkgs; [
     curl
-    fastfetch # system info
+    #fastfetch # system info
     #pre-commit # git hooks
     # p7zip # compression & encryption
     # unzip # zip extraction
@@ -71,7 +70,7 @@ in
     ssh-to-age
     tree
     jq
-    ripgrep
+    #ripgrep
     nh
     btop
     wget
@@ -79,14 +78,14 @@ in
     # dev tools
     gh
     devenv
-    bun
+    #bun
     # lsp
     nil
     nixd
     # langs
-    go
-    gcc
-    cargo
+    #go
+    #gcc
+    #cargo
     #python3
   ];
 

@@ -75,14 +75,11 @@ in
     git
     curl
     nano
-    nmap
     sops
     age
     ssh-to-age
     dnsutils
-    unzip
     tmux
-    #inputs.nxv.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
   # Force home-manager to use global packages
   home-manager.useGlobalPkgs = true;

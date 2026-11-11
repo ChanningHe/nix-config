@@ -8,7 +8,6 @@
   # Linux-specific packages
   home.packages = with pkgs; [
     pciutils # PCI device utilities (lspci)
-    usbutils # USB device utilities (lsusb)
     lm_sensors # Hardware monitoring
     # sysstat # System statistics
     traceroute
