@@ -241,7 +241,11 @@
 
     hermes-agent = {
       url = "github:NousResearch/hermes-agent";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      # nix/pm-packages.nix unconditionally patches patchelf with a 0.19.2-only
+      # fix, but nixos-unstable reverted to 0.15.2, so the patch fails. Pin to
+      # the rev upstream locks (patchelf 0.19.2); switch back to
+      # `inputs.nixpkgs.follows = "nixpkgs-unstable"` once upstream gates it.
+      inputs.nixpkgs.url = "github:NixOS/nixpkgs/02c087f3fe673c9e317f206a627cb6b910336dbe";
     };
 
     bootvine = {
