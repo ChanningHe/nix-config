@@ -8,6 +8,9 @@
 # DCBX) and, for a passed-through VF, on the hypervisor/switch — it is not a
 # kernel sysctl, so it is intentionally out of scope here.
 { pkgs, ... }:
+let
+  rxRing = toString 8192;
+in
 {
   # RDMA verbs stack for RoCE. ib_core / rdma_cm load automatically as deps.
   #   mlx5_ib    - RoCE provider for ConnectX NICs
@@ -55,5 +58,36 @@
     "net.ipv4.neigh.default.gc_thresh1" = 4096;
     "net.ipv4.neigh.default.gc_thresh2" = 8192;
     "net.ipv4.neigh.default.gc_thresh3" = 16384;
+  };
+
+  # Enlarge the RX ring on every netdev backing an RDMA device (PF or VF).
+  # Triggered by the infiniband add event, not net add: mlx5_ib registers the
+  # IB device after mlx5_core creates the netdev, so a net-subsystem rule
+  # can't yet tell whether the interface is RDMA-capable.
+  # Note: on mlx5 changing the ring re-creates queues (brief link flap).
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="infiniband", TAG+="systemd", ENV{SYSTEMD_WANTS}+="rdma-rx-ring@%k.service"
+  '';
+
+  systemd.services."rdma-rx-ring@" = {
+    description = "Set RX ring size on netdevs of RDMA device %i";
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    path = [
+      pkgs.ethtool
+      pkgs.gawk
+    ];
+    scriptArgs = "%i";
+    script = ''
+      for net in /sys/class/infiniband/"$1"/device/net/*; do
+        [ -e "$net" ] || continue
+        iface=$(basename "$net")
+        cur=$(ethtool -g "$iface" | awk '/^Current/{c=1} c && /^RX:/{print $2; exit}')
+        [ "$cur" = "${rxRing}" ] && continue
+        ethtool -G "$iface" rx ${rxRing} || echo "WARN: $iface rx ${rxRing} failed (cur=$cur)" >&2
+      done
+    '';
   };
 }
