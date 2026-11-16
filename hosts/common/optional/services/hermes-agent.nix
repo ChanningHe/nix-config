@@ -19,9 +19,9 @@ let
 
   # Run the service's own hermes CLI as the service user against its state.
   hadm = pkgs.writeShellScriptBin "hadm" ''
-    cd ${cfg.stateDir}
     exec /run/wrappers/bin/sudo -u ${cfg.user} \
-      env HOME=${cfg.stateDir} HERMES_HOME=${cfg.stateDir}/.hermes \
+      ${pkgs.coreutils}/bin/env -C ${cfg.stateDir} \
+      HOME=${cfg.stateDir} HERMES_HOME=${cfg.stateDir}/.hermes \
       ${cfg.package}/bin/hermes "$@"
   '';
 in
