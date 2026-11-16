@@ -85,9 +85,9 @@ in
   networking = {
     hostId = "e874e2fb";
     #nameservers = hostNetwork.dns;
-    nameservers = [ "1.1.1.1" ];
+    nameservers = [ "9.9.9.9" ];
     extraHosts = ''
-      10.1.10.8 git-local.homielab.cc
+      10.1.10.8 git.shoal.twl.ooo
     '';
   };
 
