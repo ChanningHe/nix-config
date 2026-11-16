@@ -14,6 +14,7 @@
 let
   platform = if isDarwin then "darwin" else "nixos";
   platformModules = "${platform}Modules";
+  githubTokenKey = "github/nix_pub_flake_token";
 in
 {
   imports = lib.flatten [
@@ -144,5 +145,22 @@ in
 
       auto-optimise-store = true;
     };
+
+    # Flake fetching runs in the client, so the file must be readable by the user.
+    # `!include` skips it while missing (bootstrap) or unreadable (other users).
+    extraOptions = ''
+      !include ${config.sops.templates."nix-access-tokens".path}
+    '';
+  };
+
+  # Authenticated GitHub API: 5000 req/h instead of 60 per egress IP.
+  sops.secrets.${githubTokenKey}.sopsFile = "${config.hostSpec.sopsDir}/shared.yaml";
+  sops.templates."nix-access-tokens" = {
+    content = ''
+      access-tokens = github.com=${config.sops.placeholder.${githubTokenKey}}
+    '';
+    owner = config.hostSpec.username;
+    group = if isDarwin then "staff" else config.users.users.${config.hostSpec.username}.group;
+    mode = "0400";
   };
 }
