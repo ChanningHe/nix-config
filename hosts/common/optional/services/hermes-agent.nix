@@ -47,6 +47,10 @@ in
       config.nix.package
       pkgs.mcp-victoriametrics
       pkgs.mcp-victorialogs
+      # renovate-review skill: Forgejo PRs, GitHub releases/advisories, changelog pages.
+      pkgs.forgejo-mcp
+      pkgs.github-mcp-server
+      pkgs.mcp-server-fetch
     ];
   };
 
