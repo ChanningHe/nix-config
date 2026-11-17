@@ -194,16 +194,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1789934755,
-        "narHash": "sha256-bKFTAAN+A3Po0PnVv1XYQyLWqBQT3btYUUuFu7jcCXA=",
+        "lastModified": 1794862010,
+        "narHash": "sha256-ZK8qhsQ6FFCzGSQ/eaT/l3zSYe2UP/v/bmv8zPNwgTs=",
         "owner": "HalFrgrd",
         "repo": "flyline",
-        "rev": "3b9e900f628a9da1211030016ca765fdfa2533dc",
+        "rev": "bc658cff3919d6917986253be02ba1588a6843a3",
         "type": "github"
       },
       "original": {
         "owner": "HalFrgrd",
-        "ref": "v1.9.0",
+        "ref": "v1.11.0",
         "repo": "flyline",
         "type": "github"
       }
@@ -403,10 +403,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1794808680,
-        "narHash": "sha256-gXomUI00zQubHCDGvSBltoNZNhTgEmxI8fbOmi6T47Q=",
+        "lastModified": 1794888111,
+        "narHash": "sha256-yphZ+oGFWRgcmMe9QyCf4//0gtyR9iAF0tjU3Oepf/M=",
         "ref": "master",
-        "rev": "8d5227f535f0aa8a7df3d8e20eca1045fe67cff3",
+        "rev": "e8695844c15dc4bb4661c4d7a119761aa81c3f35",
         "shallow": true,
         "type": "git",
         "url": "ssh://git@github.com/ChanningHe/nix-secrets.git"

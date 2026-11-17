@@ -204,7 +204,7 @@
     # Bash loadable builtin replacing readline: inline autosuggestions,
     # fuzzy tab completion, syntax highlighting, fuzzy Ctrl+R.
     flyline = {
-      url = "github:HalFrgrd/flyline/v1.9.0";
+      url = "github:HalFrgrd/flyline/v1.11.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
