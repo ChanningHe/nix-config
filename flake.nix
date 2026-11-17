@@ -254,6 +254,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # S3-backed binary cache: CLI + post-build-hook auto-upload modules
+    niks3 = {
+      url = "github:Mic92/niks3";
+      # Tracks a recent Go toolchain
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     #
     # ========= Personal Repositories =========
     #
