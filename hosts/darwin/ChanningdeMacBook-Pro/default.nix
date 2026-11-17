@@ -56,6 +56,8 @@
     # loadUserAgeKey = true;
   };
 
+  sshAgent.enable = true;
+
   # Darwin uses integer stateVersion (1-6), not string like NixOS
   # See: https://daiderd.com/nix-darwin/manual/index.html#opt-system.stateVersion
   # 5 corresponds to nix-darwin 25.05

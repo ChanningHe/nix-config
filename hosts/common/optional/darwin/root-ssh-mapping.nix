@@ -30,7 +30,7 @@ in
 {
   environment.etc."ssh/ssh_config.d/999-root-builder.conf".text = ''
     Match localuser root
-      IdentityAgent ${primaryUserHome}/.ssh/ssh-agent.sock
+      IdentityAgent ${config.sshAgent.socket}
       UserKnownHostsFile ${primaryUserHome}/.ssh/known_hosts
       GlobalKnownHostsFile /etc/ssh/ssh_known_hosts
       StrictHostKeyChecking accept-new
