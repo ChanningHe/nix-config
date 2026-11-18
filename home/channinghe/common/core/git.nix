@@ -13,6 +13,7 @@
       };
       core.excludesFile = "~/.config/git/ignore";
       init.defaultBranch = "main";
+      url."git@github.com:".pushInsteadOf = "https://github.com/";
     };
     ignores = [
       ".csvignore"
