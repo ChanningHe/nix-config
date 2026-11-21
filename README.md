@@ -13,6 +13,7 @@ Secrets are managed with sops-nix and kept in a separate private repo. Most mach
 | `Poecilia` | Mini PC | AMD Ryzen 9 8745HS | 32 GB | — | HA services |
 | `Pseudomugil` | Server | AMD EPYC 7D12 | 64 GB | — | Remote testing |
 | `Toxotidae` | KVM VM | AMD EPYC 7C13 | 128 GB | — | Build / CI testing |
+| `marginatus` | KVM VM | AMD Ryzen 5 7640H | 3 GB |  | BGP router |
 | `Deissneri` | Server | Ampere Altra Q80-30 | 64 GB | — | ARM build machine |
 | `Macrouridae` | NAS | Intel Atom C3558 | 4 GB | — | Cold backup |
 | `ChanningdeMacBook-Pro` | Laptop | Apple M4 Pro | 48 GB | — | Primary workstation |
