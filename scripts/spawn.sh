@@ -278,11 +278,49 @@ function confirm() {
 # SC2029: the command in "$@" is built locally and intentionally sent to the
 # remote shell — client-side expansion is what we want here.
 # shellcheck disable=SC2029
-function tssh() {
-	local opts=(-p "$ssh_port" -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new
-		-o UserKnownHostsFile=/dev/null -o BatchMode=yes)
-	ssh "${opts[@]}" "${target_user}@${target_ip}" "$@" 2>/dev/null && return 0
-	ssh "${opts[@]}" "root@${target_ip}" "$@" 2>/dev/null
+function tssh_as() {
+	local user=$1
+	shift
+	ssh -p "$ssh_port" -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new \
+		-o UserKnownHostsFile=/dev/null -o BatchMode=yes "${user}@${target_ip}" "$@" 2>/dev/null
+}
+function tssh() { tssh_as "$target_user" "$@" || tssh_as root "$@"; }
+
+# Login nixos-anywhere should use: root, or the primary user with passwordless
+# sudo (nixos-anywhere escalates with sudo and switches to root after kexec).
+# A fresh non-NixOS distro often only lets the primary user in; handing
+# nixos-anywhere an unusable root@ makes it retry ssh-copy-id forever.
+function install_ssh_user() {
+	if tssh_as root true; then
+		echo root
+	elif tssh_as "$target_user" "sudo -n true"; then
+		echo "$target_user"
+	else
+		return 1
+	fi
+}
+
+# Sets INSTALL_USER. Until a usable login exists, explain how to grant one
+# on the target and offer to re-check (not under -y).
+INSTALL_USER=""
+function require_install_ssh_user() {
+	until INSTALL_USER=$(install_ssh_user); do
+		yellow "install: nixos-anywhere needs root on ${target_ip}, but neither login works yet:"
+		yellow "  - root@${target_ip}: login refused"
+		yellow "  - ${target_user}@${target_ip}: sudo asks for a password"
+		yellow "Fix one of them on the target (it is wiped right after), e.g.:"
+		echo "    echo '${target_user} ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/99-nixos-anywhere && sudo visudo -cf /etc/sudoers.d/99-nixos-anywhere"
+		echo "    sudo install -D -m600 ~/.ssh/authorized_keys /root/.ssh/authorized_keys"
+		if [ "$assume_yes" -eq 1 ]; then
+			red "Not waiting under -y; fix the login and re-run with --from install."
+			exit 1
+		fi
+		confirm "Done? Check the login again" || {
+			yellow "Aborted. Re-run with --from install once the login works."
+			exit 0
+		}
+	done
+	green "install: logging in as ${INSTALL_USER}@${target_ip}"
 }
 
 # step_enabled <name> — honour --only / --from / --skip and the plan.
@@ -786,6 +824,7 @@ function step_install() {
 		red "install: secrets not ready (run secrets step first)."
 		exit 1
 	}
+	require_install_ssh_user
 	confirm_wipe
 
 	# Extract the sops ssh host key into a secure temp for --extra-files.
@@ -810,9 +849,9 @@ function step_install() {
 	no-external) build_args=(--build-on local --option external-builders "[]") ;;
 	esac
 
-	green "Running nixos-anywhere on ${host} @ ${target_ip} (${TARGET_STATE}, build: ${build_strategy})"
+	green "Running nixos-anywhere on ${host} @ ${INSTALL_USER}@${target_ip} (${TARGET_STATE}, build: ${build_strategy})"
 	if [ "$dry_run" -eq 1 ]; then
-		yellow "[DRY-RUN] nixos-anywhere --flake ${git_root}#${host} --generate-hardware-config nixos-facter hosts/nixos/${host}/facter.json ${build_args[*]} ${phases[*]} root@${target_ip}"
+		yellow "[DRY-RUN] nixos-anywhere --flake ${git_root}#${host} --generate-hardware-config nixos-facter hosts/nixos/${host}/facter.json ${build_args[*]} ${phases[*]} ${INSTALL_USER}@${target_ip}"
 		return 0
 	fi
 
@@ -823,7 +862,7 @@ function step_install() {
 		--ssh-port "$ssh_port" \
 		"${build_args[@]}" \
 		"${phases[@]}" \
-		--target-host "root@${target_ip}"
+		--target-host "${INSTALL_USER}@${target_ip}"
 
 	# facter.json must be git-tracked for the flake to see it.
 	git -C "$git_root" add "hosts/nixos/${host}/facter.json" "hosts/nixos/${host}/" 2>/dev/null || true
