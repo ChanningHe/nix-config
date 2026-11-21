@@ -26,7 +26,8 @@ in
     # local x86_64-linux builder (nix-vz-builder) has been unreliable on kernel
     # module builds; remote build sidesteps it. Override per-invocation with
     # `--remote-build false` if you want to build locally.
-    remoteBuild = true;
+    # Low-memory hosts (optional/system/low-mem.nix) never build on themselves.
+    remoteBuild = !nixosConfigurations.${host}.config.hostSpec.isLowMem;
     profiles.system = {
       user = "root";
       path = (activationLib host).activate.nixos nixosConfigurations.${host};

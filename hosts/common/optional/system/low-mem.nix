@@ -1,7 +1,10 @@
 # Overrides for hosts with ~2-3GB RAM. Only tunes options; what a small host
 # runs is decided by what its host file imports (attic, home dev tools, ...).
-# Deploy these hosts from a bigger machine (`just deploy`), not locally.
+# Deploy these hosts from a bigger machine (`just deploy`), not locally;
+# isLowMem makes deploy-rs build on the control machine instead of the target.
 {
+  hostSpec.isLowMem = true;
+
   # Compressed swap in RAM; there is no disk swap anywhere in this repo
   zramSwap = {
     enable = true;

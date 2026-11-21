@@ -121,6 +121,11 @@
           default = false;
           description = "Used to indicate a host that uses work resources";
         };
+        isLowMem = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = "Host with little RAM: never build on it (deploy builds elsewhere)";
+        };
         # Sometimes we can't use pkgs.stdenv.isLinux due to infinite recursion
         isDarwin = lib.mkOption {
           type = lib.types.bool;
