@@ -50,7 +50,10 @@ in
     shell = pkgs.bashInteractive;
     hashedPasswordFile = config.users.users.${hostSpec.username}.hashedPasswordFile;
     hashedPassword = config.users.users.${hostSpec.username}.hashedPassword; # This comes from hosts/common/optional/minimal.nix and gets overridden if sops is working
-    openssh.authorizedKeys.keys = config.users.users.${hostSpec.username}.openssh.authorizedKeys.keys; # root's ssh keys are mainly used for remote deployment.
+    # deploy-rs logs in as root; hardware keys only, so root still costs a YubiKey touch
+    openssh.authorizedKeys.keys =
+      lib.filter (lib.hasPrefix "sk-")
+        config.users.users.${hostSpec.username}.openssh.authorizedKeys.keys;
   };
 
   # Create ssh sockets directory for controlpaths when homemanager not loaded (i.e. isMinimal)

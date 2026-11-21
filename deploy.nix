@@ -16,9 +16,14 @@ in
     # SSH target is the node name, resolved by ~/.ssh/config.
     # Override per-invocation with `--hostname <ip>`.
     hostname = host;
-    sshUser = nixosConfigurations.${host}.config.hostSpec.username;
+    # Log in as root: deploy-rs then skips sudo, whose pam_rssh check cost a
+    # YubiKey touch per remote command (activate, wait, confirm).
+    # Root accepts hardware keys only (users/channinghe/nixos.nix).
+    sshUser = "root";
     sshOpts = [
-      "-A"
+      # Don't leave a touch-free root master socket behind (ssh.nix persists 20m)
+      "-o"
+      "ControlPersist=60"
       "-o"
       "StrictHostKeyChecking=accept-new"
     ];

@@ -23,12 +23,20 @@ in
       PasswordAuthentication = false;
       # PAM keyboard-interactive would still accept the account password
       KbdInteractiveAuthentication = false;
-      PermitRootLogin = "no";
+      # Keys only; root's keys are hardware-backed (users/channinghe/nixos.nix)
+      PermitRootLogin = "prohibit-password";
       # Automatically remove stale sockets
       StreamLocalBindUnlink = "yes";
       # Allow forwarding ports to everywhere
       GatewayPorts = "clientspecified";
     };
+
+    # Root reads only the Nix-managed (sk-only) key file, never a mutable
+    # /root/.ssh/authorized_keys. Other users (e.g. rl-man) keep the homedir file.
+    extraConfig = ''
+      Match User root
+        AuthorizedKeysFile /etc/ssh/authorized_keys.d/%u
+    '';
 
     hostKeys = [
       {
