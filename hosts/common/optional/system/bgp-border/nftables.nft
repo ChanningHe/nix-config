@@ -1,0 +1,98 @@
+# Host firewall for the BGP border VM. The `define`s are generated from
+# nix-secrets in default.nix and prepended; the nftables module flushes the
+# ruleset in the same transaction, so a reload is atomic.
+#
+# The physical NICs are matched by interface GROUP (set by networkd from the
+# MAC), never by kernel name. gre1 and dummy0 are matched by name. Until
+# networkd configured a NIC it is in group 0 and matches nothing: input and
+# forward fall through to their drop policies.
+#
+# Forwarding is allowed ONLY between gre1 and the transit NIC and ONLY for the
+# own prefixes. The home router is the stateful firewall; this box filters by
+# prefix and keeps forwarded packets out of conntrack.
+#
+# Forwarding itself is switched on by nftables.service only after this ruleset
+# loaded, and off when the service stops or fails (default.nix).
+
+table inet raw {
+    chain prerouting {
+        # Priority -450, before fragment reassembly (-400): forwarded
+        # fragments pass through as fragments, no reassembly queue to fill.
+        # The rules only look at the IP header, so non-first fragments match.
+        type filter hook prerouting priority -450; policy accept;
+
+        # Transit packets are never tracked. Local traffic (BGP, GRE outer,
+        # ssh, icmp to us) still is, so the input chain stays stateful.
+        iifname "gre1" fib daddr type unicast notrack
+        iifgroup $GRP_TRANSIT fib daddr type unicast notrack
+    }
+}
+
+table inet filter {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+        iif "lo" accept
+
+        # GRE outer packets (IPv6 underlay): only from the tunnel remote, only
+        # via the edge. l4proto looks past extension headers.
+        iifgroup $GRP_EDGE ip6 saddr $GRE_REMOTE_V6 meta l4proto gre accept
+
+        # ICMP: PMTUD is mandatory over a 1400-MTU GRE tunnel, ping rate-limited
+        ip protocol icmp icmp type { destination-unreachable, time-exceeded, parameter-problem } accept
+        ip protocol icmp icmp type echo-request limit rate 20/second accept
+
+        # ICMPv6: errors + NDP (NDP must be link-local, hop limit 255)
+        meta l4proto ipv6-icmp icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem } accept
+        meta l4proto ipv6-icmp icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert, nd-router-advert } ip6 hoplimit 255 accept
+        meta l4proto ipv6-icmp icmpv6 type echo-request limit rate 20/second accept
+
+        # BGP: only the configured neighbor, only through the tunnel
+        iifname "gre1" ip  saddr $BGP_PEER_V4 tcp dport 179 accept
+        iifname "gre1" ip6 saddr $BGP_PEER_V6 tcp dport 179 accept
+
+        # SSH: home LAN via the edge, never from the prefixes / transit / Internet
+        iifgroup $GRP_EDGE ip saddr $MGMT_V4 tcp dport $SSH_PORTS ct state new limit rate 10/minute accept
+        # SSH from the tunnel peer
+        iifname "gre1" ip saddr $BGP_PEER_V4 tcp dport $SSH_PORTS ct state new limit rate 10/minute accept
+
+        limit rate 5/minute log prefix "nft-in-drop: " level info
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+
+        # Anti-spoof: our own prefixes can never be a source on the upstream side
+        iifname "gre1" ip  saddr $OWN_V4 drop
+        iifname "gre1" ip6 saddr $OWN_V6 drop
+
+        # The transit /64 holds exactly one forwardable neighbour; otherwise
+        # anyone can make us resolve 2^64 addresses and fill the neighbour table.
+        iifname "gre1" ip6 daddr $TRANSIT_V6 ip6 daddr != $ROUTER_V6 drop
+
+        # Internet -> own prefixes
+        iifname "gre1" oifgroup $GRP_TRANSIT ip  daddr $OWN_V4 accept
+        iifname "gre1" oifgroup $GRP_TRANSIT ip6 daddr $OWN_V6 accept
+
+        # Own prefixes -> Internet (BCP38: nothing else may leave via the tunnel)
+        iifgroup $GRP_TRANSIT oifname "gre1" ip  saddr $OWN_V4 accept
+        iifgroup $GRP_TRANSIT oifname "gre1" ip6 saddr $OWN_V6 accept
+
+        limit rate 5/minute log prefix "nft-fwd-drop: " level info
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+
+        # The edge NIC is underlay only but carries the default route: anything
+        # towards a destination not (yet) in the BGP table would leave there
+        # with a private source and be NATed to the home address.
+        # IPv4: only the home networks (ssh replies, dns, ntp, nix copy).
+        oifgroup $GRP_EDGE ip daddr != { 10.0.0.0/8 } counter drop
+
+        # IPv6: the GRE peer, the edge link and neighbour discovery.
+        oifgroup $GRP_EDGE ip6 daddr != { $GRE_REMOTE_V6, $EDGE_V6, fe80::/10, ff02::/16 } counter drop
+    }
+}

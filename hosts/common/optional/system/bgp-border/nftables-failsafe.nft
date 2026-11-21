@@ -1,0 +1,38 @@
+# Fail-safe ruleset: management in, nothing forwarded. Installed as
+# /etc/nftables-failsafe.conf (defines prepended by default.nix). Rollback
+# target for manual rule changes - never roll back to an EMPTY ruleset: while
+# nftables.service is active forwarding is on, so empty means open forwarder.
+#
+# Keeps the tunnel and the BGP sessions alive; traffic for the prefixes is
+# dropped until the real ruleset is back. Independent of NIC names and
+# interface groups, so it works when networkd did not configure the NICs.
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+        iif "lo" accept
+
+        ip protocol icmp accept
+        meta l4proto ipv6-icmp accept
+
+        iifname != "gre1" ip6 saddr $GRE_REMOTE_V6 meta l4proto gre accept
+        iifname "gre1" ip  saddr $BGP_PEER_V4 tcp dport 179 accept
+        iifname "gre1" ip6 saddr $BGP_PEER_V6 tcp dport 179 accept
+
+        # management from the home networks only, never through the tunnel
+        iifname != "gre1" ip saddr 10.0.0.0/8 tcp dport $SSH_PORTS accept
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+    }
+}
