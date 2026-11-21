@@ -88,9 +88,18 @@ facter:
 deploy hostname *ARGS:
     nix run .#deploy -- --skip-checks .#{{ hostname }} {{ ARGS }}
 
-# Deploy every node in deploy.nodes via deploy-rs; a failure rolls back the whole batch
+# Host running the LAN attic cache; deploy-all handles it first, on its own
+cache_host := "Annulatus"
+
+# Deploy every node: cache host first, wait for attic, then the rest as one batch
 deploy-all *ARGS: rebuild-pre
-    nix run .#deploy -- --skip-checks . {{ ARGS }}
+    nix run .#deploy -- --skip-checks .#{{ cache_host }} {{ ARGS }}
+    scripts/wait-attic.sh {{ cache_host }}
+    just deploy-others {{ ARGS }}
+
+# Deploy every node except the cache host; a failure rolls back the whole batch
+deploy-others *ARGS:
+    nix run .#deploy -- --skip-checks --targets $(nix eval --raw .#deploy.nodes --apply 'ns: toString (map (n: ".#" + n) (builtins.filter (n: n != "{{ cache_host }}") (builtins.attrNames ns)))') {{ ARGS }}
 
 # Update nix-secrets flake
 update-nix-secrets:
