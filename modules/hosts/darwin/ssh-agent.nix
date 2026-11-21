@@ -3,7 +3,7 @@
 # - Fixed socket so nix-daemon (root) can reach it via IdentityAgent.
 # - SSH_AUTH_SOCK / SSH_ASKPASS exported to shells and to GUI apps (launchctl setenv).
 # - Keys are added on first use by the client's `AddKeysToAgent yes`.
-# - Built-in askpass: touch prompts become notifications, other prompts are dialogs.
+# - Built-in askpass: dialogs only; the touch prompt is closed by the agent (SIGTERM) once touched.
 {
   config,
   lib,
@@ -18,11 +18,11 @@ let
     on run argv
       set msg to item 1 of argv
       set promptKind to system attribute "SSH_ASKPASS_PROMPT"
+      activate
       if promptKind is "none" then
-        display notification msg with title "SSH"
+        display dialog msg with title "SSH" buttons {"OK"} default button "OK" with icon caution giving up after 60
         return
       end if
-      activate
       if promptKind is "confirm" then
         display dialog msg buttons {"No", "Yes"} default button "Yes" cancel button "No"
         return
