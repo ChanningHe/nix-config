@@ -22,6 +22,7 @@
     # common/optional/comms
     # common/optional/media
     common/optional/darwin/ssh-client.nix
+    common/optional/shunt.nix
     # uncommit to auto add ssh-private-key && age user key
     # common/optional/sops.nix
   ];

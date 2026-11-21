@@ -239,6 +239,12 @@
       #inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    shunt = {
+      url = "github:ChanningHe/shunt";
+      # Only its HM module is used, which builds the package from our pkgs
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     hermes-agent = {
       url = "github:NousResearch/hermes-agent";
       # nix/pm-packages.nix unconditionally patches patchelf with a 0.19.2-only

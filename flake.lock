@@ -666,6 +666,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "noctalia": "noctalia",
         "pre-commit-hooks": "pre-commit-hooks",
+        "shunt": "shunt",
         "sops-nix": "sops-nix",
         "systems-linux": "systems-linux"
       }
@@ -688,6 +689,26 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "shunt": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1795239790,
+        "narHash": "sha256-ruUwDssRKJFafRDtopJF/vH+KY/YPlsU3Aw9Bo3viWc=",
+        "owner": "ChanningHe",
+        "repo": "shunt",
+        "rev": "74e496817567fa608dba6219e5e781610530db5a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ChanningHe",
+        "repo": "shunt",
         "type": "github"
       }
     },
