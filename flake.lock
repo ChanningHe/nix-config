@@ -424,10 +424,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1795231328,
-        "narHash": "sha256-7jaze7gIFK70Yi2kxMNQIXqCls/HIw3cHEbwfIXUYG0=",
+        "lastModified": 1795233121,
+        "narHash": "sha256-qn5Ch7D6lumtJR11ZbdbIoQYdmQ1xJ8JOCj8yfopPZI=",
         "ref": "master",
-        "rev": "db94f66defd8018537d97ccb204e568e189a0c2c",
+        "rev": "5406021fbd1b5813ff00faa38699e785dadcc5a7",
         "shallow": true,
         "type": "git",
         "url": "ssh://git@github.com/ChanningHe/nix-secrets.git"

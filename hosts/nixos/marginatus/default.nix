@@ -22,6 +22,7 @@ in
     #
     (lib.custom.bootDiskLayout inputs {
       layout = "ext4";
+      disk = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0";
     })
 
     (map lib.custom.relativeToRoot [
