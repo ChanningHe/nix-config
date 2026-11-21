@@ -88,8 +88,9 @@ in
       '';
     }
     // lib.optionalAttrs (!isDarwin) {
-      # Auto-push every locally built store path to the cache
-      systemd.services.attic-watch-store = {
+      # Auto-push every locally built store path to the cache. Low-memory hosts
+      # build nothing themselves and stay a pull-only client.
+      systemd.services.attic-watch-store = lib.mkIf (!config.hostSpec.isLowMem) {
         description = "Push new store paths to Attic cache ${cacheName}";
         wantedBy = [ "multi-user.target" ];
         wants = [ "network-online.target" ];

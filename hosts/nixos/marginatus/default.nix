@@ -39,6 +39,7 @@ in
       "hosts/common/optional/system/low-mem.nix"
       "hosts/common/optional/system/bgp-border"
       "hosts/common/optional/services/bird.nix"
+      "hosts/common/optional/services/attic.nix"
     ])
   ];
 
