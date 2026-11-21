@@ -26,9 +26,6 @@ let
 
   sopsFolder = config.hostSpec.sopsDir;
   hasSharedYaml = builtins.pathExists "${sopsFolder}/shared.yaml";
-
-  # Only evaluated on NixOS; `or false` guards hosts without the docker module.
-  hasDocker = config.virtualisation.docker.enable or false;
 in
 {
   config = lib.mkIf (servername != "" && endpoint != "") (
@@ -94,12 +91,21 @@ in
         description = "Push new store paths to Attic cache ${cacheName}";
         wantedBy = [ "multi-user.target" ];
         wants = [ "network-online.target" ];
-        # Ordering only: start after docker when present, but never depend on it.
-        after = [ "network-online.target" ] ++ lib.optional hasDocker "docker.service";
+        after = [ "network-online.target" ];
         # attic resolves config.toml/netrc relative to $HOME
         environment.HOME = config.hostSpec.home;
         serviceConfig = {
-          ExecStart = "${pkgs.unstable.attic-client}/bin/attic watch-store ${cacheName}";
+          # watch-store exits if the server is down at startup, and the server
+          # may be a container that comes up well after docker.service. Wait in
+          # ExecStart, not ExecStartPre, so switch-to-configuration never blocks.
+          ExecStart = pkgs.writeShellScript "attic-watch-store" ''
+            until ${lib.getExe pkgs.curl} -fsS -o /dev/null --max-time 5 \
+              --netrc-file ${netrcPath} https://${endpoint}/nix-cache-info; do
+              echo "waiting for attic at ${endpoint}"
+              sleep 5
+            done
+            exec ${pkgs.unstable.attic-client}/bin/attic watch-store ${cacheName}
+          '';
           User = config.hostSpec.username;
           Restart = "on-failure";
           RestartSec = 30;
